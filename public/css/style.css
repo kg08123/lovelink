@@ -118,6 +118,9 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .tabs{display:flex; gap:28px; margin:2px 0 14px; overflow-x:auto; padding:0 2px 6px}
 .tabs a{flex:0 0 auto; white-space:nowrap; text-align:center; padding:8px 2px 10px; background:none; border:none; border-radius:0; text-decoration:none; color:#8a8f98; font-weight:600; font-size:.95rem; border-bottom:2.5px solid transparent}
 .tabs a.on{color:var(--pink); border-bottom-color:var(--pink); font-weight:700; box-shadow:0 10px 16px -10px rgba(255,46,99,.55)}
+/* Smooth Explore tab switches: the grid fades out, swaps, fades back in. */
+#explore-grid-root{transition:opacity .18s ease, transform .18s ease}
+#explore-grid-root.grid-switching{opacity:0; transform:translateY(6px)}
 .filter-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:4px 0 12px}
 .filter-panel[hidden]{display:none}
 .frow{margin-bottom:12px}

@@ -1,0 +1,34 @@
+<%# Explore grid fragment: the cards + pager only, no heading/tabs/chrome. %>
+<%# Rendered on its own (layout: false) for smooth tab switches, and %>
+<%# included inside #explore-grid-root on the full Explore page. %>
+<% if (!items.length) { %><div class="empty"><%- icon('search') %>No one matches these filters yet.</div><% } %>
+<div class="explore-grid">
+  <% items.forEach(function(it){ %>
+  <div class="explore-card">
+    <a class="explore-card-link" href="/u/<%= it.id %>">
+      <% if (it.photo1) { %><img src="<%= it.thumb || it.photo1 %>" alt="<%= it.name %>" loading="lazy" decoding="async"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
+      <div class="explore-info">
+        <b><%= it.name %></b>
+        <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
+      </div>
+      <span class="explore-score-chip"><%= it.score %>%</span>
+      <% if (it.online) { %><span class="online-dot pulse" title="Online"></span><% } %>
+    </a>
+    <% if (it.matched) { %>
+      <button class="explore-like liked" type="button" disabled title="Matched"><%- icon('heart', true) %></button>
+    <% } else if (it.swipedKind === 'like' || it.swipedKind === 'super') { %>
+      <button class="explore-like liked" type="button" disabled title="Liked"><%- icon('heart', true) %></button>
+    <% } else { %>
+      <form class="explore-like-form js-grid-like-form" method="post" action="/discover/grid-like">
+        <input type="hidden" name="to" value="<%= it.id %>">
+        <button class="explore-like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %> <%= it.name %>"><%- icon('heart') %></button>
+      </form>
+    <% } %>
+  </div>
+  <% }) %>
+</div>
+<div class="pager">
+  <% if (page > 1) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page-1}) %>"><%- icon('chevronLeft') %> Prev</a><% } %>
+  <span class="pager-info">Page <%= page %> / <%= totalPages %></span>
+  <% if (page < totalPages) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page+1}) %>">Next <%- icon('chevronRight') %></a><% } %>
+</div>

@@ -146,6 +146,81 @@
     }
   }, true);
 
+  // ---- Explore tabs: switch without a full page reload ----
+  // Tapping Nearby / Online / New (or a pager link) fetches just the grid
+  // fragment from /explore?fragment=1 and swaps it in place with a fade —
+  // the active tab moves instantly, no white flash, no scroll jump. The
+  // URL is updated with pushState so back/forward still work (popstate
+  // re-fetches the grid for the URL it lands on). Any failure falls back
+  // to a normal navigation, so a broken fetch can never strand a tap.
+  // Grid hearts keep working after a swap: their submit handler is
+  // delegated on `document`, so newly loaded cards need no rebinding.
+  var exploreSeq = 0;
+
+  function exploreRoot() { return document.getElementById('explore-grid-root'); }
+
+  function setActiveExploreTab(tab) {
+    var tabs = document.querySelector('.tabs');
+    if (!tabs) return;
+    var links = tabs.querySelectorAll('a');
+    for (var i = 0; i < links.length; i++) {
+      var t = '';
+      try { t = new URL(links[i].href, location.origin).searchParams.get('tab') || 'nearby'; } catch (e) { t = ''; }
+      links[i].classList.toggle('on', t === tab);
+    }
+  }
+
+  function tabOf(url) {
+    try { return new URL(url, location.origin).searchParams.get('tab') || 'nearby'; } catch (e) { return 'nearby'; }
+  }
+
+  function fetchExploreGrid(url) {
+    var sep = url.indexOf('?') === -1 ? '?' : '&';
+    return fetch(url + sep + 'fragment=1', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    }).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.text();
+    });
+  }
+
+  function swapExploreGrid(url, push) {
+    var root = exploreRoot();
+    if (!root) return false;
+    var seq = ++exploreSeq;
+    setActiveExploreTab(tabOf(url));
+    root.classList.add('grid-switching');
+    fetchExploreGrid(url).then(function (html) {
+      if (seq !== exploreSeq) return; // a newer tap already won
+      root.innerHTML = html;
+      // Force a reflow so the fade-in transition runs from the faded state.
+      void root.offsetWidth;
+      root.classList.remove('grid-switching');
+      if (push) {
+        try { history.pushState({ exploreTab: tabOf(url) }, '', url); } catch (e) { /* old browser */ }
+      }
+    }).catch(function () {
+      root.classList.remove('grid-switching');
+      window.location.href = url; // fall back to a normal navigation
+    });
+    return true;
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+    var a = e.target.closest ? e.target.closest('a[href^="/explore?"]') : null;
+    if (!a || !exploreRoot()) return;
+    e.preventDefault();
+    swapExploreGrid(a.getAttribute('href'), true);
+  });
+
+  window.addEventListener('popstate', function () {
+    var root = exploreRoot();
+    if (!root || !location.pathname.startsWith('/explore')) return;
+    swapExploreGrid(location.pathname + location.search, false);
+  });
+
   // ---- Drag to swipe (Discover card) ----
   // Pointer Events, works for touch and mouse. The card follows the
   // finger, rotates a little, LIKE / NOPE stamps fade in as it moves.

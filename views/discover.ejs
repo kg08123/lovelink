@@ -15,7 +15,6 @@
     <a href="/discover?tab=online" class="<%= grid.f.tab==='online'?'on':'' %>"><%= t('online') %></a>
     <a href="/discover?tab=new" class="<%= grid.f.tab==='new'?'on':'' %>"><%= t('new') %></a>
   </div>
-  <p class="count"><%= grid.total %> <%= grid.total===1?'person':'people' %> found</p>
   <div class="explore-grid">
     <% grid.items.forEach(function(it){ %>
     <div class="explore-card">

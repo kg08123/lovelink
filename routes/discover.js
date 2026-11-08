@@ -525,6 +525,12 @@ router.get('/match/:id', requireAuth, async (req, res, next) => {
 router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     await sweepDemoAutoMatches(req);
+    // Fragment mode (?fragment=1): the smooth-tab JS fetches just the grid
+    // HTML (no layout) and swaps it in place — no full page reload.
+    // Strip it from req.query first so qs() never leaks fragment=1 into
+    // pager links (a plain click on those must render a full page).
+    const fragment = req.query.fragment === '1';
+    delete req.query.fragment;
     const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
     const f = {
       tab,
@@ -542,6 +548,11 @@ router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => 
     const safePage = Math.min(page, totalPages);
     const pageItems = cands.slice((safePage - 1) * PER, safePage * PER);
     await attachSwipeKind(req.user.id, pageItems);
+    if (fragment) {
+      return res.render('partials/explore-grid', {
+        items: pageItems, page: safePage, totalPages, layout: false,
+      });
+    }
     res.render('explore', { title: res.locals.t('explore'), items: pageItems, f, total, page: safePage, totalPages, photoOf });
   } catch (e) { next(e); }
 });
