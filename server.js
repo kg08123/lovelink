@@ -192,9 +192,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// Cheap health check for the keep-alive cron (no DB touch, so it stays fast
-// even when Neon is asleep).
-app.get('/health', (req, res) => res.json({ ok: true }));
+// Health check for the keep-alive cron. It runs a tiny `SELECT 1` so the
+// ping wakes the Neon database too — the old version touched nothing, so
+// Render stayed awake while Neon still slept ~5 min after idle and the
+// next real click paid a database wakeup. Cheap (one trivial query) and
+// safe: if the DB is down it answers 503 instead of crashing.
+app.get('/health', async (req, res) => {
+  try {
+    await db.query('SELECT 1');
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(503).json({ ok: false });
+  }
+});
 
 // Demo auto-match backup: every 30s, let demo users like back any
 // 60s-old likes (lib/demo-auto). Page-load sweeps are the reliable path

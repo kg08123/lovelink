@@ -1,3 +1,4 @@
+<div id="discover-root">
 <div class="discover-top">
   <span class="pill ok"><%- icon('heart', true) %> <%= freeLeft %> / <%= FREE_MATCHES %> free matches left</span>
   <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium <%- icon('chevronRight') %></a><% } else { %><span class="pill ok"><%- icon('star', true) %> Premium</span><% } %>
@@ -5,7 +6,7 @@
 <% if (!card) { %>
   <div class="empty"><%- icon('heart') %><h2><%= t('noMoreProfiles') %></h2>
     <p class="sub">Here are more people nearby — including ones you already passed. Tap the heart to like anyone.</p>
-    <form method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
+    <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
       <button class="btn btn-pink" type="submit"><%= t('showAgain') %></button>
     </form></div>
   <% if (grid && grid.items.length) { %>
@@ -32,7 +33,7 @@
       <% } else if (it.swipedKind === 'like' || it.swipedKind === 'super') { %>
         <button class="explore-like liked" type="button" disabled title="Liked"><%- icon('heart', true) %></button>
       <% } else { %>
-        <form class="explore-like-form" method="post" action="/discover/grid-like">
+        <form class="explore-like-form js-grid-like-form" method="post" action="/discover/grid-like">
           <input type="hidden" name="to" value="<%= it.id %>">
           <button class="explore-like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %> <%= it.name %>"><%- icon('heart') %></button>
         </form>
@@ -68,10 +69,11 @@
     </div>
   </div>
   <div class="swipe-actions">
-    <form method="post" action="/discover/rewind"><button class="swipe-btn rewind" title="<%= t('rewind') %>" aria-label="<%= t('rewind') %>"><%- icon('rewind') %></button></form>
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" title="<%= t('pass') %>" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" title="<%= t('like') %>" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super" title="<%= t('superLike') %>" aria-label="<%= t('superLike') %>"><%- icon('star', true) %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/rewind"><button class="swipe-btn rewind" title="<%= t('rewind') %>" aria-label="<%= t('rewind') %>"><%- icon('rewind') %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" title="<%= t('pass') %>" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" title="<%= t('like') %>" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super" title="<%= t('superLike') %>" aria-label="<%= t('superLike') %>"><%- icon('star', true) %></button></form>
   </div>
   <p class="sub" style="text-align:center"><%= remaining %> <%= remaining===1?'profile':'profiles' %> near you · <a class="link" href="/u/<%= card.id %>">View full profile <%- icon('chevronRight') %></a></p>
 <% } %>
+</div>

@@ -35,16 +35,16 @@
   <a class="btn btn-pink btn-block" href="/matches"><%- icon('comment') %> <%= t('chatNow') %></a>
 <% } else if (!swiped) { %>
   <div class="swipe-actions">
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass"><%- icon('x') %></button></form>
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like"><%- icon('heart', true) %></button></form>
-    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super"><%- icon('star', true) %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass"><%- icon('x') %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like"><%- icon('heart', true) %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super"><%- icon('star', true) %></button></form>
   </div>
 <% } else { %>
   <p class="sub" style="text-align:center">You <%= swiped.kind==='pass' ? 'passed' : 'liked' %> this profile.</p>
 <% } %>
 <div class="section">
   <h2><%= t('report') %> / <%= t('block') %></h2>
-  <form method="post" action="/u/<%= other.id %>/report">
+  <form class="js-report-form" method="post" action="/u/<%= other.id %>/report">
     <div class="field"><label>Reason</label><input type="text" name="reason" placeholder="Fake profile, rude, scam..." maxlength="500"></div>
     <button class="btn btn-outline btn-block" type="submit"><%- icon('flag') %> <%= t('report') %></button>
   </form>

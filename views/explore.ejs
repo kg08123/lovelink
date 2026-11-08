@@ -33,7 +33,7 @@
     <% } else if (it.swipedKind === 'like' || it.swipedKind === 'super') { %>
       <button class="explore-like liked" type="button" disabled title="Liked"><%- icon('heart', true) %></button>
     <% } else { %>
-      <form class="explore-like-form" method="post" action="/discover/grid-like">
+      <form class="explore-like-form js-grid-like-form" method="post" action="/discover/grid-like">
         <input type="hidden" name="to" value="<%= it.id %>">
         <button class="explore-like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %> <%= it.name %>"><%- icon('heart') %></button>
       </form>

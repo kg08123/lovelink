@@ -189,6 +189,64 @@ function photoOf(p) {
   return p.photo1_thumb || p.photo1 || p.photo2_thumb || p.photo2 || p.photo3_thumb || p.photo3 || null;
 }
 
+// Shared Discover data: the card, the remaining count and (when the cards
+// run out) the Explore-style grid. Used by GET /discover and by the
+// instant XHR buttons, so both render exactly the same page.
+async function discoverData(req) {
+  await sweepDemoAutoMatches(req);
+  await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
+  const cands = await getCandidates(req.user, req.profile);
+  const card = cands[0] || null;
+  const n = await matchCount(req.user.id);
+  let grid = null;
+  if (!card) {
+    const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
+    const f = { tab, onlineOnly: tab === 'online' };
+    let items = await getCandidates(req.user, req.profile, { includeSwiped: true, ...f });
+    if (tab === 'new') items.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const PER = 8;
+    const total = items.length;
+    const totalPages = Math.max(1, Math.ceil(total / PER));
+    const safePage = Math.min(page, totalPages);
+    const pageItems = items.slice((safePage - 1) * PER, safePage * PER);
+    await attachSwipeKind(req.user.id, pageItems);
+    grid = { items: pageItems, f, total, page: safePage, totalPages };
+  }
+  return {
+    card, remaining: cands.length,
+    matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
+    interestsList: card ? splitList(card.interests) : [], grid,
+  };
+}
+
+// Render the Discover page body (no layout) for instant XHR swaps: the
+// client replaces #discover-root with this HTML instead of reloading the
+// whole page. If rendering fails, the caller falls back to a full redirect.
+function renderDiscoverBody(req, res, data) {
+  return new Promise((resolve, reject) => {
+    res.render('discover', {
+      title: res.locals.t('discover'), ...data, photoOf, layout: false,
+    }, (err, html) => (err ? reject(err) : resolve(html)));
+  });
+}
+
+// Instant-button answer: fresh Discover body as JSON. `extra` carries
+// optional toast text (msg / hint). On any failure the client falls back
+// to a normal form submit, so a rendering problem can never strand a tap.
+async function discoverJson(req, res, extra) {
+  try {
+    const data = await discoverData(req);
+    const html = await renderDiscoverBody(req, res, data);
+    return res.json({ ok: true, html, ...(extra || {}) });
+  } catch (e) {
+    console.error('[instant] discover render failed:', e.message);
+    return res.redirect('/discover');
+  }
+}
+
+const isXhr = (req) => !!req.xhr;
+
 // ---- Onboarding questionnaire ----
 const ONBOARD_FIELDS = ['bio', 'city', 'country', 'latitude', 'longitude', 'height_cm', 'religion',
   'education', 'job', 'smoking', 'drinking', 'kids', 'looking_for_gender', 'age_min', 'age_max',
@@ -320,30 +378,9 @@ router.get('/profile/edit', requireAuth, (req, res) => {
 // button — so there is always something to look at and like.
 router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
-    await sweepDemoAutoMatches(req);
-    await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
-    const cands = await getCandidates(req.user, req.profile);
-    const card = cands[0] || null;
-    const n = await matchCount(req.user.id);
-    let grid = null;
-    if (!card) {
-      const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
-      const f = { tab, onlineOnly: tab === 'online' };
-      let items = await getCandidates(req.user, req.profile, { includeSwiped: true, ...f });
-      if (tab === 'new') items.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
-      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-      const PER = 8;
-      const total = items.length;
-      const totalPages = Math.max(1, Math.ceil(total / PER));
-      const safePage = Math.min(page, totalPages);
-      const pageItems = items.slice((safePage - 1) * PER, safePage * PER);
-      await attachSwipeKind(req.user.id, pageItems);
-      grid = { items: pageItems, f, total, page: safePage, totalPages };
-    }
+    const data = await discoverData(req);
     res.render('discover', {
-      title: res.locals.t('discover'), card, remaining: cands.length,
-      matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
-      photoOf, interestsList: card ? splitList(card.interests) : [], grid,
+      title: res.locals.t('discover'), ...data, photoOf,
     });
   } catch (e) { next(e); }
 });
@@ -354,31 +391,42 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
     const t = res.locals.t;
     const kind = ['like', 'pass', 'super'].includes(req.body.kind) ? req.body.kind : 'pass';
     const toId = Number(req.body.to);
-    if (!toId || toId === req.user.id) return res.redirect('/discover');
+    // Instant buttons (XHR): answer JSON with a fresh Discover body instead
+    // of a full redirect — the card swaps in place. Anything unexpected
+    // falls back to the old redirect flow on the client.
+    if (!toId || toId === req.user.id) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
-    if (!target.rows.length) return res.redirect('/discover');
+    if (!target.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-    if (already.rows.length) return res.redirect('/discover');
+    if (already.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
 
     await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
       [req.user.id, toId, kind]);
     if (kind === 'pass') {
       req.session.lastPass = toId; // rewind target (once)
-      return res.redirect('/discover');
+      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     }
     // Demo profiles like back automatically after 60s (see lib/demo-auto);
     // tell the tester so the wait is expected, not a mystery. Only when
     // the demo has NOT already liked back (those match instantly).
+    // XHR: the hint rides in the JSON (a session flash would only appear
+    // on the next full page load); plain forms keep the flash.
+    let hint = null;
     if (target.rows[0].is_demo) {
       const alreadyLikedBack = await db.query(
         "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
         [toId, req.user.id]);
       if (!alreadyLikedBack.rows.length) {
-        req.session.flash = { type: 'ok', msg: t('demoReplyHint') };
+        hint = t('demoReplyHint');
+        if (!isXhr(req)) req.session.flash = { type: 'ok', msg: hint };
       }
     }
     const dest = await processLike(req, toId, target.rows[0].name);
-    return res.redirect(dest);
+    if (dest !== '/discover') {
+      // Match screen or paywall: a real navigation either way.
+      return isXhr(req) ? res.json({ ok: true, redirect: dest, hint }) : res.redirect(dest);
+    }
+    return isXhr(req) ? discoverJson(req, res, hint ? { hint } : null) : res.redirect(dest);
   } catch (e) { next(e); }
 });
 
@@ -389,26 +437,36 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
 router.post('/discover/grid-like', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const toId = Number(req.body.to);
-    if (!toId || toId === req.user.id) return res.redirect('/discover');
+    if (!toId || toId === req.user.id) return isXhr(req) ? res.json({ ok: false }) : res.redirect('/discover');
     const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
-    if (!target.rows.length) return res.redirect('/discover');
+    if (!target.rows.length) return isXhr(req) ? res.json({ ok: false }) : res.redirect('/discover');
     const existing = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-    if (existing.rows.length && existing.rows[0].kind !== 'pass') return res.redirect('/discover');
+    if (existing.rows.length && existing.rows[0].kind !== 'pass') {
+      // Already liked: nothing to do — the heart is already filled in.
+      return isXhr(req) ? res.json({ ok: true, liked: true }) : res.redirect('/discover');
+    }
     if (existing.rows.length && existing.rows[0].kind === 'pass') {
       await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind='pass'", [req.user.id, toId]);
+      if (req.session.lastPass === toId) delete req.session.lastPass; // it is no longer a pass to rewind to
     }
     await db.query("INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,'like') ON CONFLICT (from_user_id,to_user_id) DO NOTHING",
       [req.user.id, toId]);
+    let hint = null;
     if (target.rows[0].is_demo) {
       const alreadyLikedBack = await db.query(
         "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
         [toId, req.user.id]);
       if (!alreadyLikedBack.rows.length) {
-        req.session.flash = { type: 'ok', msg: req.res.locals.t('demoReplyHint') };
+        hint = req.res.locals.t('demoReplyHint');
+        if (!isXhr(req)) req.session.flash = { type: 'ok', msg: hint };
       }
     }
     const dest = await processLike(req, toId, target.rows[0].name);
-    return res.redirect(dest);
+    if (dest !== '/discover') {
+      return isXhr(req) ? res.json({ ok: true, redirect: dest, hint }) : res.redirect(dest);
+    }
+    // Instant heart: the button fills in place, no page reload.
+    return isXhr(req) ? res.json({ ok: true, liked: true, hint }) : res.redirect(dest);
   } catch (e) { next(e); }
 });
 
@@ -418,11 +476,13 @@ router.post('/discover/rewind', requireAuth, requireOnboarded, async (req, res, 
     const t = res.locals.t;
     const last = req.session.lastPass;
     if (!last) {
+      if (isXhr(req)) return res.json({ ok: false, msg: t('noRewind') });
       req.session.flash = { type: 'err', msg: t('noRewind') };
       return res.redirect('/discover');
     }
     await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind='pass'", [req.user.id, last]);
     delete req.session.lastPass;
+    if (isXhr(req)) return discoverJson(req, res, { msg: t('rewound') });
     req.session.flash = { type: 'ok', msg: t('rewound') };
     res.redirect('/discover');
   } catch (e) { next(e); }
@@ -434,6 +494,7 @@ router.post('/discover/reset-passes', requireAuth, requireOnboarded, async (req,
   try {
     await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND kind='pass'", [req.user.id]);
     delete req.session.lastPass;
+    if (isXhr(req)) return discoverJson(req, res, { msg: res.locals.t('passesCleared') });
     req.session.flash = { type: 'ok', msg: res.locals.t('passesCleared') };
     res.redirect('/discover');
   } catch (e) { next(e); }
@@ -558,11 +619,14 @@ router.post('/u/:id/report', requireAuth, requireOnboarded, async (req, res, nex
     const ex = await db.query("SELECT id FROM reports WHERE reporter_user_id=$1 AND reported_user_id=$2 AND status='pending'",
       [req.user.id, id]);
     if (ex.rows.length) {
+      if (isXhr(req)) return res.json({ ok: false, msg: t('alreadyReported') });
       req.session.flash = { type: 'err', msg: t('alreadyReported') };
       return res.redirect('/u/' + id);
     }
     await db.query('INSERT INTO reports(reporter_user_id,reported_user_id,reason) VALUES($1,$2,$3)',
       [req.user.id, id, reason]);
+    // Instant report: no reload, the client just shows a toast.
+    if (isXhr(req)) return res.json({ ok: true, msg: t('reported') });
     req.session.flash = { type: 'ok', msg: t('reported') };
     res.redirect('/u/' + id);
   } catch (e) { next(e); }
