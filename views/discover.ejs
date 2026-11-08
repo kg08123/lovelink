@@ -3,7 +3,11 @@
   <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium <%- icon('chevronRight') %></a><% } else { %><span class="pill ok"><%- icon('star', true) %> Premium</span><% } %>
 </div>
 <% if (!card) { %>
-  <div class="empty"><%- icon('heart') %><h2><%= t('noMoreProfiles') %></h2><p><a class="link" href="/explore">Browse Explore <%- icon('chevronRight') %></a></p></div>
+  <div class="empty"><%- icon('heart') %><h2><%= t('noMoreProfiles') %></h2>
+    <form method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
+      <button class="btn btn-pink" type="submit"><%= t('showAgain') %></button>
+    </form>
+    <p><a class="link" href="/explore">Browse Explore <%- icon('chevronRight') %></a></p></div>
 <% } else { %>
   <div class="swipe-card">
     <% if (card.photo1) { %>

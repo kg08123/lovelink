@@ -319,6 +319,17 @@ router.post('/discover/rewind', requireAuth, requireOnboarded, async (req, res, 
   } catch (e) { next(e); }
 });
 
+// "Show profiles again": clear ONLY my passes so swiped-past profiles come
+// back. Likes, super-likes and matches are never touched.
+router.post('/discover/reset-passes', requireAuth, requireOnboarded, async (req, res, next) => {
+  try {
+    await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND kind='pass'", [req.user.id]);
+    delete req.session.lastPass;
+    req.session.flash = { type: 'ok', msg: res.locals.t('passesCleared') };
+    res.redirect('/discover');
+  } catch (e) { next(e); }
+});
+
 // ---- Match screen ----
 router.get('/match/:id', requireAuth, async (req, res, next) => {
   try {

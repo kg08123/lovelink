@@ -11,34 +11,34 @@ const ADMIN_PASS = 'admin123';
 
   const extraDemos = [
     ['Helina Girma', '0922000777', 'female', 25, 'Addis Ababa', 9.0120, 38.7680,
-     'Fashion lover, buna mornings, and dancing at weddings.', 'serious', 'male', 23, 33,
+     'Fashion lover, buna mornings, and dancing at weddings.', 'serious', 'male', 18, 35,
      166, 'Orthodox', 'University', 'Fashion Designer', 'never', 'sometimes', 'want', 'travel,music,fitness,movies', 'demo-helina.jpg'],
     ['Tigist Bekele', '0922000888', 'female', 23, 'Addis Ababa', 8.9980, 38.7520,
-     'Night owl, denim jacket always on. Looking for real talk.', 'casual', 'male', 21, 30,
+     'Night owl, denim jacket always on. Looking for real talk.', 'casual', 'male', 18, 35,
      162, 'Orthodox', 'College', 'Barista', 'never', 'sometimes', 'none', 'music,movies,travel,cooking', 'demo-tigist.jpg'],
     ['Bethlehem Tadesse', '0922000999', 'female', 21, 'Bahir Dar', 11.5760, 37.3920,
-     'Lake Tana sunsets are my favourite. Hiking, music, good food.', 'serious', 'male', 21, 30,
+     'Lake Tana sunsets are my favourite. Hiking, music, good food.', 'serious', 'male', 18, 35,
      164, 'Orthodox', 'High School', 'Student', 'never', 'never', 'want', 'travel,music,fitness,reading', 'demo-bethlehem.jpg'],
     ['Hanna Solomon', '0922001010', 'female', 24, 'Hawassa', 7.0620, 38.4720,
-     'Smiles a lot, laughs louder. Coffee, books, and long walks.', 'marriage', 'male', 24, 34,
+     'Smiles a lot, laughs louder. Coffee, books, and long walks.', 'marriage', 'male', 18, 35,
      167, 'Protestant', 'University', 'Nurse', 'never', 'never', 'want', 'travel,fitness,music,reading', 'demo-hanna.jpg'],
     ['Meron Alemayehu', '0922001112', 'female', 26, 'Mekelle', 13.4980, 39.4710,
-     'Teacher by day, movie lover by night. Honest and kind.', 'serious', 'male', 24, 34,
+     'Teacher by day, movie lover by night. Honest and kind.', 'serious', 'male', 18, 35,
      165, 'Orthodox', 'University', 'Teacher', 'never', 'sometimes', 'want', 'movies,reading,travel,music', 'demo-meron.jpg'],
     ['Yonas Tesfaye', '0922001212', 'male', 28, 'Addis Ababa', 9.0180, 38.7450,
-     'Red shirt, big smile. Football on Sundays, buna every day.', 'serious', 'female', 21, 30,
+     'Red shirt, big smile. Football on Sundays, buna every day.', 'serious', 'female', 18, 35,
      180, 'Orthodox', 'University', 'Driver', 'sometimes', 'sometimes', 'none', 'fitness,football,music,travel', 'demo-yonas.jpg'],
     ['Dawit Haile', '0922001313', 'male', 27, 'Hawassa', 7.0550, 38.4650,
-     'Laughs with his eyes closed. Engineer, foodie, good listener.', 'serious', 'female', 20, 30,
+     'Laughs with his eyes closed. Engineer, foodie, good listener.', 'serious', 'female', 18, 35,
      178, 'Orthodox', 'University', 'Engineer', 'never', 'sometimes', 'want', 'music,movies,cooking,travel', 'demo-dawit.jpg'],
     ['Nahom Gebru', '0922001414', 'male', 29, 'Addis Ababa', 9.0020, 38.7800,
-     'Quiet at first, funny once you know me. Into tech and music.', 'marriage', 'female', 22, 32,
+     'Quiet at first, funny once you know me. Into tech and music.', 'marriage', 'female', 18, 35,
      182, 'Orthodox', 'Masters', 'Software Developer', 'never', 'never', 'want', 'music,travel,reading,fitness', 'demo-nahom.jpg'],
     ['Fitsum Berhe', '0922001515', 'male', 24, 'Bahir Dar', 11.5700, 37.3850,
-     'Leather jacket, city streets, golden hour. Let us explore.', 'casual', 'female', 20, 28,
+     'Leather jacket, city streets, golden hour. Let us explore.', 'casual', 'female', 18, 35,
      176, 'Orthodox', 'College', 'Photographer', 'sometimes', 'sometimes', 'none', 'travel,photography,music,fitness', 'demo-fitsum.jpg'],
     ['Kaleb Worku', '0922001616', 'male', 25, 'Adama', 8.5420, 39.2720,
-     'Gym, movies, and weekend road trips. Simple and real.', 'serious', 'female', 20, 30,
+     'Gym, movies, and weekend road trips. Simple and real.', 'serious', 'female', 18, 35,
      179, 'Protestant', 'University', 'Banker', 'never', 'sometimes', 'none', 'fitness,movies,travel,music', 'demo-kaleb.jpg'],
   ];
 
@@ -62,22 +62,22 @@ async function main(opts = {}) {
   // All in Addis Ababa, real-ish coordinates around Bole / Piassa / CMC.
   const demos = [
     ['Abel Tesfaye', '0922000111', 'male', 26, 'Addis Ababa', 9.0054, 38.7636,
-     'Video editor & motion graphics. Coffee first, then the world.', 'serious', 'female', 20, 30,
+     'Video editor & motion graphics. Coffee first, then the world.', 'serious', 'female', 18, 35,
      178, 'Orthodox', 'University', 'Video Editor', 'never', 'sometimes', 'none', 'travel,music,fitness,movies', 'demo-abel.jpg'],
     ['Selam Tesfaye', '0922000222', 'female', 24, 'Addis Ababa', 9.0100, 38.7700,
-     'Dream big, work hard, and enjoy life', 'serious', 'male', 22, 32,
+     'Dream big, work hard, and enjoy life', 'serious', 'male', 18, 35,
      165, 'Orthodox', 'University', 'Nurse', 'never', 'never', 'want', 'travel,music,fitness,movies', 'demo-selam.jpg'],
     ['Sara Mekonnen', '0922000333', 'female', 25, 'Addis Ababa', 9.0200, 38.7500,
-     'Love music, movies and good food. Looking for someone real.', 'serious', 'male', 22, 32,
+     'Love music, movies and good food. Looking for someone real.', 'serious', 'male', 18, 35,
      168, 'Orthodox', 'College', 'Teacher', 'never', 'sometimes', 'want', 'music,movies,cooking,travel', 'demo-sara.jpg'],
     ['Mimi Alemu', '0922000444', 'female', 27, 'Addis Ababa', 8.9950, 38.7800,
-     'Photographer. Always chasing golden hour.', 'marriage', 'male', 24, 35,
+     'Photographer. Always chasing golden hour.', 'marriage', 'male', 18, 35,
      170, 'Orthodox', 'University', 'Photographer', 'never', 'never', 'want', 'travel,fitness,photography,music', 'demo-mimi.jpg'],
     ['Daniel Haile', '0922000555', 'male', 26, 'Addis Ababa', 9.0150, 38.7400,
-     'Gym, football, and good conversation. Simple guy.', 'serious', 'female', 20, 30,
+     'Gym, football, and good conversation. Simple guy.', 'serious', 'female', 18, 35,
      180, 'Orthodox', 'University', 'Engineer', 'sometimes', 'sometimes', 'none', 'fitness,football,music,travel', 'demo-daniel.jpg'],
     ['Ruth Girma', '0922000666', 'female', 26, 'Addis Ababa', 9.0080, 38.7550,
-     'Book lover, night walks, and deep talks over buna.', 'serious', 'male', 23, 33,
+     'Book lover, night walks, and deep talks over buna.', 'serious', 'male', 18, 35,
      164, 'Protestant', 'University', 'Accountant', 'never', 'never', 'want', 'movies,reading,travel,music', 'demo-ruth.jpg'],
   ];
   const ids = {};
@@ -232,10 +232,43 @@ async function seedExtraDemos() {
     ['Bethlehem Tadesse', 'Hi Dawit! Hawassa is beautiful this time of year.'],
     ['Dawit Haile', 'Hi Bethlehem! It really is. Want to walk by the lake sometime?'],
   ]);
-  return added;
+  // v4: widen EVERY demo profile's age range to 18-35. A 19-year-old tester
+  // got an empty Discover because every demo woman wanted 21+ — the age
+  // filter in getCandidates drops anyone outside their range. Idempotent.
+  const widened = await db.query(
+    `UPDATE profiles SET age_min=18, age_max=35
+     WHERE user_id IN (SELECT id FROM users WHERE is_demo=TRUE AND role='user')`);
+  return { added, widened: widened.rowCount };
+}
+
+// Reset demo swipes only: delete every swipe FROM a demo account, then
+// restore the canonical pre-seeded likes (so instant matches still work).
+// Matches, messages, reports and real users' swipes are never touched.
+async function resetDemoSwipes() {
+  const all = await db.query('SELECT id, name FROM users WHERE is_demo=TRUE');
+  const ids = {};
+  for (const u of all.rows) ids[u.name] = u.id;
+  const demoIds = all.rows.map((u) => u.id);
+  let cleared = 0;
+  if (demoIds.length) {
+    const ph = demoIds.map((_, i) => '$' + (i + 1)).join(',');
+    const r = await db.query(`DELETE FROM swipes WHERE from_user_id IN (${ph})`, demoIds);
+    cleared = r.rowCount;
+  }
+  const abel = ids['Abel Tesfaye'];
+  const like = async (a, b) => {
+    if (ids[a] && ids[b]) await db.query("INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,'like') ON CONFLICT DO NOTHING", [ids[a], ids[b]]);
+  };
+  if (abel) {
+    for (const n of ['Selam Tesfaye', 'Helina Girma', 'Tigist Bekele', 'Hanna Solomon', 'Meron Alemayehu']) await like(n, abel);
+  }
+  await like('Sara Mekonnen', 'Daniel Haile'); await like('Daniel Haile', 'Sara Mekonnen');
+  await like('Helina Girma', 'Yonas Tesfaye'); await like('Yonas Tesfaye', 'Helina Girma');
+  await like('Bethlehem Tadesse', 'Dawit Haile'); await like('Dawit Haile', 'Bethlehem Tadesse');
+  return cleared;
 }
 
 if (require.main === module) {
   main().catch((e) => { console.error(e); process.exit(1); });
 }
-module.exports = { main, seedExtraDemos };
+module.exports = { main, seedExtraDemos, resetDemoSwipes };

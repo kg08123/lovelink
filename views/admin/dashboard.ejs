@@ -21,6 +21,9 @@
   <form method="post" action="/admin/seed-demo" style="margin-bottom:8px">
     <button class="btn btn-green btn-block" type="submit">Add missing demo users</button>
   </form>
+  <form method="post" action="/admin/reset-demo-swipes" style="margin-bottom:8px">
+    <button class="btn btn-outline btn-block" type="submit">Reset demo swipes (demo accounts can swipe again)</button>
+  </form>
   <form method="post" action="/admin/delete-demo" onsubmit="return confirm('Delete ALL demo users and their data?')">
     <button class="btn btn-red" type="submit"><%= t('deleteDemo') %></button>
   </form>

@@ -158,10 +158,21 @@ router.post('/reports/:id/ban', async (req, res, next) => {
 
 // Add the v3 demo profiles to a live DB that already has users (boot seed only
 // runs on an empty users table). Idempotent — running it twice adds nothing.
+// Also widens all demo age ranges to 18-35 (see seedExtraDemos).
 router.post('/seed-demo', async (req, res, next) => {
   try {
-    const added = await require('../db/seed').seedExtraDemos();
-    req.session.flash = { type: 'ok', msg: added > 0 ? added + ' new demo users added.' : 'Demo users are already there — nothing new added.' };
+    const r = await require('../db/seed').seedExtraDemos();
+    req.session.flash = { type: 'ok', msg: (r.added > 0 ? r.added + ' new demo users added. ' : 'Demo users are already there — nothing new added. ') + r.widened + ' demo profiles set to age range 18-35.' };
+    res.redirect('/admin');
+  } catch (e) { next(e); }
+});
+
+// Reset demo swipes only (demo accounts can swipe again; pre-seeded likes
+// restored). Matches, messages and real users' swipes are never touched.
+router.post('/reset-demo-swipes', async (req, res, next) => {
+  try {
+    const cleared = await require('../db/seed').resetDemoSwipes();
+    req.session.flash = { type: 'ok', msg: cleared + ' demo swipes cleared — demo accounts can swipe again. Pre-seeded likes restored.' };
     res.redirect('/admin');
   } catch (e) { next(e); }
 });
