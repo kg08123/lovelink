@@ -1,6 +1,6 @@
 <a class="chat-back" href="/messages"><%- icon('chevronLeft') %> <%= t('messages') %></a>
 <h1 class="page-title"><%= conv.other_name %></h1>
-<p class="sub"><span style="color:var(--pink)"><%- icon('heart', true) %></span> <%= t('itsAMatch') %> — <a href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
+<p class="sub"><span style="color:var(--pink)"><%- icon('heart', true) %></span> <%= t('itsAMatch') %> — <a class="link" href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
 <div class="chat" id="chat">
   <% messages.forEach(function(m){ %>
     <div class="bubble <%= m.sender_user_id===user.id?'mine':'theirs' %>">

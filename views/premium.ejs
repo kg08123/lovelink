@@ -29,8 +29,7 @@
     <form method="post" action="/premium" enctype="multipart/form-data">
       <div class="field"><label>Receipt screenshot / photo *</label>
         <label class="upload-zone"><%- icon('camera') %> Tap to choose receipt image<input type="file" name="receipt" accept="image/*" id="receiptInput" required></label>
-        <img id="receiptPrev" class="receipt-prev" hidden alt="">
-        <div id="receiptName" class="hint"></div>
+        <div class="upz-prev" id="receiptPrevBox"><img id="receiptPrev" alt=""><span class="upz-name" id="receiptName"></span><button type="button" class="upz-x" id="receiptRm" aria-label="Remove receipt"><%- icon('x') %></button></div>
       </div>
       <button class="btn btn-pink btn-block" type="submit"><%= t('payNow') %></button>
     </form>
@@ -46,10 +45,16 @@
   if(!inp) return;
   inp.addEventListener('change',function(){
     var f=inp.files[0]; if(!f) return;
-    var pv=document.getElementById('receiptPrev'), nm=document.getElementById('receiptName');
+    var pv=document.getElementById('receiptPrev'), nm=document.getElementById('receiptName'),
+        box=document.getElementById('receiptPrevBox');
     var reader=new FileReader();
-    reader.onload=function(e){ pv.src=e.target.result; pv.hidden=false; nm.textContent=f.name; };
+    reader.onload=function(e){ pv.src=e.target.result; nm.textContent=f.name; box.classList.add('show'); };
     reader.readAsDataURL(f);
+  });
+  document.getElementById('receiptRm').addEventListener('click',function(){
+    inp.value=''; var box=document.getElementById('receiptPrevBox');
+    box.classList.remove('show'); document.getElementById('receiptPrev').removeAttribute('src');
+    document.getElementById('receiptName').textContent='';
   });
 })();
 </script>

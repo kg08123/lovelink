@@ -4,17 +4,17 @@
     <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
     <div>
       <b><%= user.name %></b><br>
-      <a href="/profile"><%= t('viewProfile') %> <%- icon('chevronRight') %></a>
+      <a class="link" href="/profile"><%= t('viewProfile') %> <%- icon('chevronRight') %></a>
     </div>
   </div>
 </div>
 <div class="settings-list">
-  <a href="/profile/edit"><span class="row-ico"><%- icon('user') %></span> Account Settings <span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/messages"><span class="row-ico"><%- icon('bell') %></span> Notifications <% if (unreadCount > 0) { %><span class="count-badge"><%= unreadCount > 9 ? '9+' : unreadCount %></span><% } else { %><span class="chev"><%- icon('chevronRight') %></span><% } %></a>
-  <a href="/settings"><span class="row-ico"><%- icon('shield') %></span> Privacy &amp; Security <span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/settings"><span class="row-ico"><%- icon('settings') %></span> App Preferences <span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/about"><span class="row-ico"><%- icon('help') %></span> Help &amp; Support <span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/about"><span class="row-ico"><%- icon('info') %></span> About LoveLink <span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/profile/edit"><span class="row-ico"><%- icon('user') %></span><span class="lbl">Account Settings</span><span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/messages"><span class="row-ico"><%- icon('bell') %></span><span class="lbl">Notifications</span><% if (unreadCount > 0) { %><span class="count-badge"><%= unreadCount > 9 ? '9+' : unreadCount %></span><% } else { %><span class="chev"><%- icon('chevronRight') %></span><% } %></a>
+  <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl">Privacy &amp; Security</span><span class="chev"><%- icon('chevronRight') %></span></a>
+  <span class="row-item"><span class="row-ico"><%- icon('settings') %></span><span class="lbl">App Preferences</span><span class="chev"><%- icon('chevronRight') %></span></span>
+  <a href="/about"><span class="row-ico"><%- icon('help') %></span><span class="lbl">Help &amp; Support</span><span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/about"><span class="row-ico"><%- icon('info') %></span><span class="lbl">About LoveLink</span><span class="chev"><%- icon('chevronRight') %></span></a>
 </div>
 <div class="section">
   <h2><%= t('changePassword') %></h2>
@@ -25,10 +25,9 @@
     <button class="btn btn-pink btn-block" type="submit"><%= t('save') %></button>
   </form>
 </div>
-<div class="section">
-  <h2><%= t('appPreferences') %></h2>
-  <p>Language: <a href="?lang=en" class="<%= lang==='en'?'on':'' %>">English</a> · <a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማርኛ</a></p>
-  <p><a href="/about"><%= t('aboutUs') %></a></p>
-  <p><a href="/privacy"><%= t('privacyTitle') %></a></p>
+<div class="settings-list">
+  <span class="row-item"><span class="row-ico"><%- icon('globe') %></span><span class="lbl">Language</span><span class="lang-toggle"><a href="?lang=en" class="<%= lang==='en'?'on':'' %>">EN</a><a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማ</a></span></span>
+  <a href="/about"><span class="row-ico"><%- icon('info') %></span><span class="lbl"><%= t('aboutUs') %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl"><%= t('privacyTitle') %></span><span class="chev"><%- icon('chevronRight') %></span></a>
 </div>
 <a class="btn-logout" href="/signout"><%- icon('logout') %> <%= t('logOut') %></a>

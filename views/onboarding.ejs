@@ -9,11 +9,18 @@
     <h2><%- icon('camera') %> <%= t('profile') %></h2>
     <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt="" style="width:120px;height:150px;border-radius:16px;object-fit:cover"><% } %>
     <div class="field"><label>Main photo * <%= profile ? '(leave empty to keep current)' : '' %></label>
-      <input type="file" name="photo1" accept="image/*" <%= profile ? '' : 'required' %>>
-      <div class="hint">Any phone photo works — it is shrunk automatically before saving. A clear photo of you, face visible.</div>
+      <label class="upload-zone"><%- icon('camera') %><b>Tap to upload your main photo</b><small>Any phone photo works — shrunk automatically. Face visible.</small><input type="file" name="photo1" accept="image/*" data-upz="upz1" <%= profile ? '' : 'required' %>></label>
+      <div class="upz-prev" id="upz1"><img alt=""><span class="upz-name"></span><button type="button" class="upz-x" data-clear="photo1" aria-label="Remove photo"><%- icon('x') %></button></div>
+      <div class="hint">A clear photo of you, face visible.</div>
     </div>
-    <div class="field"><label>Photo 2 (optional)</label><input type="file" name="photo2" accept="image/*"></div>
-    <div class="field"><label>Photo 3 (optional)</label><input type="file" name="photo3" accept="image/*"></div>
+    <div class="field"><label>Photo 2 (optional)</label>
+      <label class="upload-zone"><%- icon('camera') %><b>Tap to add a second photo</b><small>Optional — shows more of you.</small><input type="file" name="photo2" accept="image/*" data-upz="upz2"></label>
+      <div class="upz-prev" id="upz2"><img alt=""><span class="upz-name"></span><button type="button" class="upz-x" data-clear="photo2" aria-label="Remove photo"><%- icon('x') %></button></div>
+    </div>
+    <div class="field"><label>Photo 3 (optional)</label>
+      <label class="upload-zone"><%- icon('camera') %><b>Tap to add a third photo</b><small>Optional — shows more of you.</small><input type="file" name="photo3" accept="image/*" data-upz="upz3"></label>
+      <div class="upz-prev" id="upz3"><img alt=""><span class="upz-name"></span><button type="button" class="upz-x" data-clear="photo3" aria-label="Remove photo"><%- icon('x') %></button></div>
+    </div>
     <div class="field"><label><%= t('aboutMe') %></label>
       <textarea name="bio" maxlength="500" placeholder="Dream big, work hard, and enjoy life"><%= (profile && profile.bio) || form.bio || '' %></textarea>
     </div>
@@ -134,6 +141,24 @@
         })
         .catch(function(){});
     }, function(){ st.textContent='<%= t('locationFailed') %>'; }, {timeout:10000});
+  });
+  // Upload-zone previews: show thumbnail + file name, X clears the pick.
+  document.querySelectorAll('input[data-upz]').forEach(function(inp){
+    inp.addEventListener('change', function(){
+      var box=document.getElementById(inp.dataset.upz); if(!box) return;
+      var f=inp.files[0];
+      if(!f){ box.classList.remove('show'); return; }
+      var r=new FileReader();
+      r.onload=function(e){ box.querySelector('img').src=e.target.result; box.querySelector('.upz-name').textContent=f.name; box.classList.add('show'); };
+      r.readAsDataURL(f);
+    });
+  });
+  document.querySelectorAll('.upz-x').forEach(function(x){
+    x.addEventListener('click', function(){
+      var inp=document.querySelector('input[name="'+x.dataset.clear+'"]');
+      if(inp) inp.value='';
+      var box=x.closest('.upz-prev'); if(box){ box.classList.remove('show'); box.querySelector('img').removeAttribute('src'); }
+    });
   });
   // Shrink photos in the browser before upload: a 10MB phone photo becomes
   // ~100KB, so saving is fast even on slow data. The server shrinks again

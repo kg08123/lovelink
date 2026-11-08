@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LoveLink — <%= typeof title !== 'undefined' ? title : t('appTag') %></title>
-<link rel="stylesheet" href="/css/style.css">
+<link rel="stylesheet" href="/css/style.css?v=3">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF2E63'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E">
 </head>
 <body<%- typeof bodyClass !== 'undefined' && bodyClass ? ' class="' + bodyClass + '"' : '' %>>
@@ -16,10 +16,9 @@
     <a class="logo" href="/"><span class="logo-heart"><%- icon('heart', true) %></span>Love<span class="logo-link">Link</span></a>
     <nav class="navlinks">
       <% if (user && (profile || user.role === 'admin')) { %>
-        <a class="msg-ico" href="/messages" aria-label="<%= t('messages') %>"><%- icon('comment') %><% if (unreadCount > 0) { %><span class="badge"><%= unreadCount > 99 ? '99+' : unreadCount %></span><% } %></a>
         <button class="hamb" id="menuBtn" aria-label="menu"><%- icon('menu') %></button>
       <% } else if (user) { %>
-        <a href="/signout" style="font-weight:700; color:var(--red); text-decoration:none"><%= t('signOut') %></a>
+        <a class="signout-link" href="/signout"><%= t('signOut') %></a>
       <% } else { %>
         <a class="btn-signin" href="/signin"><%= t('signIn') %></a>
       <% } %>
@@ -46,14 +45,12 @@
       <a href="/admin/users"><%- icon('users') %><%= t('allUsers') %></a>
       <a href="/admin/payments"><%- icon('cash') %><%= t('paymentReceipts') %></a>
       <a href="/admin/reports"><%- icon('file') %><%= t('reportsQueue') %></a>
+      <a href="/messages"><%- icon('comment') %><%= t('messages') %></a>
     <% } else { %>
       <a href="/discover"><%- icon('flame') %><%= t('discover') %></a>
       <a href="/explore"><%- icon('search') %><%= t('explore') %></a>
-      <a href="/matches"><%- icon('heart') %><%= t('matches') %></a>
-      <a href="/profile"><%- icon('user') %><%= t('profile') %></a>
       <a href="/premium"><%- icon('star') %><%= t('premiumTitle') %></a>
     <% } %>
-    <a href="/messages"><%- icon('comment') %><%= t('messages') %></a>
     <a href="/settings"><%- icon('settings') %><%= t('settings') %></a>
     <a href="/about"><%- icon('info') %><%= t('aboutUs') %></a>
     <a href="/signout" class="danger"><%- icon('logout') %><%= t('signOut') %></a>
@@ -74,7 +71,7 @@
 </nav>
 <% } %>
 <% if (!isLanding) { %>
-<footer class="footer">LoveLink · <%= t('appTag') %> · Addis Ababa, Ethiopia<br><a href="/about"><%= t('aboutUs') %></a> · <a href="/privacy"><%= t('privacyTitle') %></a></footer>
+<footer class="footer">LoveLink · <%= t('appTag') %> · Addis Ababa, Ethiopia<br><a class="link" href="/about"><%= t('aboutUs') %></a> · <a class="link" href="/privacy"><%= t('privacyTitle') %></a></footer>
 <% } %>
 <script>
 function copyNum(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard&&navigator.clipboard.writeText(el.innerText.trim());}

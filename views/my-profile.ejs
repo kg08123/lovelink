@@ -29,7 +29,7 @@
 <% if (p.photo2 || p.photo3) { %>
 <div class="section"><h2>More photos</h2>
   <div class="explore-grid">
-    <% [p.photo2, p.photo3].forEach(function(ph){ if (ph) { %><img src="<%= ph %>" style="width:100%;border-radius:12px" alt=""><% } }) %>
+    <% [p.photo2, p.photo3].forEach(function(ph){ if (ph) { %><img class="photo-more" src="<%= ph %>" alt=""><% } }) %>
   </div>
 </div>
 <% } %>

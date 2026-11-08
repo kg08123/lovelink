@@ -29,7 +29,7 @@ a{color:var(--pink)}
 .btn-pink:hover{background:var(--pink-dark)}
 .btn-block{width:100%; display:block; margin:8px 0}
 .btn-sm{padding:8px 12px; font-size:.85rem; width:auto}
-.btn-outline{background:#fff; border:1.5px solid var(--line); color:var(--ink); padding:12px 16px; width:100%}
+.btn-outline{background:#fff; border:1.5px solid var(--line); color:var(--ink); padding:12px 16px; width:auto}
 .btn-outline-light{background:transparent; border:1.5px solid #fff; color:#fff; padding:13px 16px; width:100%}
 .btn-red{background:var(--red); color:#fff; padding:8px 12px; font-size:.85rem}
 .btn-amber{background:var(--amber); color:#1a1a1a; padding:8px 12px; font-size:.85rem}
@@ -332,4 +332,80 @@ table.data th{background:#fdf0f3; font-size:.78rem; text-transform:uppercase; le
 .swipe-card .swipe-info{padding-bottom:16px}
 @media (max-width:520px){
   .swipe-photo{height:460px}
+}
+
+/* ---- v3: no unstyled native elements anywhere ---- */
+/* Root cause of the user's screenshot: a bare <a> was pink + underlined by the
+   browser default. Every link now has no underline; inline links use .link. */
+a{color:var(--pink); text-decoration:none}
+a:hover{text-decoration:underline}
+.btn, .btn-pink, .btn-outline, .btn-red, .btn-green, .btn-amber, .btn-signin,
+.btn-google, .btn-logout, .pill, .chip, .tabs a, .bottomnav a, .drawer-nav a,
+.settings-list a, .chat-item, .explore-card, .swipe-name, .logo, .lang-toggle a,
+.pager a, .chat-back, .swipe-info-btn, .explore-like{text-decoration:none}
+.btn:hover, .btn-pink:hover, .btn-outline:hover, .btn-red:hover, .btn-green:hover,
+.btn-amber:hover, .btn-signin:hover, .btn-google:hover, .btn-logout:hover,
+.pill:hover, .chip:hover, .tabs a:hover, .bottomnav a:hover, .drawer-nav a:hover,
+.settings-list a:hover, .chat-item:hover, .explore-card:hover, .swipe-name:hover,
+.logo:hover, .lang-toggle a:hover, .pager a:hover, .chat-back:hover,
+.swipe-info-btn:hover, .explore-like:hover{text-decoration:none}
+.link{color:var(--pink); font-weight:700; text-decoration:none; white-space:nowrap}
+.link:hover{text-decoration:underline}
+.signout-link{font-weight:700; color:var(--red); text-decoration:none; white-space:nowrap}
+/* Buttons inside a row of actions stay compact and sit side by side */
+.row-actions .btn, .row-actions .btn-outline, .row-actions .btn-red,
+.row-actions .btn-green, .row-actions .btn-amber{width:auto; flex:0 0 auto; margin:0}
+.row-actions{align-items:center}
+/* Table name links: dark, bold, no underline (was pink underlined) */
+.table-link{color:var(--ink); font-weight:700; text-decoration:none}
+/* Custom selects: no native grey arrow, pink chevron instead */
+.field select, .frow select{
+  appearance:none; -webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23FF2E63' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:right 12px center; padding-right:38px;
+}
+.field input[type=file]{display:none}
+/* Styled upload zone (onboarding photos + receipt): dashed pink card, camera
+   icon, tap text; preview thumbnail + file name + X to remove. The browser's
+   native "Choose file / No file chosen" button never shows. */
+.upload-zone{display:block; border:2px dashed var(--pink); border-radius:14px; padding:22px 16px; text-align:center; background:var(--pink-soft); cursor:pointer}
+.upload-zone .ico{width:30px; height:30px; color:var(--pink); display:block; margin:0 auto 8px}
+.upload-zone b{display:block; font-size:.95rem}
+.upload-zone small{color:var(--muted); font-weight:600}
+.upload-zone input{display:none}
+.upz-prev{position:relative; display:none; margin:10px auto 0; max-width:220px}
+.upz-prev.show{display:block}
+.upz-prev img{width:100%; max-height:220px; object-fit:cover; border-radius:12px; display:block}
+.upz-prev .upz-name{display:block; font-size:.8rem; color:var(--muted); font-weight:600; margin-top:6px; word-break:break-all}
+.upz-x{position:absolute; top:-9px; right:-9px; width:28px; height:28px; border-radius:50%; border:none; background:#1a1a1a; color:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.upz-x .ico{width:15px; height:15px}
+/* Settings list rows: one row per line, icon chip + label + chevron, never
+   wrapping into a run of pink links (the exact bug in the user's screenshot) */
+.settings-list a, .settings-list .row-item{flex-wrap:nowrap; min-width:0}
+.settings-list a span.lbl, .settings-list .row-item span.lbl{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.settings-list .chev{flex:0 0 auto}
+/* My Profile: photo thumbnails use a class, not inline styles */
+.photo-more{width:100%; border-radius:12px; display:block; aspect-ratio:3/4; object-fit:cover}
+/* Chat thread "View profile" + other inline links */
+.sub a.link{white-space:normal}
+/* Empty-state + error-page links sit on their own line, centred */
+.empty .btn{margin-top:10px}
+.back-home{display:inline-flex; align-items:center; gap:4px; margin-top:12px}
+.back-home .ico{width:16px; height:16px}
+/* Admin quick actions as styled rows, not bare pink links */
+.admin-actions{background:#fff; border-radius:16px; overflow:hidden; margin-bottom:12px}
+.admin-actions a{display:flex; align-items:center; gap:12px; padding:15px 16px; text-decoration:none; color:var(--ink); font-weight:600; border-bottom:1px solid var(--line)}
+.admin-actions a:last-child{border-bottom:none}
+.admin-actions .row-ico{width:34px; height:34px; border-radius:10px; background:var(--pink-soft); color:var(--pink); display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+.admin-actions .row-ico .ico{width:18px; height:18px}
+.admin-actions .chev{margin-left:auto; color:var(--muted)}
+.admin-actions .chev .ico{width:18px; height:18px}
+/* Onboarding: location button icon alignment + interest chips checked state */
+#locBtn .ico{width:18px; height:18px; vertical-align:-3px; margin-right:6px}
+.chip-check:has(input:checked){background:var(--pink-soft); border-color:var(--pink); color:var(--pink-dark)}
+/* Discover empty state link */
+.empty p a.link{white-space:normal}
+@media (max-width:520px){
+  .settings-list a, .settings-list .row-item{padding:14px 14px}
+  .row-actions .btn{padding:10px 14px; font-size:.9rem}
 }

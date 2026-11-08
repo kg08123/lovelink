@@ -4,7 +4,7 @@
 <tbody>
 <% users.forEach(function(u){ %>
 <tr>
-  <td data-l="Name"><a href="/admin/users/<%= u.id %>"><b><%= u.name %></b></a><%= u.is_demo ? ' <span class="pill warn">DEMO</span>' : '' %></td>
+  <td data-l="Name"><a class="table-link" href="/admin/users/<%= u.id %>"><%= u.name %></a><%- u.is_demo ? ' <span class="pill warn">DEMO</span>' : '' %></td>
   <td data-l="Phone"><%= u.phone %></td>
   <td data-l="Age"><%= u.age || '—' %> <%= u.gender || '' %></td>
   <td data-l="City"><%= u.city || '—' %></td>

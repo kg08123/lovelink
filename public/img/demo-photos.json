@@ -48,5 +48,75 @@
     "src": "https://images.pexels.com/photos/40455799/pexels-photo-40455799.jpeg",
     "bytes": 28551,
     "use": "landing hero background, couple silhouette at sunset"
+  },
+  "helina": {
+    "id": 37038761,
+    "photographer": "Bakarii_photography",
+    "url": "https://www.pexels.com/photo/smiling-woman-in-vibrant-traditional-attire-37038761/",
+    "src": "https://images.pexels.com/photos/37038761/pexels-photo-37038761.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 56298
+  },
+  "tigist": {
+    "id": 39598425,
+    "photographer": "Elka Elias",
+    "url": "https://www.pexels.com/photo/portrait-of-smiling-woman-in-denim-jacket-at-night-39598425/",
+    "src": "https://images.pexels.com/photos/39598425/pexels-photo-39598425.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 36164
+  },
+  "bethlehem": {
+    "id": 8998361,
+    "photographer": "Labskiii",
+    "url": "https://www.pexels.com/photo/a-woman-in-black-shirt-wearing-a-black-hat-standing-on-a-grassy-pathway-8998361/",
+    "src": "https://images.pexels.com/photos/8998361/pexels-photo-8998361.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 28796
+  },
+  "hanna": {
+    "id": 33646629,
+    "photographer": "Jaye Iyanu",
+    "url": "https://www.pexels.com/photo/smiling-woman-outdoors-on-a-sunny-day-33646629/",
+    "src": "https://images.pexels.com/photos/33646629/pexels-photo-33646629.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 40843
+  },
+  "meron": {
+    "id": 1239287,
+    "photographer": "Daniel Xavier",
+    "url": "https://www.pexels.com/photo/woman-wearing-black-and-gray-crew-neck-sweater-near-building-at-daytime-1239287/",
+    "src": "https://images.pexels.com/photos/1239287/pexels-photo-1239287.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 30231
+  },
+  "yonas": {
+    "id": 15929275,
+    "photographer": "Victor Chijioke",
+    "url": "https://www.pexels.com/photo/close-up-of-young-smiling-man-15929275/",
+    "src": "https://images.pexels.com/photos/15929275/pexels-photo-15929275.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 35888
+  },
+  "dawit": {
+    "id": 3316263,
+    "photographer": "Tope J. Asokere",
+    "url": "https://www.pexels.com/photo/photo-of-man-smiling-3316263/",
+    "src": "https://images.pexels.com/photos/3316263/pexels-photo-3316263.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 45305
+  },
+  "nahom": {
+    "id": 7432863,
+    "photographer": "August de Richelieu",
+    "url": "https://www.pexels.com/photo/a-man-in-striped-shirt-smiling-7432863/",
+    "src": "https://images.pexels.com/photos/7432863/pexels-photo-7432863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 31915
+  },
+  "fitsum": {
+    "id": 16948950,
+    "photographer": "Luiz Woellner Fotografia",
+    "url": "https://www.pexels.com/photo/man-posing-in-jacket-16948950/",
+    "src": "https://images.pexels.com/photos/16948950/pexels-photo-16948950.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 82533
+  },
+  "kaleb": {
+    "id": 3981704,
+    "photographer": "Andrea Piacquadio",
+    "url": "https://www.pexels.com/photo/man-in-blue-crew-neck-t-shirt-near-white-building-3981704/",
+    "src": "https://images.pexels.com/photos/3981704/pexels-photo-3981704.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+    "bytes": 52911
   }
 }
