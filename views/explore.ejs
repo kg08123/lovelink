@@ -18,16 +18,27 @@
 <% if (!items.length) { %><div class="empty"><%- icon('search') %>No one matches these filters yet.</div><% } %>
 <div class="explore-grid">
   <% items.forEach(function(it){ %>
-  <a class="explore-card" href="/u/<%= it.id %>">
-    <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
-    <div class="explore-info">
-      <b><%= it.name %></b>
-      <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
-      <span class="explore-score"><%= it.score %>% match</span>
-    </div>
-    <% if (it.online) { %><span class="online-dot" title="Online"></span><% } %>
-    <span class="explore-like"><%- icon('heart', true) %></span>
-  </a>
+  <div class="explore-card">
+    <a class="explore-card-link" href="/u/<%= it.id %>">
+      <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
+      <div class="explore-info">
+        <b><%= it.name %></b>
+        <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
+        <span class="explore-score"><%= it.score %>% match</span>
+      </div>
+      <% if (it.online) { %><span class="online-dot" title="Online"></span><% } %>
+    </a>
+    <% if (it.matched) { %>
+      <button class="explore-like liked" type="button" disabled title="Matched"><%- icon('heart', true) %></button>
+    <% } else if (it.swipedKind === 'like' || it.swipedKind === 'super') { %>
+      <button class="explore-like liked" type="button" disabled title="Liked"><%- icon('heart', true) %></button>
+    <% } else { %>
+      <form class="explore-like-form" method="post" action="/discover/grid-like">
+        <input type="hidden" name="to" value="<%= it.id %>">
+        <button class="explore-like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %> <%= it.name %>"><%- icon('heart') %></button>
+      </form>
+    <% } %>
+  </div>
   <% }) %>
 </div>
 <div class="pager">

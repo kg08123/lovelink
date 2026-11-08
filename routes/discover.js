@@ -7,6 +7,7 @@ const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { haversineKm, fmtDistance, splitList, matchScore } = require('../lib/match');
 const { notify } = require('../lib/notify');
+const { processDemoAutoMatches } = require('../lib/demo-auto');
 const router = express.Router();
 
 const FREE_MATCHES = 3;
@@ -128,6 +129,53 @@ async function getCandidates(me, meProfile, opts = {}) {
     return y.score - x.score;
   });
   return out;
+}
+
+// After a like is recorded: if the other side already liked me, it is a
+// mutual like — create the match (paywall first) and go to the match
+// screen. Returns the redirect target. Shared by the swipe buttons and
+// the Explore/Discover grid hearts so all three behave identically.
+async function processLike(req, toId, targetName) {
+  const mutual = await db.query(
+    "SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
+    [toId, req.user.id]);
+  if (!mutual.rows.length) return '/discover';
+  const n = await matchCount(req.user.id);
+  if (!req.user.is_premium && n >= FREE_MATCHES) {
+    req.session.flash = { type: 'err', msg: req.res.locals.t('premiumNeeded') };
+    return '/premium?blocked=1';
+  }
+  const matchId = await createMatch(req.user.id, toId);
+  await notify(db, toId, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [req.user.name]);
+  await notify(db, req.user.id, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [targetName]);
+  return '/match/' + matchId;
+}
+
+async function attachSwipeKind(userId, items) {
+  if (!items.length) return items;
+  const ids = items.map((i) => i.id);
+  const ph = ids.map((_, i) => `$${i + 2}`).join(',');
+  const sw = await db.query(
+    `SELECT to_user_id, kind FROM swipes WHERE from_user_id=$1 AND to_user_id IN (${ph})`,
+    [userId, ...ids]);
+  const m = await db.query(
+    `SELECT CASE WHEN user_a_id=$1 THEN user_b_id ELSE user_a_id END AS other_id FROM matches WHERE user_a_id=$1 OR user_b_id=$1`,
+    [userId]);
+  const matched = new Set(m.rows.map((r) => r.other_id));
+  const byId = {};
+  for (const r of sw.rows) byId[r.to_user_id] = r.kind;
+  for (const it of items) {
+    it.swipedKind = byId[it.id] || null;
+    it.matched = matched.has(it.id);
+  }
+  return items;
+}
+
+// Best-effort demo auto-match sweep on page load. A failure here must
+// never break the page the user actually asked for.
+async function sweepDemoAutoMatches(req) {
+  if (!req.user || req.user.role !== 'user') return;
+  try { await processDemoAutoMatches(req.user); } catch (e) { console.error('[demo-auto] page sweep failed:', e.message); }
 }
 
 function photoOf(p) {
@@ -252,16 +300,36 @@ router.get('/profile/edit', requireAuth, (req, res) => {
 });
 
 // ---- Discover: one card at a time, nearest + best match first ----
+// When the cards run out, the page does NOT go dead: it shows the
+// Explore-style grid (Nearby / Online / New tabs, 2-column cards) with
+// the same candidates including already-swiped ones, plus the reset
+// button — so there is always something to look at and like.
 router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
+    await sweepDemoAutoMatches(req);
     await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
     const cands = await getCandidates(req.user, req.profile);
     const card = cands[0] || null;
     const n = await matchCount(req.user.id);
+    let grid = null;
+    if (!card) {
+      const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
+      const f = { tab, onlineOnly: tab === 'online' };
+      let items = await getCandidates(req.user, req.profile, { includeSwiped: true, ...f });
+      if (tab === 'new') items.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const PER = 8;
+      const total = items.length;
+      const totalPages = Math.max(1, Math.ceil(total / PER));
+      const safePage = Math.min(page, totalPages);
+      const pageItems = items.slice((safePage - 1) * PER, safePage * PER);
+      await attachSwipeKind(req.user.id, pageItems);
+      grid = { items: pageItems, f, total, page: safePage, totalPages };
+    }
     res.render('discover', {
       title: res.locals.t('discover'), card, remaining: cands.length,
       matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
-      photoOf, interestsList: card ? splitList(card.interests) : [],
+      photoOf, interestsList: card ? splitList(card.interests) : [], grid,
     });
   } catch (e) { next(e); }
 });
@@ -273,7 +341,7 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
     const kind = ['like', 'pass', 'super'].includes(req.body.kind) ? req.body.kind : 'pass';
     const toId = Number(req.body.to);
     if (!toId || toId === req.user.id) return res.redirect('/discover');
-    const target = await db.query('SELECT id, name FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
+    const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
     if (!target.rows.length) return res.redirect('/discover');
     const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
     if (already.rows.length) return res.redirect('/discover');
@@ -284,22 +352,49 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
       req.session.lastPass = toId; // rewind target (once)
       return res.redirect('/discover');
     }
-    // Did they already like me?
-    const mutual = await db.query(
-      "SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
-      [toId, req.user.id]);
-    if (!mutual.rows.length) return res.redirect('/discover');
-
-    // Mutual! Paywall: 4th match needs Premium (server-side, never client-only).
-    const n = await matchCount(req.user.id);
-    if (!req.user.is_premium && n >= FREE_MATCHES) {
-      req.session.flash = { type: 'err', msg: t('premiumNeeded') };
-      return res.redirect('/premium?blocked=1');
+    // Demo profiles like back automatically after 60s (see lib/demo-auto);
+    // tell the tester so the wait is expected, not a mystery. Only when
+    // the demo has NOT already liked back (those match instantly).
+    if (target.rows[0].is_demo) {
+      const alreadyLikedBack = await db.query(
+        "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
+        [toId, req.user.id]);
+      if (!alreadyLikedBack.rows.length) {
+        req.session.flash = { type: 'ok', msg: t('demoReplyHint') };
+      }
     }
-    const matchId = await createMatch(req.user.id, toId);
-    await notify(db, toId, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [req.user.name]);
-    await notify(db, req.user.id, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [target.rows[0].name]);
-    res.redirect('/match/' + matchId);
+    const dest = await processLike(req, toId, target.rows[0].name);
+    return res.redirect(dest);
+  } catch (e) { next(e); }
+});
+
+// Like from a grid heart (Discover end-state grid / Explore grid). Same
+// rules as the swipe buttons: a previous pass is upgraded to a like
+// (changed your mind), an existing like stays a like, mutual likes go
+// through the same match + paywall logic.
+router.post('/discover/grid-like', requireAuth, requireOnboarded, async (req, res, next) => {
+  try {
+    const toId = Number(req.body.to);
+    if (!toId || toId === req.user.id) return res.redirect('/discover');
+    const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
+    if (!target.rows.length) return res.redirect('/discover');
+    const existing = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+    if (existing.rows.length && existing.rows[0].kind !== 'pass') return res.redirect('/discover');
+    if (existing.rows.length && existing.rows[0].kind === 'pass') {
+      await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind='pass'", [req.user.id, toId]);
+    }
+    await db.query("INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,'like') ON CONFLICT (from_user_id,to_user_id) DO NOTHING",
+      [req.user.id, toId]);
+    if (target.rows[0].is_demo) {
+      const alreadyLikedBack = await db.query(
+        "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
+        [toId, req.user.id]);
+      if (!alreadyLikedBack.rows.length) {
+        req.session.flash = { type: 'ok', msg: req.res.locals.t('demoReplyHint') };
+      }
+    }
+    const dest = await processLike(req, toId, target.rows[0].name);
+    return res.redirect(dest);
   } catch (e) { next(e); }
 });
 
@@ -352,6 +447,7 @@ router.get('/match/:id', requireAuth, async (req, res, next) => {
 // ---- Explore grid: nearby / online / new, with filters ----
 router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
+    await sweepDemoAutoMatches(req);
     const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
     const f = {
       tab,
@@ -368,6 +464,7 @@ router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => 
     const totalPages = Math.max(1, Math.ceil(total / PER));
     const safePage = Math.min(page, totalPages);
     const pageItems = cands.slice((safePage - 1) * PER, safePage * PER);
+    await attachSwipeKind(req.user.id, pageItems);
     res.render('explore', { title: res.locals.t('explore'), items: pageItems, f, total, page: safePage, totalPages, photoOf });
   } catch (e) { next(e); }
 });
@@ -375,6 +472,7 @@ router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => 
 // ---- Matches list ----
 router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
+    await sweepDemoAutoMatches(req);
     const r = await db.query(
       `SELECT m.id, m.created_at,
               CASE WHEN m.user_a_id=$1 THEN m.user_b_id ELSE m.user_a_id END AS other_id,

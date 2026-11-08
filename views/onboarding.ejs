@@ -33,8 +33,14 @@
     </div>
     <input type="hidden" name="latitude" id="latInput" value="<%= (profile && profile.latitude) || form.latitude || '' %>">
     <input type="hidden" name="longitude" id="lngInput" value="<%= (profile && profile.longitude) || form.longitude || '' %>">
-    <button type="button" class="btn btn-outline btn-block" id="locBtn"><%- icon('pin') %> <%= t('useMyLocation') %></button>
-    <div class="hint" id="locStatus">We store your city + coordinates so matches are sorted by real distance. Only the distance (e.g. “2 km away”) is shown — never your exact spot.</div>
+    <div class="loc-box">
+      <div class="loc-status" id="locStatus"><%= (profile && profile.latitude && profile.longitude) ? t('locSetIs') + (profile.city || '') + ' (' + Number(profile.latitude).toFixed(4) + ', ' + Number(profile.longitude).toFixed(4) + ')' : t('locNotSet') %></div>
+      <div class="loc-actions">
+        <button type="button" class="btn btn-outline" id="locBtn"><%- icon('pin') %> <%= t('useMyLocation') %></button>
+        <button type="button" class="btn btn-outline" id="ipBtn"><%- icon('globe') %> <%- t('locDetectCity') %></button>
+      </div>
+    </div>
+    <div class="hint">We store your city + coordinates so matches are sorted by real distance. Only the distance (e.g. “2 km away”) is shown — never your exact spot. "Detect my city" uses your internet connection and is approximate; GPS is exact.</div>
   </div>
 
   <div class="section">
@@ -124,23 +130,93 @@
 </form>
 <script>
 (function(){
-  var btn=document.getElementById('locBtn'), st=document.getElementById('locStatus');
+  // ---- Real location: GPS first, internet city detection as fallback ----
+  // Proven live failures this fixes:
+  //  (1) GPS denied/timeout used to show one generic "failed" with no
+  //      reason and no way forward — now the real reason + how to fix it.
+  //  (2) GPS could succeed yet the city stayed empty: Nominatim returns
+  //      NO "city" for Addis Ababa coords (only suburb/county/state, often
+  //      in Amharic script), and its fetch failure was swallowed silently
+  //      while the page still claimed "Location saved."
+  var btn=document.getElementById('locBtn'), ipBtn=document.getElementById('ipBtn'),
+      st=document.getElementById('locStatus'),
+      latIn=document.getElementById('latInput'), lngIn=document.getElementById('lngInput'),
+      cityIn=document.getElementById('cityInput');
+  function showStatus(text, kind){
+    st.textContent=text;
+    st.className='loc-status' + (kind==='ok' ? ' loc-ok' : kind==='err' ? ' loc-err' : '');
+  }
+  function fmtCoord(lat, lng){ return ' (' + Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4) + ')'; }
+  function setLoc(lat, lng, city, approx){
+    latIn.value=lat; lngIn.value=lng;
+    if(city) cityIn.value=city;
+    showStatus((approx ? '<%- t('locApproxIs') %>' : '<%- t('locSetIs') %>') + (city || '') + fmtCoord(lat, lng), 'ok');
+  }
+  // Nominatim address -> city name. For Ethiopian coords it often returns
+  // no "city" at all (Addis: suburb/county/state only, Amharic script),
+  // or "ሀዋሳ / Hawassa" (Amharic + Latin). Prefer the Latin part, map
+  // known Amharic names, never return a district like "Kirkos" as the city.
+  var AM_CITY = {'አዲስ አበባ':'Addis Ababa','ሀዋሳ':'Hawassa','መቀሌ':'Mekelle','ባሕር ዳር':'Bahir Dar','ድሬዳዋ':'Dire Dawa','አዳማ':'Adama','ጅማ':'Jimma','ጎንደር':'Gondar','ደሴ':'Dessie','ጅጅጋ':'Jijiga','አርባ ምንጭ':'Arba Minch','ሐረር':'Harar','ነቀምት':'Nekemte','አሶሳ':'Asosa','ጋምቤላ':'Gambela','ሰመራ':'Semera'};
+  function cleanCity(s){
+    if(!s) return '';
+    var v=String(s).trim();
+    if(AM_CITY[v]) return AM_CITY[v];
+    var parts=v.split('/');
+    var latin=parts[parts.length-1].trim();
+    if(AM_CITY[latin]) return AM_CITY[latin];
+    if(!/[A-Za-z]/.test(latin)) return '';
+    return latin;
+  }
+  function cityFromAddress(a){
+    if(!a) return '';
+    var c = cleanCity(a.city) || cleanCity(a.town) || cleanCity(a.municipality) || cleanCity(a.village);
+    if(c) return c;
+    return cleanCity(a.state) || cleanCity(a.state_district) || '';
+  }
+  function readCityName(lat, lng){
+    // zoom=10 asks for city-level results; accept-language=en prefers
+    // Latin names where OpenStreetMap has them.
+    return fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lng+'&zoom=10&accept-language=en')
+      .then(function(r){ return r.json(); })
+      .then(function(d){ return cityFromAddress(d.address || {}); });
+  }
+  function geoError(err){
+    if(err && err.code===1) showStatus('<%- t('locDenied') %>', 'err');
+    else if(err && err.code===2) showStatus('<%- t('locUnavailable') %>', 'err');
+    else showStatus('<%- t('locTimeout') %>', 'err');
+  }
   if(btn) btn.addEventListener('click', function(){
-    if(!navigator.geolocation){ st.textContent='<%= t('locationFailed') %>'; return; }
-    st.textContent='<%= t('locating') %>';
+    if(!navigator.geolocation){ showStatus('<%- t('locUnsupported') %>', 'err'); return; }
+    showStatus('<%- t('locating') %>', '');
     navigator.geolocation.getCurrentPosition(function(pos){
-      document.getElementById('latInput').value=pos.coords.latitude;
-      document.getElementById('lngInput').value=pos.coords.longitude;
-      st.textContent='<%= t('locationSaved') %>';
-      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude)
-        .then(function(r){ return r.json(); })
-        .then(function(d){
-          var a=d.address||{};
-          var city=a.city||a.town||a.village||a.county||'';
-          if(city) document.getElementById('cityInput').value=city;
-        })
-        .catch(function(){});
-    }, function(){ st.textContent='<%= t('locationFailed') %>'; }, {timeout:10000});
+      var lat=pos.coords.latitude, lng=pos.coords.longitude;
+      latIn.value=lat; lngIn.value=lng;
+      readCityName(lat, lng).then(function(city){
+        if(city){ setLoc(lat, lng, city, false); }
+        else showStatus('<%- t('locCityFailed') %>', 'err');
+      }).catch(function(){ showStatus('<%- t('locCityFailed') %>', 'err'); });
+    }, geoError, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
+  });
+  // One-tap fallback when GPS is denied/unavailable: detect the city from
+  // the internet connection (approximate). ipwho.is is free, no key, and
+  // allows browser (CORS) calls; ipapi.co is the second try.
+  if(ipBtn) ipBtn.addEventListener('click', function(){
+    showStatus('<%- t('locDetecting') %>', '');
+    fetch('https://ipwho.is/')
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.success && d.city && d.latitude) { setLoc(d.latitude, d.longitude, d.city, true); return; }
+        throw new Error('ipwho: no city');
+      })
+      .catch(function(){
+        return fetch('https://ipapi.co/json/')
+          .then(function(r){ return r.json(); })
+          .then(function(d){
+            if(d && d.city && d.latitude) setLoc(d.latitude, d.longitude, d.city, true);
+            else throw new Error('ipapi: no city');
+          });
+      })
+      .catch(function(){ showStatus('<%- t('locIpFailed') %>', 'err'); });
   });
   // Upload-zone previews: show thumbnail + file name, X clears the pick.
   document.querySelectorAll('input[data-upz]').forEach(function(inp){

@@ -48,6 +48,13 @@ async function markRead(convId, userId) {
 // Inbox: all my match conversations + platform notifications
 router.get('/', requireAuth, async (req, res, next) => {
   try {
+    // Demo auto-match sweep: a demo who liked back shows up here.
+    if (req.user && req.user.role === 'user') {
+      try {
+        const { processDemoAutoMatches } = require('../lib/demo-auto');
+        await processDemoAutoMatches(req.user);
+      } catch (e) { console.error('[demo-auto] inbox sweep failed:', e.message); }
+    }
     const r = await db.query(
       `SELECT c.id, c.match_id, c.created_at,
               CASE WHEN c.user_a_id=$1 THEN bu.name ELSE au.name END AS other_name,

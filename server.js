@@ -185,6 +185,22 @@ app.use((req, res, next) => {
 // even when Neon is asleep).
 app.get('/health', (req, res) => res.json({ ok: true }));
 
+// Demo auto-match backup: every 30s, let demo users like back any
+// 60s-old likes (lib/demo-auto). Page-load sweeps are the reliable path
+// (the free tier sleeps); this only helps while the server is awake.
+// Guarded so overlapping runs and failures never crash the server.
+let demoSweepRunning = false;
+const demoSweepTimer = setInterval(async () => {
+  if (demoSweepRunning) return;
+  demoSweepRunning = true;
+  try {
+    const { processAllDemoAutoMatches } = require('./lib/demo-auto');
+    await processAllDemoAutoMatches();
+  } catch (e) { console.error('[demo-auto] interval sweep failed:', e.message); }
+  demoSweepRunning = false;
+}, 30000);
+if (demoSweepTimer.unref) demoSweepTimer.unref();
+
 app.use('/messages', require('./routes/messages'));
 app.use('/premium', require('./routes/premium'));
 app.use('/settings', require('./routes/settings'));
