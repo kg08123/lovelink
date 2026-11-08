@@ -1,0 +1,55 @@
+<h1 class="page-title">💖 <%= t('premiumTitle') %></h1>
+<% if (user.is_premium) { %>
+  <div class="flash ok"><%= t('premiumActive') %></div>
+  <a class="btn btn-pink btn-block" href="/discover"><%= t('discover') %> →</a>
+<% } else { %>
+  <% if (blocked) { %><div class="flash err"><%= t('premiumSub') %></div><% } %>
+  <div class="section">
+    <h2>Your free matches</h2>
+    <p><b><%= matchCount %> / <%= FREE_MATCHES %></b> used — <b><%= freeLeft %></b> left.</p>
+    <p>Premium unlocks <b>unlimited matches</b> and <b>unlimited messages</b>.</p>
+    <p class="page-title" style="margin:8px 0"><%= fmtETB(fee) %> <small style="font-size:.9rem;color:var(--muted)">one-time</small></p>
+  </div>
+  <% if (pending) { %>
+    <div class="flash ok"><%= t('paymentPending') %></div>
+    <p class="sub">Sent <%= new Date(pending.created_at).toLocaleString() %> · <%= fmtETB(pending.amount_etb) %></p>
+  <% } else { %>
+  <div class="section">
+    <h2>Pay with Telebirr or CBE</h2>
+    <p>Send <b><%= fmtETB(fee) %></b> to one of these numbers, then upload your receipt below.</p>
+    <% if (TELEBIRR_NUMBER) { %>
+    <div class="copy-row"><span>📱 Telebirr: <span id="tbNum"><%= TELEBIRR_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('tbNum')">Copy</button></div>
+    <% } %>
+    <% if (CBE_NUMBER) { %>
+    <div class="copy-row"><span>🏦 CBE: <span id="cbeNum"><%= CBE_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('cbeNum')">Copy</button></div>
+    <% } %>
+    <% if (!TELEBIRR_NUMBER && !CBE_NUMBER) { %>
+    <p class="sub">Payment numbers are being set up — please check back soon, or contact support.</p>
+    <% } %>
+    <form method="post" action="/premium" enctype="multipart/form-data">
+      <div class="field"><label>Receipt screenshot / photo *</label>
+        <label class="upload-zone">📷 Tap to choose receipt image<input type="file" name="receipt" accept="image/*" id="receiptInput" required></label>
+        <img id="receiptPrev" class="receipt-prev" hidden alt="">
+        <div id="receiptName" class="hint"></div>
+      </div>
+      <button class="btn btn-pink btn-block" type="submit"><%= t('payNow') %></button>
+    </form>
+  </div>
+  <% } %>
+  <% if (lastPayment && lastPayment.status==='rejected') { %>
+    <p class="sub">Your last receipt was rejected. Please pay again and upload a clear receipt.</p>
+  <% } %>
+<% } %>
+<script>
+(function(){
+  var inp=document.getElementById('receiptInput');
+  if(!inp) return;
+  inp.addEventListener('change',function(){
+    var f=inp.files[0]; if(!f) return;
+    var pv=document.getElementById('receiptPrev'), nm=document.getElementById('receiptName');
+    var reader=new FileReader();
+    reader.onload=function(e){ pv.src=e.target.result; pv.hidden=false; nm.textContent=f.name; };
+    reader.readAsDataURL(f);
+  });
+})();
+</script>

@@ -1,0 +1,37 @@
+<% var navActive='profile'; %>
+<div class="profile-head">
+  <% if (p.photo1) { %><img class="avatar-lg" src="<%= p.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph">👤</div><% } %>
+  <div>
+    <h1 class="page-title" style="margin:0"><%= me.name %>, <%= me.age %></h1>
+    <p class="sub">📍 <%= p.city || '' %><%= p.country ? ', '+p.country : '' %> · <%= me.is_premium ? '💖 Premium' : matchCount + ' / ' + FREE_MATCHES + ' free matches used' %></p>
+    <a class="btn btn-outline btn-sm" href="/profile/edit"><%= t('editProfile') %></a>
+  </div>
+</div>
+<div class="section">
+  <h2><%= t('aboutMe') %></h2>
+  <p><%= p.bio || '—' %></p>
+  <div class="chips"><% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %></div>
+</div>
+<div class="section">
+  <h2>Details</h2>
+  <table class="data kv">
+    <tr><th>Height</th><td><%= p.height_cm ? p.height_cm + ' cm' : '—' %></td></tr>
+    <tr><th>Religion</th><td><%= p.religion || '—' %></td></tr>
+    <tr><th>Education</th><td><%= p.education || '—' %></td></tr>
+    <tr><th>Job</th><td><%= p.job || '—' %></td></tr>
+    <tr><th>Smoking</th><td><%= p.smoking || '—' %></td></tr>
+    <tr><th>Drinking</th><td><%= p.drinking || '—' %></td></tr>
+    <tr><th>Kids</th><td><%= p.kids || '—' %></td></tr>
+    <tr><th>Looking for</th><td><%= p.looking_for_gender || 'any' %> · <%= p.age_min %>–<%= p.age_max %> · <%= p.relationship_goal || '—' %></td></tr>
+    <tr><th>Languages</th><td><%= p.languages || '—' %></td></tr>
+    <tr><th>Location</th><td><%= p.city || '—' %><%= (p.latitude && p.longitude) ? ' (' + p.latitude.toFixed(4) + ', ' + p.longitude.toFixed(4) + ')' : '' %></td></tr>
+  </table>
+</div>
+<% if (p.photo2 || p.photo3) { %>
+<div class="section"><h2>More photos</h2>
+  <div class="explore-grid">
+    <% [p.photo2, p.photo3].forEach(function(ph){ if (ph) { %><img src="<%= ph %>" style="width:100%;border-radius:12px" alt=""><% } }) %>
+  </div>
+</div>
+<% } %>
+<a class="btn btn-pink btn-block" href="/premium"><%= t('premiumTitle') %></a>

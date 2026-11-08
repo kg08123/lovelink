@@ -1,0 +1,26 @@
+<h1 class="page-title"><%= t('settings') %></h1>
+<div class="section">
+  <div class="profile-head">
+    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph">👤</div><% } %>
+    <div>
+      <b><%= user.name %></b><br>
+      <a href="/profile"><%= t('viewProfile') %> →</a>
+    </div>
+  </div>
+</div>
+<div class="section">
+  <h2><%= t('changePassword') %></h2>
+  <form method="post" action="/settings/change-password">
+    <div class="field"><label><%= t('currentPassword') %></label><input type="password" name="current" required></div>
+    <div class="field"><label><%= t('newPassword') %></label><input type="password" name="password" required minlength="4"></div>
+    <div class="field"><label><%= t('confirmPassword') %></label><input type="password" name="password2" required minlength="4"></div>
+    <button class="btn btn-pink btn-block" type="submit"><%= t('save') %></button>
+  </form>
+</div>
+<div class="section">
+  <h2><%= t('appPreferences') %></h2>
+  <p>Language: <a href="?lang=en" class="<%= lang==='en'?'on':'' %>">English</a> · <a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማርኛ</a></p>
+  <p><a href="/about"><%= t('aboutUs') %></a></p>
+  <p><a href="/privacy"><%= t('privacyTitle') %></a></p>
+</div>
+<a class="btn btn-outline btn-block" href="/signout" style="color:var(--red)">↪ <%= t('logOut') %></a>

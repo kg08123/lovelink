@@ -1,0 +1,12 @@
+<h1 class="page-title"><%= t('signIn') %></h1>
+<p class="sub">Welcome back to LoveLink.</p>
+<form method="post" action="/signin">
+  <div class="field"><label>Phone or email</label><input type="text" name="login" required value="<%= login || '' %>" autocomplete="username"></div>
+  <div class="field"><label>Password</label><input type="password" name="password" required autocomplete="current-password"></div>
+  <button class="btn btn-pink btn-block" type="submit"><%= t('signIn') %></button>
+</form>
+<% if (googleEnabled) { %>
+<div class="or-row"><span>or</span></div>
+<a class="btn btn-google" href="/auth/google"><span class="g-logo">G</span> Continue with Google</a>
+<% } %>
+<p class="sub" style="margin-top:14px"><a href="/forgot-password"><%= t('forgotPassword') %></a> · <a href="/signup"><%= t('signUp') %></a></p>

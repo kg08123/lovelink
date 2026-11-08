@@ -1,0 +1,19 @@
+<h1 class="page-title"><%= t('allUsers') %></h1>
+<table class="data">
+<thead><tr><th>Name</th><th>Phone</th><th>Age</th><th>City</th><th>Status</th></tr></thead>
+<tbody>
+<% users.forEach(function(u){ %>
+<tr>
+  <td data-l="Name"><a href="/admin/users/<%= u.id %>"><b><%= u.name %></b></a><%= u.is_demo ? ' <span class="pill warn">DEMO</span>' : '' %></td>
+  <td data-l="Phone"><%= u.phone %></td>
+  <td data-l="Age"><%= u.age || '—' %> <%= u.gender || '' %></td>
+  <td data-l="City"><%= u.city || '—' %></td>
+  <td data-l="Status">
+    <% if (u.is_banned) { %><span class="pill bad">Banned</span><% } %>
+    <% if (u.is_premium) { %><span class="pill ok">Premium</span><% } %>
+    <span class="pill wait"><%= u.free_matches_used %> matches</span>
+  </td>
+</tr>
+<% }) %>
+</tbody>
+</table>

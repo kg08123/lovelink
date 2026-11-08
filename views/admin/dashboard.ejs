@@ -1,0 +1,22 @@
+<h1 class="page-title"><%= t('adminPanel') %></h1>
+<div class="stat4">
+  <a class="box" href="/admin/users"><b><%= totalUsers %></b><small><%= t('totalUsers') %></small></a>
+  <a class="box" href="/admin/users"><b><%= totalMatches %></b><small><%= t('totalMatches') %></small></a>
+  <a class="box" href="/admin/users"><b><%= totalMessages %></b><small><%= t('totalMessages') %></small></a>
+  <a class="box" href="/admin/payments"><b><%= pendingPayments %></b><small><%= t('pendingPayments') %></small></a>
+  <a class="box" href="/admin/reports"><b><%= pendingReports %></b><small><%= t('reportsQueue') %></small></a>
+  <a class="box" href="/admin/users"><b><%= premiumUsers %></b><small><%= t('premiumUsers') %></small></a>
+</div>
+<div class="section">
+  <h2>Revenue (approved Premium)</h2>
+  <p><b><%= fmtETB(revenue) %></b> · <%= PREMIUM_FEE %> ETB per Premium unlock</p>
+</div>
+<div class="section">
+  <h2>Quick actions</h2>
+  <p><a href="/admin/users">👥 <%= t('allUsers') %> →</a></p>
+  <p><a href="/admin/payments">💵 <%= t('paymentReceipts') %> →</a></p>
+  <p><a href="/admin/reports">🚩 <%= t('reportsQueue') %> →</a></p>
+  <form method="post" action="/admin/delete-demo" onsubmit="return confirm('Delete ALL demo users and their data?')">
+    <button class="btn btn-red" type="submit">🗑 <%= t('deleteDemo') %></button>
+  </form>
+</div>

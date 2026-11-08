@@ -1,0 +1,114 @@
+<a class="chat-back" href="/messages">← <%= t('messages') %></a>
+<h1 class="page-title"><%= conv.other_name %></h1>
+<p class="sub">💖 <%= t('itsAMatch') %> — <a href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
+<div class="chat" id="chat">
+  <% messages.forEach(function(m){ %>
+    <div class="bubble <%= m.sender_user_id===user.id?'mine':'theirs' %>">
+      <% if (m.image_data) { %><a href="<%= m.image_data %>" target="_blank" rel="noopener"><img class="chat-img" src="<%= m.image_data %>" alt=""></a><% } %>
+      <% if (m.body) { %><p><%= m.body %></p><% } %>
+      <small><%= new Date(m.created_at).toLocaleString() %></small>
+    </div>
+  <% }) %>
+</div>
+<div id="imgPrev" class="img-prev" hidden>
+  <img id="imgPrevImg" alt="">
+  <button type="button" id="imgRm" class="img-prev-x" aria-label="<%= t('removeImage') %>">✕</button>
+</div>
+<div id="imgErr" class="img-prev-err" hidden></div>
+<form id="sendform" method="post" action="/messages/<%= conv.id %>" class="chatbar" enctype="multipart/form-data">
+  <button type="button" class="icon-btn" id="imgBtn" aria-label="<%= t('chooseImage') %>">🖼️</button>
+  <input type="file" id="imgInput" name="image" accept="image/*" hidden>
+  <input type="text" name="body" placeholder="<%= t('typeMessage') %>" autocomplete="off" maxlength="2000">
+  <button class="icon-btn" type="submit" aria-label="<%= t('send') %>">➤</button>
+</form>
+<script>
+(function(){
+  var chat=document.getElementById('chat');
+  var lastId=<%= messages.length ? messages[messages.length-1].id : 0 %>;
+  chat.scrollTop=chat.scrollHeight;
+  function addMsg(m){
+    if(m.id<=lastId) return;
+    lastId=m.id;
+    if(m.mine){
+      chat.querySelectorAll('.bubble.temp').forEach(function(t){
+        var tp=t.querySelector('p');
+        var tBody=tp?tp.textContent:'';
+        var tImg=!!t.querySelector('img');
+        if(tBody===(m.body||'') && tImg===!!m.has_image){ t.remove(); }
+      });
+    }
+    var div=document.createElement('div');
+    div.className='bubble '+(m.mine?'mine':'theirs');
+    if(m.has_image&&m.image_data){
+      var a=document.createElement('a'); a.href=m.image_data; a.target='_blank'; a.rel='noopener';
+      var im=document.createElement('img'); im.className='chat-img'; im.src=m.image_data; im.alt='';
+      a.appendChild(im); div.appendChild(a);
+    }
+    if(m.body){ var p=document.createElement('p'); p.textContent=m.body; div.appendChild(p); }
+    var s=document.createElement('small'); s.textContent=new Date(m.created_at).toLocaleString();
+    div.appendChild(s); chat.appendChild(div);
+    chat.scrollTop=chat.scrollHeight;
+  }
+  async function poll(){
+    try{
+      var r=await fetch('/messages/<%= conv.id %>/json?after='+lastId,{headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}});
+      if(!r.ok) return;
+      var d=await r.json();
+      d.messages.forEach(addMsg);
+    }catch(e){}
+  }
+  setInterval(poll,2000);
+  var form=document.getElementById('sendform');
+  var input=form.querySelector('input[name=body]');
+  var imgInput=document.getElementById('imgInput'), imgFile=null;
+  document.getElementById('imgBtn').addEventListener('click',function(){ imgInput.click(); });
+  imgInput.addEventListener('change',function(){
+    var pv=document.getElementById('imgPrev'), err=document.getElementById('imgErr');
+    imgFile=imgInput.files[0]||null;
+    if(err) err.hidden=true;
+    if(!imgFile){ pv.hidden=true; return; }
+    if(imgFile.type.indexOf('image/')!==0){
+      imgInput.value=''; imgFile=null; pv.hidden=true;
+      if(err){ err.textContent='<%= t('imageOnly') %>'; err.hidden=false; }
+      return;
+    }
+    if(imgFile.size>3*1024*1024){
+      imgInput.value=''; imgFile=null; pv.hidden=true;
+      if(err){ err.textContent='<%= t('imageTooBig') %>'; err.hidden=false; }
+      return;
+    }
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var im=document.getElementById('imgPrevImg');
+      im.onerror=function(){ pv.hidden=true; if(err){ err.textContent='<%= t('imageOnly') %>'; err.hidden=false; } };
+      im.src=e.target.result;
+      pv.hidden=false;
+    };
+    reader.readAsDataURL(imgFile);
+  });
+  document.getElementById('imgRm').addEventListener('click',function(){
+    imgInput.value=''; imgFile=null; document.getElementById('imgPrevImg').removeAttribute('src'); document.getElementById('imgPrev').hidden=true;
+  });
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var text=input.value.trim();
+    if(!text&&!imgFile) return;
+    var fd=new FormData();
+    fd.append('body',text);
+    if(imgFile) fd.append('image',imgFile);
+    var imgData=imgFile?document.getElementById('imgPrevImg').src:null;
+    var tmp=document.createElement('div');
+    tmp.className='bubble mine temp';
+    if(imgData){ var ta=document.createElement('a'); ta.href=imgData; ta.target='_blank'; ta.rel='noopener'; var tim=document.createElement('img'); tim.className='chat-img'; tim.src=imgData; ta.appendChild(tim); tmp.appendChild(ta); }
+    if(text){ var tp=document.createElement('p'); tp.textContent=text; tmp.appendChild(tp); }
+    var ts=document.createElement('small'); ts.textContent='Sending…'; tmp.appendChild(ts);
+    chat.appendChild(tmp); chat.scrollTop=chat.scrollHeight;
+    input.value=''; imgInput.value=''; imgFile=null;
+    document.getElementById('imgPrevImg').removeAttribute('src');
+    document.getElementById('imgPrev').hidden=true;
+    fetch(form.action,{method:'POST',headers:{'X-Requested-With':'XMLHttpRequest'},body:fd})
+      .then(function(r){ if(r.ok) poll(); else form.submit(); })
+      .catch(function(){ form.submit(); });
+  });
+})();
+</script>

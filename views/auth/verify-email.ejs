@@ -1,0 +1,7 @@
+<h1 class="page-title"><%= t('verifyEmailTitle') %></h1>
+<p class="sub">We sent a verification link to <b><%= email %></b>. Tap the link in your inbox, then come back here.</p>
+<form method="post" action="/verify-email/resend">
+  <div class="field"><label>Email</label><input type="email" name="email" value="<%= email || '' %>" required></div>
+  <button class="btn btn-pink btn-block" type="submit">Resend link</button>
+</form>
+<p class="sub" style="margin-top:14px"><a href="/signin"><%= t('signIn') %></a></p>

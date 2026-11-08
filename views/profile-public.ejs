@@ -1,0 +1,56 @@
+<a class="chat-back" href="/discover">← <%= t('discover') %></a>
+<div class="swipe-card" style="margin-top:10px">
+  <% if (other.photo1) { %><img class="swipe-photo" src="<%= other.photo1 %>" alt="<%= other.name %>"><% } %>
+  <% if (other.online) { %><span class="online-badge">● <%= t('online') %></span><% } %>
+  <span class="match-badge"><%= score %>% match</span>
+  <div class="swipe-info">
+    <div class="swipe-name"><%= other.name %>, <%= other.age %> ✓</div>
+    <div class="swipe-meta">📍 <%= distanceText || (other.city || '') %> · <%= other.city || '' %><%= other.country ? ', '+other.country : '' %></div>
+    <% if (other.bio) { %><p class="swipe-bio"><%= other.bio %></p><% } %>
+    <div class="chips"><% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %></div>
+  </div>
+</div>
+<div class="section">
+  <h2>Details</h2>
+  <table class="data kv">
+    <tr><th>Height</th><td><%= other.height_cm ? other.height_cm + ' cm' : '—' %></td></tr>
+    <tr><th>Religion</th><td><%= other.religion || '—' %></td></tr>
+    <tr><th>Education</th><td><%= other.education || '—' %></td></tr>
+    <tr><th>Job</th><td><%= other.job || '—' %></td></tr>
+    <tr><th>Smoking</th><td><%= other.smoking || '—' %></td></tr>
+    <tr><th>Drinking</th><td><%= other.drinking || '—' %></td></tr>
+    <tr><th>Kids</th><td><%= other.kids || '—' %></td></tr>
+    <tr><th>Goal</th><td><%= other.relationship_goal || '—' %> · looking for <%= other.looking_for_gender || 'any' %> <%= other.age_min %>–<%= other.age_max %></td></tr>
+    <tr><th>Languages</th><td><%= other.languages || '—' %></td></tr>
+  </table>
+</div>
+<% if (other.photo2 || other.photo3) { %>
+<div class="section"><h2>More photos</h2>
+  <div class="explore-grid">
+    <% [other.photo2, other.photo3].forEach(function(ph){ if (ph) { %><img src="<%= ph %>" style="width:100%;border-radius:12px" alt=""><% } }) %>
+  </div>
+</div>
+<% } %>
+<% if (matched) { %>
+  <a class="btn btn-pink btn-block" href="/matches">💬 <%= t('chatNow') %></a>
+<% } else if (!swiped) { %>
+  <div class="swipe-actions">
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass">✕</button></form>
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like">❤️</button></form>
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super">★</button></form>
+  </div>
+<% } else { %>
+  <p class="sub" style="text-align:center">You <%= swiped.kind==='pass' ? 'passed' : 'liked' %> this profile.</p>
+<% } %>
+<div class="section">
+  <h2><%= t('report') %> / <%= t('block') %></h2>
+  <form method="post" action="/u/<%= other.id %>/report">
+    <div class="field"><label>Reason</label><input type="text" name="reason" placeholder="Fake profile, rude, scam..." maxlength="500"></div>
+    <button class="btn btn-outline btn-block" type="submit">🚩 <%= t('report') %></button>
+  </form>
+  <% if (!isBlocked) { %>
+  <form method="post" action="/u/<%= other.id %>/block" style="margin-top:8px">
+    <button class="btn btn-red btn-block" type="submit">🚫 <%= t('block') %> <%= other.name %></button>
+  </form>
+  <% } else { %><p class="sub">This user is blocked.</p><% } %>
+</div>

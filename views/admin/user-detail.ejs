@@ -1,0 +1,39 @@
+<a class="chat-back" href="/admin/users">← <%= t('allUsers') %></a>
+<h1 class="page-title"><%= user.name %></h1>
+<p class="sub"><%= user.role %> · <%= user.phone %> · <%= user.email || 'no email' %> · <%= user.age %> · <%= user.gender || '' %><%= user.is_demo ? ' · DEMO' : '' %></p>
+<table class="data kv">
+  <tr><th>Premium</th><td><%= user.is_premium ? 'Yes 💖' : 'No' %></td></tr>
+  <tr><th>Banned</th><td><%= user.is_banned ? 'Yes' : 'No' %></td></tr>
+  <tr><th>Free matches used</th><td><%= user.free_matches_used %></td></tr>
+  <tr><th>Matches</th><td><%= counts.matches %></td></tr>
+  <tr><th>Messages sent</th><td><%= counts.messagesSent %></td></tr>
+  <tr><th>Pending reports</th><td><%= counts.pendingReports %></td></tr>
+  <tr><th>Joined</th><td><%= new Date(user.created_at).toLocaleString() %></td></tr>
+</table>
+<% if (profile) { %>
+<div class="section"><h2>Profile</h2>
+  <p><%= profile.bio || '' %></p>
+  <p>📍 <%= profile.city || '' %><%= (profile.latitude && profile.longitude) ? ' (' + profile.latitude + ', ' + profile.longitude + ')' : '' %></p>
+  <p><%= profile.height_cm || '—' %> cm · <%= profile.religion || '' %> · <%= profile.education || '' %> · <%= profile.job || '' %></p>
+  <p>Goal: <%= profile.relationship_goal || '' %> · Looking for: <%= profile.looking_for_gender || '' %> <%= profile.age_min %>–<%= profile.age_max %></p>
+  <p>Interests: <%= profile.interests || '' %></p>
+  <% if (profile.photo1) { %><img src="<%= profile.photo1 %>" style="width:120px;border-radius:12px" alt=""><% } %>
+</div>
+<% } %>
+<div class="section"><h2>Payments</h2>
+  <% if (!payments.length) { %><p class="sub">No payments.</p><% } %>
+  <% payments.forEach(function(p){ %>
+    <p><%= new Date(p.created_at).toLocaleString() %> · <%= fmtETB(p.amount_etb) %> · <b><%= p.status %></b></p>
+  <% }) %>
+</div>
+<div class="row-actions">
+  <% if (!user.is_premium) { %>
+  <form method="post" action="/admin/users/<%= user.id %>/premium"><button class="btn btn-amber" type="submit">💖 Grant Premium</button></form>
+  <% } %>
+  <% if (!user.is_banned) { %>
+  <form method="post" action="/admin/users/<%= user.id %>/ban"><button class="btn btn-red" type="submit"><%= t('ban') %></button></form>
+  <% } else { %>
+  <form method="post" action="/admin/users/<%= user.id %>/unban"><button class="btn btn-green" type="submit"><%= t('unban') %></button></form>
+  <% } %>
+  <form method="post" action="/admin/users/<%= user.id %>/delete" onsubmit="return confirm('Delete this user?')"><button class="btn btn-red" type="submit">Delete user</button></form>
+</div>

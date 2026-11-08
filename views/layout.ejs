@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="<%= lang %>">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LoveLink — <%= typeof title !== 'undefined' ? title : t('appTag') %></title>
+<link rel="stylesheet" href="/css/style.css">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+</head>
+<body<%- typeof bodyClass !== 'undefined' && bodyClass ? ' class="' + bodyClass + '"' : '' %>>
+<% var isLanding = typeof bodyClass !== 'undefined' && bodyClass === 'landing'; %>
+<% var isChat = typeof bodyClass !== 'undefined' && bodyClass === 'chat-page'; %>
+<% if (!isLanding) { %>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="logo" href="/"><span class="logo-heart">❤️</span>Love<span class="logo-link">Link</span></a>
+    <nav class="navlinks">
+      <% if (user) { %>
+        <a class="msg-ico" href="/messages" aria-label="<%= t('messages') %>"><%- icon('comment') %><% if (unreadCount > 0) { %><span class="badge"><%= unreadCount > 99 ? '99+' : unreadCount %></span><% } %></a>
+        <button class="hamb" id="menuBtn" aria-label="menu"><%- icon('menu') %></button>
+      <% } else { %>
+        <a class="btn-signin" href="/signin"><%= t('signIn') %></a>
+      <% } %>
+      <span class="lang-toggle">
+        <a href="?lang=en" class="<%= lang==='en'?'on':'' %>">EN</a><a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማ</a>
+      </span>
+    </nav>
+  </div>
+</header>
+<% if (user) { %>
+<div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+<aside class="drawer" id="drawer" aria-label="menu">
+  <div class="drawer-head">
+    <div class="drawer-avatar"><%= user.name ? user.name.trim()[0].toUpperCase() : 'L' %></div>
+    <div class="grow">
+      <b><%= user.name %></b>
+      <span class="sub" style="margin:0"><%= user.role === 'admin' ? t('adminPanel') : (user.is_premium ? '💖 Premium' : t('profile')) %></span>
+    </div>
+    <button class="icon-btn drawer-close" id="drawerClose" aria-label="close"><%- icon('x') %></button>
+  </div>
+  <nav class="drawer-nav">
+    <% if (user.role === 'admin') { %>
+      <a href="/admin"><%- icon('grid') %><%= t('adminPanel') %></a>
+      <a href="/admin/users"><%- icon('users') %><%= t('allUsers') %></a>
+      <a href="/admin/payments"><%- icon('cash') %><%= t('paymentReceipts') %></a>
+      <a href="/admin/reports"><%- icon('file') %><%= t('reportsQueue') %></a>
+    <% } else { %>
+      <a href="/discover"><%- icon('heart') %><%= t('discover') %></a>
+      <a href="/explore"><%- icon('search') %><%= t('explore') %></a>
+      <a href="/matches"><%- icon('users') %><%= t('matches') %></a>
+      <a href="/profile"><%- icon('user') %><%= t('profile') %></a>
+      <a href="/premium"><%- icon('star') %><%= t('premiumTitle') %></a>
+    <% } %>
+    <a href="/messages"><%- icon('comment') %><%= t('messages') %></a>
+    <a href="/settings"><%- icon('settings') %><%= t('settings') %></a>
+    <a href="/about"><%- icon('info') %><%= t('aboutUs') %></a>
+    <a href="/signout" class="danger"><%- icon('logout') %><%= t('signOut') %></a>
+  </nav>
+</aside>
+<% } %>
+<% } %>
+<main class="wrap">
+  <% if (flash) { %><div class="flash <%= flash.type %>"><%= flash.msg %></div><% } %>
+  <%- body %>
+</main>
+<% if (user && user.role !== 'admin' && !isLanding && !isChat) { %>
+<nav class="bottomnav">
+  <a href="/discover" class="<%= typeof navActive !== 'undefined' && navActive==='discover' ? 'on' : '' %>"><span class="bn-ico">❤️</span><%= t('discover') %></a>
+  <a href="/matches" class="<%= typeof navActive !== 'undefined' && navActive==='matches' ? 'on' : '' %>"><span class="bn-ico">💞</span><%= t('matches') %></a>
+  <a href="/messages" class="<%= typeof navActive !== 'undefined' && navActive==='messages' ? 'on' : '' %>"><span class="bn-ico">💬</span><%= t('messages') %><% if (unreadCount > 0) { %><span class="bn-badge"><%= unreadCount > 99 ? '99+' : unreadCount %></span><% } %></a>
+  <a href="/profile" class="<%= typeof navActive !== 'undefined' && navActive==='profile' ? 'on' : '' %>"><span class="bn-ico">👤</span><%= t('profile') %></a>
+</nav>
+<% } %>
+<% if (!isLanding) { %>
+<footer class="footer">LoveLink · <%= t('appTag') %> · Addis Ababa, Ethiopia<br><a href="/about"><%= t('aboutUs') %></a> · <a href="/privacy"><%= t('privacyTitle') %></a></footer>
+<% } %>
+<script>
+function copyNum(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard&&navigator.clipboard.writeText(el.innerText.trim());}
+(function(){
+  var b=document.getElementById('menuBtn'), d=document.getElementById('drawer'),
+      bg=document.getElementById('drawerBackdrop'), x=document.getElementById('drawerClose');
+  if(!b||!d) return;
+  function open(){ d.classList.add('open'); bg.hidden=false; document.body.style.overflow='hidden'; }
+  function close(){ d.classList.remove('open'); bg.hidden=true; document.body.style.overflow=''; }
+  b.addEventListener('click', function(e){ e.stopPropagation(); open(); });
+  if(x) x.addEventListener('click', close);
+  if(bg) bg.addEventListener('click', close);
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
+})();
+</script>
+</body>
+</html>

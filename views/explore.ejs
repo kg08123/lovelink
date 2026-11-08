@@ -1,0 +1,37 @@
+<% var navActive='discover'; %>
+<h1 class="page-title"><%= t('explore') %></h1>
+<div class="tabs">
+  <a href="/explore?tab=nearby" class="<%= f.tab==='nearby'?'on':'' %>"><%= t('nearby') %></a>
+  <a href="/explore?tab=online" class="<%= f.tab==='online'?'on':'' %>"><%= t('online') %></a>
+  <a href="/explore?tab=new" class="<%= f.tab==='new'?'on':'' %>"><%= t('new') %></a>
+</div>
+<button class="btn btn-outline btn-block" type="button" onclick="document.getElementById('fp').hidden=!document.getElementById('fp').hidden">Filters</button>
+<form id="fp" class="filter-panel" method="get" action="/explore" <%= (f.ageMin||f.ageMax||f.maxKm)?'':'hidden' %>>
+  <input type="hidden" name="tab" value="<%= f.tab %>">
+  <div class="frow-2">
+    <div class="frow"><label>Min age</label><input type="number" name="age_min" min="18" max="99" value="<%= f.ageMin || '' %>"></div>
+    <div class="frow"><label>Max age</label><input type="number" name="age_max" min="18" max="99" value="<%= f.ageMax || '' %>"></div>
+  </div>
+  <div class="frow"><label>Max distance (km)</label><input type="number" name="max_km" min="1" max="500" value="<%= f.maxKm || '' %>" placeholder="e.g. 10"></div>
+  <button class="btn btn-pink btn-block" type="submit">Apply filters</button>
+</form>
+<p class="count"><%= total %> <%= total===1?'person':'people' %> found</p>
+<% if (!items.length) { %><div class="empty">No one matches these filters yet.</div><% } %>
+<div class="explore-grid">
+  <% items.forEach(function(it){ %>
+  <a class="explore-card" href="/u/<%= it.id %>">
+    <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph">👤</div><% } %>
+    <div class="explore-info">
+      <b><%= it.name %></b>
+      <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
+      <span class="explore-score"><%= it.score %>% match</span>
+    </div>
+    <% if (it.online) { %><span class="online-dot" title="Online">●</span><% } %>
+  </a>
+  <% }) %>
+</div>
+<div class="pager">
+  <% if (page > 1) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page-1}) %>">← Prev</a><% } %>
+  <span class="pager-info">Page <%= page %> / <%= totalPages %></span>
+  <% if (page < totalPages) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page+1}) %>">Next →</a><% } %>
+</div>

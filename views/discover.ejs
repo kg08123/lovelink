@@ -1,0 +1,31 @@
+<% var navActive='discover'; %>
+<div class="discover-top">
+  <span class="pill ok">💖 <%= freeLeft %> / <%= FREE_MATCHES %> free matches left</span>
+  <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium →</a><% } else { %><span class="pill ok">💖 Premium</span><% } %>
+</div>
+<% if (!card) { %>
+  <div class="empty"><h2><%= t('noMoreProfiles') %></h2><p><a href="/explore">Browse Explore →</a></p></div>
+<% } else { %>
+  <div class="swipe-card">
+    <% if (card.photo1) { %>
+    <a href="/u/<%= card.id %>"><img class="swipe-photo" src="<%= card.photo1 %>" alt="<%= card.name %>"></a>
+    <% } %>
+    <% if (card.online) { %><span class="online-badge">● <%= t('online') %></span><% } %>
+    <span class="match-badge"><%= card.score %>% match</span>
+    <div class="swipe-info">
+      <a href="/u/<%= card.id %>" class="swipe-name"><%= card.name %>, <%= card.age %> ✓</a>
+      <div class="swipe-meta">📍 <%= card.distanceText || (card.city || '') %> · <%= card.city || '' %></div>
+      <% if (card.bio) { %><p class="swipe-bio"><%= card.bio %></p><% } %>
+      <div class="chips">
+        <% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %>
+      </div>
+    </div>
+  </div>
+  <div class="swipe-actions">
+    <form method="post" action="/discover/rewind"><button class="swipe-btn rewind" title="<%= t('rewind') %>" aria-label="<%= t('rewind') %>">↺</button></form>
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" title="<%= t('pass') %>" aria-label="<%= t('pass') %>">✕</button></form>
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" title="<%= t('like') %>" aria-label="<%= t('like') %>">❤️</button></form>
+    <form method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super" title="<%= t('superLike') %>" aria-label="<%= t('superLike') %>">★</button></form>
+  </div>
+  <p class="sub" style="text-align:center"><%= remaining %> <%= remaining===1?'profile':'profiles' %> near you · <a href="/u/<%= card.id %>">View full profile →</a></p>
+<% } %>

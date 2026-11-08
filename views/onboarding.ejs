@@ -1,0 +1,136 @@
+<h1 class="page-title"><%= profile ? t('editProfile') : t('onboardingTitle') %></h1>
+<p class="sub">Answer honestly — your answers pick your best matches. Your exact location is never shown to others, only the distance.</p>
+<form method="post" action="/onboarding" enctype="multipart/form-data">
+  <div class="section">
+    <h2>📸 <%= t('profile') %></h2>
+    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt="" style="width:120px;height:150px;border-radius:16px;object-fit:cover"><% } %>
+    <div class="field"><label>Main photo * <%= profile ? '(leave empty to keep current)' : '' %></label>
+      <input type="file" name="photo1" accept="image/*" <%= profile ? '' : 'required' %>>
+      <div class="hint">Max 3MB. A clear photo of you, face visible.</div>
+    </div>
+    <div class="field"><label>Photo 2 (optional)</label><input type="file" name="photo2" accept="image/*"></div>
+    <div class="field"><label>Photo 3 (optional)</label><input type="file" name="photo3" accept="image/*"></div>
+    <div class="field"><label><%= t('aboutMe') %></label>
+      <textarea name="bio" maxlength="500" placeholder="Dream big, work hard, and enjoy life ❤️"><%= (profile && profile.bio) || form.bio || '' %></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>📍 <%= t('useMyLocation') %></h2>
+    <div class="field"><label>City *</label>
+      <input type="text" name="city" id="cityInput" required value="<%= (profile && profile.city) || form.city || '' %>" placeholder="Addis Ababa">
+    </div>
+    <input type="hidden" name="latitude" id="latInput" value="<%= (profile && profile.latitude) || form.latitude || '' %>">
+    <input type="hidden" name="longitude" id="lngInput" value="<%= (profile && profile.longitude) || form.longitude || '' %>">
+    <button type="button" class="btn btn-outline btn-block" id="locBtn">📍 <%= t('useMyLocation') %></button>
+    <div class="hint" id="locStatus">We store your city + coordinates so matches are sorted by real distance. Only the distance (e.g. “2 km away”) is shown — never your exact spot.</div>
+  </div>
+
+  <div class="section">
+    <h2>🙋 About you</h2>
+    <div class="field"><label>Height (cm)</label><input type="number" name="height_cm" min="120" max="230" value="<%= (profile && profile.height_cm) || form.height_cm || '' %>"></div>
+    <div class="field"><label>Religion</label>
+      <select name="religion">
+        <option value="">—</option>
+        <% ['Orthodox','Protestant','Catholic','Muslim','Other','Prefer not to say'].forEach(function(r){ %>
+        <option <%= (profile && profile.religion===r) || form.religion===r ? 'selected' : '' %>><%= r %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="field"><label>Education</label>
+      <select name="education">
+        <option value="">—</option>
+        <% ['High School','College','University','Masters','PhD'].forEach(function(r){ %>
+        <option <%= (profile && profile.education===r) || form.education===r ? 'selected' : '' %>><%= r %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="field"><label>Job</label><input type="text" name="job" value="<%= (profile && profile.job) || form.job || '' %>" placeholder="Teacher, Engineer..."></div>
+    <div class="field"><label>Smoking</label>
+      <select name="smoking">
+        <option value="">—</option>
+        <option value="never" <%= (profile && profile.smoking==='never')?'selected':'' %>>Never</option>
+        <option value="sometimes" <%= (profile && profile.smoking==='sometimes')?'selected':'' %>>Sometimes</option>
+        <option value="often" <%= (profile && profile.smoking==='often')?'selected':'' %>>Often</option>
+      </select>
+    </div>
+    <div class="field"><label>Drinking</label>
+      <select name="drinking">
+        <option value="">—</option>
+        <option value="never" <%= (profile && profile.drinking==='never')?'selected':'' %>>Never</option>
+        <option value="sometimes" <%= (profile && profile.drinking==='sometimes')?'selected':'' %>>Sometimes</option>
+        <option value="often" <%= (profile && profile.drinking==='often')?'selected':'' %>>Often</option>
+      </select>
+    </div>
+    <div class="field"><label>Kids</label>
+      <select name="kids">
+        <option value="">—</option>
+        <option value="none" <%= (profile && profile.kids==='none')?'selected':'' %>>No kids</option>
+        <option value="have" <%= (profile && profile.kids==='have')?'selected':'' %>>Have kids</option>
+        <option value="want" <%= (profile && profile.kids==='want')?'selected':'' %>>Want kids</option>
+        <option value="dont_want" <%= (profile && profile.kids==='dont_want')?'selected':'' %>>Don't want kids</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>💖 What are you looking for?</h2>
+    <div class="field"><label>Looking for</label>
+      <select name="looking_for_gender">
+        <option value="any" <%= (profile && profile.looking_for_gender==='any')?'selected':'' %>>Anyone</option>
+        <option value="female" <%= (profile && profile.looking_for_gender==='female')?'selected':'' %>>Women</option>
+        <option value="male" <%= (profile && profile.looking_for_gender==='male')?'selected':'' %>>Men</option>
+      </select>
+    </div>
+    <div class="field"><label>Age range</label>
+      <div style="display:flex;gap:8px">
+        <input type="number" name="age_min" min="18" max="99" value="<%= (profile && profile.age_min) || form.age_min || 18 %>" style="flex:1">
+        <span style="align-self:center">–</span>
+        <input type="number" name="age_max" min="18" max="99" value="<%= (profile && profile.age_max) || form.age_max || 99 %>" style="flex:1">
+      </div>
+    </div>
+    <div class="field"><label>Relationship goal</label>
+      <select name="relationship_goal">
+        <option value="">—</option>
+        <option value="serious" <%= (profile && profile.relationship_goal==='serious')?'selected':'' %>>Serious relationship</option>
+        <option value="marriage" <%= (profile && profile.relationship_goal==='marriage')?'selected':'' %>>Marriage</option>
+        <option value="casual" <%= (profile && profile.relationship_goal==='casual')?'selected':'' %>>Casual dating</option>
+        <option value="friendship" <%= (profile && profile.relationship_goal==='friendship')?'selected':'' %>>Friendship first</option>
+      </select>
+    </div>
+    <div class="field"><label><%= t('interests') %> (pick all that fit)</label>
+      <div class="chips">
+        <% INTERESTS.forEach(function(it){ var cur = ((profile && profile.interests) || form.interests || '').split(','); %>
+        <label class="chip-check"><input type="checkbox" name="interests" value="<%= it %>" <%= cur.includes(it)?'checked':'' %>> <%= it %></label>
+        <% }) %>
+      </div>
+    </div>
+    <div class="field"><label>Languages</label><input type="text" name="languages" value="<%= (profile && profile.languages) || form.languages || 'Amharic, English' %>"></div>
+  </div>
+
+  <button class="btn btn-pink btn-block" type="submit"><%= t('save') %></button>
+</form>
+<script>
+(function(){
+  var btn=document.getElementById('locBtn'), st=document.getElementById('locStatus');
+  if(!btn) return;
+  btn.addEventListener('click', function(){
+    if(!navigator.geolocation){ st.textContent='<%= t('locationFailed') %>'; return; }
+    st.textContent='<%= t('locating') %>';
+    navigator.geolocation.getCurrentPosition(function(pos){
+      document.getElementById('latInput').value=pos.coords.latitude;
+      document.getElementById('lngInput').value=pos.coords.longitude;
+      st.textContent='<%= t('locationSaved') %>';
+      // Reverse-geocode the city name (best effort; manual city still works)
+      fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude)
+        .then(function(r){ return r.json(); })
+        .then(function(d){
+          var a=d.address||{};
+          var city=a.city||a.town||a.village||a.county||'';
+          if(city) document.getElementById('cityInput').value=city;
+        })
+        .catch(function(){});
+    }, function(){ st.textContent='<%= t('locationFailed') %>'; }, {timeout:10000});
+  });
+})();
+</script>
