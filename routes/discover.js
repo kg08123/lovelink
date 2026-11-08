@@ -214,7 +214,7 @@ async function discoverData(req) {
     grid = { items: pageItems, f, total, page: safePage, totalPages };
   }
   return {
-    card, remaining: cands.length,
+    card, next: cands[1] || null, remaining: cands.length,
     matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
     interestsList: card ? splitList(card.interests) : [], grid,
   };

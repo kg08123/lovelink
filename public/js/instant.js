@@ -48,15 +48,17 @@
   }
 
   // Discover swipe / rewind / reset: the card flies out at once, then the
-  // fresh Discover body swaps in — no full page reload.
-  function handleDiscoverAction(form, e) {
-    e.preventDefault();
-    var card = document.querySelector('.swipe-card');
+  // fresh Discover body swaps in — no full page reload. `preFlown` is set
+  // by the drag handler, which already flew the card out with its own
+  // inline transform — then no CSS fly-out class is added on top of it.
+  function handleDiscoverAction(form, e, preFlown) {
+    if (e) e.preventDefault();
+    var card = document.querySelector('.swipe-card:not(.peek)');
     var actions = document.querySelector('.swipe-actions');
     var kindInput = form.querySelector('input[name=kind]');
     var kind = kindInput ? kindInput.value : '';
     if (actions) actions.classList.add('busy');
-    if (card) card.classList.add(kind === 'pass' ? 'swipe-out-left' : 'swipe-out-right');
+    if (card && !preFlown) card.classList.add(kind === 'pass' ? 'swipe-out-left' : 'swipe-out-right');
     postForm(form).then(function (d) {
       if (d.redirect) { window.location.href = d.redirect; return; }
       if (d.html) {
@@ -129,4 +131,133 @@
     if (form.classList.contains('js-reset-form')) { handleDiscoverAction(form, e); return; }
     if (form.classList.contains('js-report-form')) { handleReport(form, e); return; }
   });
+
+  // Skeleton shimmer: photo containers shimmer until their image loads.
+  // `load` does not bubble, so listen in the capture phase; the CSS kills
+  // the shimmer (::before) once the container has .img-loaded.
+  document.addEventListener('load', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'IMG') return;
+    var p = t.closest('.swipe-photo-link, .explore-card');
+    if (p) p.classList.add('img-loaded');
+    if (t.complete && t.naturalWidth > 0) {
+      var q = t.closest('.swipe-photo-link, .explore-card');
+      if (q) q.classList.add('img-loaded');
+    }
+  }, true);
+
+  // ---- Drag to swipe (Discover card) ----
+  // Pointer Events, works for touch and mouse. The card follows the
+  // finger, rotates a little, LIKE / NOPE stamps fade in as it moves.
+  // Release past the threshold = swipe (same fetch flow as the buttons);
+  // release early = the card springs back. Taps on links/buttons inside
+  // the card still work: a drag only starts after 10px of movement, and
+  // a tap-length press is never treated as a drag.
+  var DRAG_MIN = 10, SWIPE_PX = 90;
+  var drag = null, suppressClickUntil = 0;
+
+  function dragCard() {
+    return document.querySelector('#discover-root .swipe-card:not(.peek)');
+  }
+
+  function dragForm(kind) {
+    var forms = document.querySelectorAll('#discover-root .js-swipe-form');
+    for (var i = 0; i < forms.length; i++) {
+      var k = forms[i].querySelector('input[name=kind]');
+      if (k && k.value === kind) return forms[i];
+    }
+    return null;
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    if (drag) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    var card = e.target.closest ? e.target.closest('.swipe-card') : null;
+    if (!card || card.classList.contains('peek')) return;
+    if (!card.closest('#discover-root')) return;
+    if (e.target.closest('form, button, .swipe-info-btn')) return;
+    if (document.querySelector('.swipe-actions.busy')) return;
+    drag = { card: card, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, active: false, pointerId: e.pointerId };
+    try { card.setPointerCapture(e.pointerId); } catch (err) { /* older browsers */ }
+  });
+
+  document.addEventListener('pointermove', function (e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+    if (!drag.active) {
+      if (Math.abs(dx) < DRAG_MIN && Math.abs(dy) < DRAG_MIN) return;
+      // Vertical scroll wins: if the user is mostly scrolling, bail out
+      // and let the page scroll normally.
+      if (Math.abs(dy) > Math.abs(dx) * 1.4) { drag = null; return; }
+      drag.active = true;
+      drag.card.classList.add('dragging');
+    }
+    drag.dx = dx; drag.dy = dy;
+    var rot = Math.max(-12, Math.min(12, dx * 0.06));
+    drag.card.style.transform = 'translate(' + dx + 'px,' + (dy * 0.35) + 'px) rotate(' + rot + 'deg)';
+    var like = drag.card.querySelector('.stamp-like');
+    var nope = drag.card.querySelector('.stamp-nope');
+    var strength = Math.min(1, Math.abs(dx) / 80);
+    if (like) like.style.opacity = dx > 0 ? strength : 0;
+    if (nope) nope.style.opacity = dx < 0 ? strength : 0;
+  });
+
+  function dragEnd(e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    var d = drag; drag = null;
+    if (!d.active) return;
+    suppressClickUntil = Date.now() + 350;
+    var card = d.card;
+    var like = card.querySelector('.stamp-like');
+    var nope = card.querySelector('.stamp-nope');
+    if (like) like.style.opacity = 0;
+    if (nope) nope.style.opacity = 0;
+    var threshold = Math.min(SWIPE_PX, card.offsetWidth * 0.25);
+    if (Math.abs(d.dx) >= threshold) {
+      var kind = d.dx > 0 ? 'like' : 'pass';
+      var form = dragForm(kind);
+      if (!form) { springBack(card); return; }
+      // Fly the card off with the same inline transform it already has,
+      // then run the normal instant swipe flow (fetch + HTML swap).
+      card.style.transition = 'transform .22s ease, opacity .22s ease';
+      card.style.transform = 'translate(' + (d.dx > 0 ? 120 : -120) + '%, ' + (d.dy * 0.35) + 'px) rotate(' + (d.dx > 0 ? 14 : -14) + 'deg)';
+      card.style.opacity = '0';
+      handleDiscoverAction(form, null, true);
+    } else {
+      springBack(card);
+    }
+  }
+
+  function springBack(card) {
+    card.style.transition = 'transform .3s cubic-bezier(.2,1.4,.4,1)';
+    card.style.transform = '';
+    card.classList.remove('dragging');
+    setTimeout(function () { card.style.transition = ''; }, 320);
+  }
+
+  document.addEventListener('pointerup', dragEnd);
+  // A cancelled gesture (browser took over, e.g. scroll) never swipes —
+  // the card just springs back. (pointerup above is the only path that
+  // can fire a swipe.)
+  document.addEventListener('pointercancel', function (e) {
+    if (!drag || e.pointerId !== drag.pointerId) return;
+    var d = drag; drag = null;
+    if (d.active) springBack(d.card);
+  });
+
+  // The card photo is an <img> inside a link: without this, the browser
+  // starts a native image drag on mousedown+move, fires pointercancel,
+  // and the drag-to-swipe gesture dies after 2 moves. (draggable="false"
+  // on the img is the first line of defence; this is the second.)
+  document.addEventListener('dragstart', function (e) {
+    if (e.target.closest && e.target.closest('.swipe-card')) e.preventDefault();
+  });
+
+  // A drag must never trigger the link underneath it: if the pointer
+  // moved, swallow the click that follows the drag. (The drag state is
+  // already cleared by the time the click fires, so a timestamp flag
+  // carries the suppression across.)
+  document.addEventListener('click', function (e) {
+    if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
 })();

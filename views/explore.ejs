@@ -24,9 +24,9 @@
       <div class="explore-info">
         <b><%= it.name %></b>
         <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
-        <span class="explore-score"><%= it.score %>% match</span>
       </div>
-      <% if (it.online) { %><span class="online-dot" title="Online"></span><% } %>
+      <span class="explore-score-chip"><%= it.score %>%</span>
+      <% if (it.online) { %><span class="online-dot pulse" title="Online"></span><% } %>
     </a>
     <% if (it.matched) { %>
       <button class="explore-like liked" type="button" disabled title="Matched"><%- icon('heart', true) %></button>

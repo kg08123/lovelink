@@ -24,9 +24,9 @@
         <div class="explore-info">
           <b><%= it.name %></b>
           <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
-          <span class="explore-score"><%= it.score %>% match</span>
         </div>
-        <% if (it.online) { %><span class="online-dot" title="Online"></span><% } %>
+        <span class="explore-score-chip"><%= it.score %>%</span>
+        <% if (it.online) { %><span class="online-dot pulse" title="Online"></span><% } %>
       </a>
       <% if (it.matched) { %>
         <button class="explore-like liked" type="button" disabled title="Matched"><%- icon('heart', true) %></button>
@@ -48,12 +48,25 @@
   </div>
   <% } %>
 <% } else { %>
-  <div class="swipe-card">
+  <div class="swipe-stack">
+    <% if (typeof next !== 'undefined' && next) { %>
+    <div class="swipe-card peek" aria-hidden="true">
+      <% if (next.photo1) { %><img class="swipe-photo" src="<%= next.thumb || next.photo1 %>" alt="" draggable="false"><% } %>
+      <span class="match-badge"><%= next.score %>% match</span>
+      <div class="swipe-info">
+        <div class="swipe-name"><%= next.name %>, <%= next.age %></div>
+        <div class="swipe-meta"><%- icon('pin') %> <%= next.distanceText || (next.city || '') %></div>
+      </div>
+    </div>
+    <% } %>
+    <div class="swipe-card" data-card-id="<%= card.id %>">
     <% if (card.photo1) { %>
-    <a class="swipe-photo-link" href="/u/<%= card.id %>"><img class="swipe-photo" src="<%= card.thumb || card.photo1 %>" alt="<%= card.name %>"></a>
+    <a class="swipe-photo-link" href="/u/<%= card.id %>"><img class="swipe-photo" src="<%= card.thumb || card.photo1 %>" alt="<%= card.name %>" draggable="false"></a>
     <% } %>
     <% if (card.online) { %><span class="online-badge"><span class="online-dot"></span> <%= t('online') %></span><% } %>
     <span class="match-badge"><%= card.score %>% match</span>
+    <span class="stamp stamp-like" aria-hidden="true">LIKE</span>
+    <span class="stamp stamp-nope" aria-hidden="true">NOPE</span>
     <div class="swipe-info">
       <div style="display:flex; align-items:flex-start; gap:8px">
         <div style="min-width:0; flex:1">
@@ -66,6 +79,7 @@
       <div class="chips">
         <% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %>
       </div>
+    </div>
     </div>
   </div>
   <div class="swipe-actions">

@@ -34,7 +34,7 @@
 <% if (matched) { %>
   <a class="btn btn-pink btn-block" href="/matches"><%- icon('comment') %> <%= t('chatNow') %></a>
 <% } else if (!swiped) { %>
-  <div class="swipe-actions">
+  <div class="swipe-actions sticky-actions">
     <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass"><%- icon('x') %></button></form>
     <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like"><%- icon('heart', true) %></button></form>
     <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super"><%- icon('star', true) %></button></form>

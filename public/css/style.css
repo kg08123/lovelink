@@ -423,3 +423,150 @@ a:hover{text-decoration:underline}
   .settings-list a, .settings-list .row-item{padding:14px 14px}
   .row-actions .btn{padding:10px 14px; font-size:.9rem}
 }
+
+/* ============================================================
+   v4 — PREMIUM UI level-up (Hinge/Tinder polish, same brand)
+   Vanilla CSS only. Overrides above are intentional: this
+   section is the design system now; earlier rules stay as
+   fallbacks. Nothing here changes behaviour or wording.
+   ============================================================ */
+:root{
+  --shadow-sm:0 1px 3px rgba(16,10,14,.06), 0 4px 14px rgba(16,10,14,.06);
+  --shadow-md:0 4px 10px rgba(16,10,14,.07), 0 14px 34px rgba(16,10,14,.10);
+  --shadow-lg:0 10px 24px rgba(16,10,14,.12), 0 28px 60px rgba(16,10,14,.16);
+  --grad-pink:linear-gradient(135deg,#FF5C8A 0%,#FF2E63 55%,#E01E52 100%);
+  --grad-scrim:linear-gradient(180deg, rgba(10,4,8,0) 0%, rgba(10,4,8,.08) 42%, rgba(10,4,8,.78) 88%, rgba(10,4,8,.92) 100%);
+  --r-lg:24px; --r-md:20px; --r-sm:16px;
+}
+/* Page enter: every screen fades + rises a touch on navigation */
+.wrap{animation:pageIn .32s ease both}
+@keyframes pageIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+/* Typography scale: tighter, bolder headings */
+.page-title{font-size:1.55rem; font-weight:800; letter-spacing:-.02em; line-height:1.15}
+.section-title{letter-spacing:-.01em}
+.sub{font-size:.93rem}
+/* Press feedback everywhere: buttons shrink a touch when tapped */
+.btn{transition:transform .14s ease, box-shadow .2s ease, background .2s ease}
+.btn:active{transform:scale(.965)}
+.btn-pink{background:var(--grad-pink); box-shadow:0 8px 22px rgba(255,46,99,.42)}
+.btn-pink:active{box-shadow:0 3px 10px rgba(255,46,99,.35)}
+.btn-outline{box-shadow:var(--shadow-sm)}
+/* Glass topbar: frosted, floats above content */
+.topbar{background:rgba(255,255,255,.86); backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5); border-bottom:1px solid rgba(16,10,14,.06)}
+/* Glass bottom nav: frosted pill look, active tab = pink pill */
+.bottomnav{background:rgba(255,255,255,.82); backdrop-filter:blur(18px) saturate(1.5); -webkit-backdrop-filter:blur(18px) saturate(1.5); border-top:1px solid rgba(16,10,14,.06); box-shadow:0 -8px 30px rgba(16,10,14,.07); padding:6px 6px calc(8px + env(safe-area-inset-bottom))}
+.bottomnav a{border-radius:16px; padding:5px 0 4px; margin:0 2px; transition:background .2s ease, color .2s ease, transform .14s ease}
+.bottomnav a:active{transform:scale(.93)}
+.bottomnav a.on{background:var(--pink-soft); color:var(--pink)}
+.bottomnav a.on .bn-ico{color:var(--pink)}
+/* Cards + sections: bigger radius, layered soft shadow, hairline border */
+.section{border-radius:var(--r-md); box-shadow:var(--shadow-sm); border:1px solid rgba(16,10,14,.05)}
+.empty{border-radius:var(--r-md); box-shadow:var(--shadow-sm); border:1px solid rgba(16,10,14,.05)}
+.settings-list, .admin-actions{border-radius:var(--r-md); box-shadow:var(--shadow-sm); border:1px solid rgba(16,10,14,.05); overflow:hidden}
+.settings-list a, .settings-list .row-item{transition:background .15s ease}
+.settings-list a:active, .settings-list .row-item:active{background:var(--pink-soft)}
+/* Pills on Discover top: glass chips */
+.discover-top .pill{padding:7px 12px; box-shadow:var(--shadow-sm); border:1px solid rgba(16,10,14,.05)}
+/* Online badge dot: an old unscoped .online-dot rule (Explore grid) sets
+   position:absolute, which pulled the badge dot out of flow and onto the
+   text. The badge dot is a flex item again, and it pulses. */
+.online-badge .online-dot{position:static; flex:0 0 auto; width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 0 2px rgba(34,197,94,.35)}
+/* Drag-to-swipe must never start a native image drag (the browser fires
+   pointercancel and kills the gesture after 2 moves). */
+.swipe-card img{-webkit-user-drag:none; user-select:none; -webkit-user-select:none}
+/* ---- Discover: card stack, drag, stamps ---- */
+.swipe-stack{position:relative; animation:cardIn .38s cubic-bezier(.2,.9,.3,1) both}
+@keyframes cardIn{from{opacity:0; transform:translateY(14px) scale(.97)} to{opacity:1; transform:translateY(0) scale(1)}}
+.swipe-stack .swipe-card{border-radius:var(--r-lg); box-shadow:var(--shadow-lg); touch-action:pan-y; user-select:none; -webkit-user-select:none; will-change:transform}
+.swipe-stack .swipe-card.peek{position:absolute; inset:0; z-index:0; transform:scale(.93) translateY(18px); opacity:.5; filter:blur(1px) saturate(.85); pointer-events:none; margin-bottom:0}
+.swipe-stack .swipe-card:not(.peek){position:relative; z-index:1}
+.swipe-stack .swipe-card.dragging{transition:none !important; cursor:grabbing}
+.swipe-stack .swipe-card.dragging .swipe-info{pointer-events:none}
+/* LIKE / NOPE stamps: appear + strengthen as the card is dragged */
+.stamp{position:absolute; top:18px; z-index:3; font-size:1.5rem; font-weight:900; letter-spacing:.14em; padding:6px 14px; border-radius:12px; border:3.5px solid; opacity:0; pointer-events:none; transform:rotate(-10deg); transition:opacity .08s linear}
+.stamp-like{left:16px; color:#22c55e; border-color:#22c55e; background:rgba(255,255,255,.82); transform:rotate(-10deg)}
+.stamp-nope{right:16px; color:#ef4444; border-color:#ef4444; background:rgba(255,255,255,.82); transform:rotate(10deg)}
+/* Swipe buttons: press scale + soft ripple ring */
+.swipe-btn{position:relative; overflow:hidden; transition:transform .14s ease, box-shadow .2s ease}
+.swipe-btn::after{content:''; position:absolute; inset:0; border-radius:50%; background:rgba(255,46,99,.16); transform:scale(.5); opacity:0; transition:transform .28s ease, opacity .28s ease; pointer-events:none}
+.swipe-btn:active{transform:scale(.86)}
+.swipe-btn:active::after{transform:scale(1.25); opacity:1}
+.swipe-btn.like{box-shadow:0 8px 26px rgba(255,46,99,.5)}
+/* Sticky action bar on public profiles: floats above the bottom nav */
+.sticky-actions{position:sticky; bottom:calc(84px + env(safe-area-inset-bottom)); z-index:30; width:max-content; max-width:100%; margin:14px auto; padding:10px 14px; border-radius:999px; background:rgba(255,255,255,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:var(--shadow-md); border:1px solid rgba(16,10,14,.06)}
+/* ---- Explore grid: photo-forward, taller, press states ---- */
+.explore-grid{gap:12px}
+.explore-card{border-radius:var(--r-md); box-shadow:var(--shadow-md); border:1px solid rgba(16,10,14,.05); transition:transform .16s ease, box-shadow .2s ease}
+.explore-card:active{transform:scale(.965); box-shadow:var(--shadow-sm)}
+.explore-card img{height:252px; transition:transform .35s ease}
+.explore-card:active img{transform:scale(1.03)}
+.explore-ph{height:252px}
+.explore-info{padding:34px 48px 10px 12px; background:var(--grad-scrim); z-index:2}
+.explore-info b{font-size:1.02rem; letter-spacing:-.01em; text-shadow:0 1px 6px rgba(0,0,0,.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.explore-info span{font-size:.82rem; text-shadow:0 1px 6px rgba(0,0,0,.45)}
+.explore-score-chip{position:absolute; top:10px; right:10px; z-index:2; background:var(--grad-pink); color:#fff; font-size:.78rem; font-weight:800; padding:5px 10px; border-radius:999px; box-shadow:0 3px 12px rgba(255,46,99,.55)}
+.explore-card .online-dot{top:10px; left:10px; right:auto; width:12px; height:12px; border:2px solid #fff; z-index:2}
+.online-dot.pulse{animation:pulseRing 2s ease-out infinite}
+@keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55), 0 0 6px rgba(0,0,0,.4)} 70%{box-shadow:0 0 0 8px rgba(34,197,94,0), 0 0 6px rgba(0,0,0,.4)} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0), 0 0 6px rgba(0,0,0,.4)}}
+.online-badge .online-dot{animation:pulseRing 2s ease-out infinite}
+.explore-like{transition:transform .14s ease, background .2s ease, color .2s ease}
+.explore-like:active{transform:scale(.82)}
+.explore-like.liked{animation:heartPop .35s cubic-bezier(.2,1.6,.4,1)}
+@keyframes heartPop{0%{transform:scale(1)} 45%{transform:scale(1.35)} 100%{transform:scale(1)}}
+/* ---- Chat: on-brand pink bubbles, pill input, press send ---- */
+.bubble{border-radius:18px; box-shadow:var(--shadow-sm); border:none; padding:11px 14px; animation:msgIn .25s ease both}
+@keyframes msgIn{from{opacity:0; transform:translateY(6px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
+.bubble.mine{background:var(--grad-pink); border-color:transparent; color:#fff; border-bottom-right-radius:6px; box-shadow:0 4px 14px rgba(255,46,99,.35)}
+.bubble.mine small{color:rgba(255,255,255,.75)}
+.bubble.theirs{background:#fff; border-bottom-left-radius:6px}
+.bubble.temp{opacity:.65}
+.chatbar input{box-shadow:var(--shadow-sm)}
+.chatbar .icon-btn{transition:transform .14s ease, box-shadow .2s ease}
+.chatbar .icon-btn:active{transform:scale(.88)}
+.chatbar .icon-btn:not(.ghost){box-shadow:0 6px 18px rgba(255,46,99,.5)}
+.chat-item{border-radius:18px; box-shadow:var(--shadow-sm); transition:transform .14s ease, background .15s ease}
+.chat-item:active{transform:scale(.98)}
+.chat-item .avatar-sm{width:52px; height:52px; border-radius:16px}
+.chat-item.unread{border-color:rgba(255,46,99,.4)}
+/* ---- Profile hero: photo-forward, name over a gradient ---- */
+.profile-hero{position:relative; border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--shadow-lg); margin:14px 0 12px; background:#1a0d12}
+.profile-hero-photo{width:100%; height:360px; object-fit:cover; display:block; animation:imgIn .5s ease both}
+.profile-hero::after{content:''; position:absolute; inset:0; background:var(--grad-scrim); pointer-events:none}
+.profile-hero-info{position:absolute; left:0; right:0; bottom:0; z-index:2; padding:18px; color:#fff}
+.profile-hero-name{margin:0; font-size:1.6rem; font-weight:800; letter-spacing:-.02em; text-shadow:0 2px 10px rgba(0,0,0,.5)}
+.profile-hero-meta{margin:4px 0 0; color:#f3d9e0; font-size:.92rem; display:flex; align-items:center; gap:5px}
+.profile-hero-meta .ico{width:15px; height:15px}
+.profile-hero .match-badge{top:14px; right:14px}
+/* ---- Match celebration: pop-in photos + pulsing heart ---- */
+.match-screen{animation:matchIn .5s cubic-bezier(.2,1.3,.35,1) both}
+@keyframes matchIn{from{opacity:0; transform:scale(.92) translateY(14px)} to{opacity:1; transform:scale(1) translateY(0)}}
+.match-photo{animation:photoPop .55s cubic-bezier(.2,1.5,.35,1) both}
+.match-photo:last-of-type{animation-delay:.12s}
+@keyframes photoPop{from{opacity:0; transform:scale(.5)} to{opacity:1; transform:scale(1)}}
+.match-heart{animation:heartBeat 1.4s ease-in-out infinite}
+@keyframes heartBeat{0%,100%{transform:translateX(-50%) scale(1)} 25%{transform:translateX(-50%) scale(1.18)} 45%{transform:translateX(-50%) scale(1)}}
+/* ---- Skeleton shimmer: photo containers shimmer until the image loads ---- */
+.swipe-photo-link, .explore-card{position:relative}
+.swipe-photo-link::before, .explore-card::before{content:''; position:absolute; inset:0; z-index:0; background:linear-gradient(100deg,#ffe3ea 35%,#fff5f7 50%,#ffe3ea 65%); background-size:200% 100%; animation:shimmer 1.5s linear infinite; pointer-events:none}
+.swipe-photo-link.img-loaded::before, .explore-card.img-loaded::before{animation:none; opacity:0}
+.swipe-photo, .explore-card img{position:relative; z-index:1; animation:imgIn .45s ease both}
+@keyframes shimmer{from{background-position:200% 0} to{background-position:-200% 0}}
+@keyframes imgIn{from{opacity:0} to{opacity:1}}
+/* Filter panel + forms: same premium card language */
+.filter-panel{border-radius:var(--r-md); box-shadow:var(--shadow-sm)}
+.field input[type=text],.field input[type=password],.field input[type=number],.field input[type=email],.field textarea,.field select{transition:border-color .15s ease, box-shadow .15s ease}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none; border-color:var(--pink); box-shadow:0 0 0 3px rgba(255,46,99,.16)}
+/* Drawer: softer, slides with the same easing */
+.drawer{box-shadow:-12px 0 40px rgba(16,10,14,.2)}
+.drawer-nav a{transition:background .15s ease}
+.drawer-nav a:active{background:var(--pink-soft)}
+@media (max-width:520px){
+  .swipe-photo{height:470px}
+  .profile-hero-photo{height:320px}
+  .explore-card img, .explore-ph{height:240px}
+}
+@media (max-width:380px){
+  .swipe-photo{height:420px}
+  .profile-hero-photo{height:300px}
+  .explore-card img, .explore-ph{height:220px}
+}
