@@ -93,7 +93,13 @@ async function getCandidates(me, meProfile, opts = {}) {
     sql += ` AND u.id NOT IN (${ph})`;
     params.push(...blockedIds);
   }
-  if (!opts.includeSwiped) {
+  if (opts.recycled) {
+    // Recycled deck: people already swiped — but NEVER anyone already
+    // matched (they live in Matches now). The deck loops instead of
+    // running dry; ordering below puts the least-recently-swiped first,
+    // so a re-swiped profile goes to the back of the queue.
+    sql += ` AND u.id NOT IN (SELECT CASE WHEN user_a_id=$1 THEN user_b_id ELSE user_a_id END FROM matches WHERE user_a_id=$1 OR user_b_id=$1)`;
+  } else {
     sql += ` AND u.id NOT IN (SELECT to_user_id FROM swipes WHERE from_user_id=$1)`;
   }
   if (meProfile.looking_for_gender && meProfile.looking_for_gender !== 'any') {
@@ -123,13 +129,24 @@ async function getCandidates(me, meProfile, opts = {}) {
       interestsList: splitList(c.interests),
     });
   }
-  // Nearest first, then best match score
-  out.sort((x, y) => {
-    const dx = x.distanceKm == null ? 1e9 : x.distanceKm;
-    const dy = y.distanceKm == null ? 1e9 : y.distanceKm;
-    if (dx !== dy) return dx - dy;
-    return y.score - x.score;
-  });
+  // Nearest first, then best match score — except the recycled deck,
+  // which loops least-recently-swiped first so everyone cycles through
+  // before anyone repeats (a re-swipe stamps created_at to now, sending
+  // that profile to the back of the queue). Sorted in JS, not SQL: a
+  // correlated subquery in ORDER BY works in Postgres but pg-mem (the
+  // local test DB) cannot parse it.
+  if (opts.recycled) {
+    const sw = await db.query('SELECT to_user_id, MAX(created_at) AS last_swiped FROM swipes WHERE from_user_id=$1 GROUP BY to_user_id', [me.id]);
+    const lastSwiped = new Map(sw.rows.map((r) => [r.to_user_id, new Date(r.last_swiped).getTime()]));
+    out.sort((a, b) => (lastSwiped.get(a.id) ?? 0) - (lastSwiped.get(b.id) ?? 0));
+  } else {
+    out.sort((x, y) => {
+      const dx = x.distanceKm == null ? 1e9 : x.distanceKm;
+      const dy = y.distanceKm == null ? 1e9 : y.distanceKm;
+      if (dx !== dy) return dx - dy;
+      return y.score - x.score;
+    });
+  }
   // Backfill missing thumbnails in the background (fire-and-forget): older
   // profiles stored before thumbs existed serve the full photo this once.
   for (const c of out) backfillProfileThumb(c.user_id, c.photo1, c.photo1_thumb);
@@ -171,18 +188,26 @@ function photoOf(p) {
 
 // Shared Discover data: the card, the remaining count. Used by GET
 // /discover and by the instant XHR buttons, so both render exactly the
-// same page. When the cards run out the page shows a clean "caught up"
-// state with the reset button — swiping is the only way to see people.
+// same page. The deck is INFINITE: when the fresh cards run out, the
+// already-swiped profiles loop back in (least-recently-swiped first) —
+// the "caught up" state only ever appears when there are literally zero
+// candidates in the whole system. Swiping is the only way to see people.
 async function discoverData(req) {
   await sweepDemoAutoMatches(req);
   await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
-  const cands = await getCandidates(req.user, req.profile);
+  let cands = await getCandidates(req.user, req.profile);
+  let recycled = false;
+  if (!cands.length) {
+    cands = await getCandidates(req.user, req.profile, { recycled: true });
+    recycled = cands.length > 0;
+  }
   const card = cands[0] || null;
   const n = await matchCount(req.user.id);
   return {
     card, next: cands[1] || null, remaining: cands.length,
     matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
     interestsList: card ? splitList(card.interests) : [],
+    recycled,
   };
 }
 
@@ -338,8 +363,8 @@ router.get('/profile/edit', requireAuth, (req, res) => {
 });
 
 // ---- Discover: one card at a time, nearest + best match first ----
-// When the cards run out, the page shows a clean "caught up" state with
-// the reset button — swiping is the only way to see people.
+// The deck loops forever (see discoverData): the "caught up" state only
+// appears when there are literally no candidates at all in the system.
 router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const data = await discoverData(req);
@@ -362,10 +387,30 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
     const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
     if (!target.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-    if (already.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
-
-    await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
-      [req.user.id, toId, kind]);
+    const prevKind = already.rows.length ? already.rows[0].kind : null;
+    if (prevKind === 'like' || prevKind === 'super') {
+      // Re-swiping someone already liked: a strict no-op. Never a second
+      // match, never another free match, never an error — just stamp the
+      // swipe as fresh so the profile re-queues at the back of the
+      // recycled deck, and move on to the next card.
+      await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
+    }
+    if (prevKind === 'pass' && kind === 'pass') {
+      // Same for a re-pass: re-queue at the back of the deck, nothing else.
+      await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+      req.session.lastPass = toId; // rewind still brings this card back
+      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
+    }
+    if (prevKind === 'pass') {
+      // Pass -> like/super upgrade: change the stored swipe, then run the
+      // normal like flow below (a NEW match from it still counts as a
+      // free match, exactly like a first-time like).
+      await db.query('UPDATE swipes SET kind=$3, created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId, kind]);
+    } else {
+      await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
+        [req.user.id, toId, kind]);
+    }
     if (kind === 'pass') {
       req.session.lastPass = toId; // rewind target (once)
       return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');

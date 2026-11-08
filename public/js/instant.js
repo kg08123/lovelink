@@ -126,20 +126,28 @@
     }
   }, true);
 
-  // ---- Dark mode toggle (Settings) ----
+  // ---- Dark mode: Settings switch + top-bar icon, one shared state ----
   // The choice lives in a cookie (the server renders <html class="dark">,
   // so there is no white flash) AND localStorage (the <head> boot script
   // reads it when there is no cookie yet, e.g. system-preference
-  // default). Flipping the switch changes the theme instantly, no reload.
+  // default). Flipping either control changes the theme instantly, no
+  // reload, and both controls always show the same state.
   var themeToggle = document.getElementById('themeToggle');
+  var themeBtn = document.getElementById('themeBtn');
   function applyTheme(dark) {
     document.documentElement.classList.toggle('dark', dark);
     try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) { /* private mode */ }
     document.cookie = 'theme=' + (dark ? 'dark' : 'light') + '; max-age=31536000; path=/; SameSite=Lax';
+    if (themeToggle) themeToggle.checked = dark;
+    if (themeBtn) themeBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
   }
   if (themeToggle) {
     themeToggle.checked = document.documentElement.classList.contains('dark');
     themeToggle.addEventListener('change', function () { applyTheme(themeToggle.checked); });
+  }
+  if (themeBtn) {
+    themeBtn.setAttribute('aria-pressed', document.documentElement.classList.contains('dark') ? 'true' : 'false');
+    themeBtn.addEventListener('click', function () { applyTheme(!document.documentElement.classList.contains('dark')); });
   }
 
   // ---- Drag to swipe (Discover card) ----

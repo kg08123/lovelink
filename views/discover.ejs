@@ -3,6 +3,7 @@
   <span class="pill ok"><%- icon('heart', true) %> <%= freeLeft %> / <%= FREE_MATCHES %> free matches left</span>
   <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium <%- icon('chevronRight') %></a><% } else { %><span class="pill ok"><%- icon('star', true) %> Premium</span><% } %>
 </div>
+<% if (typeof recycled !== 'undefined' && recycled) { %><p class="sub" style="text-align:center; margin:2px 0 8px"><%= t('showingAgain') %></p><% } %>
 <% if (!card) { %>
   <div class="empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">

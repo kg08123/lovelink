@@ -206,6 +206,14 @@ body.chat-page .sub{margin:0 0 8px}
 /* Header / drawer */
 .hamb{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
 .hamb .ico{width:22px;height:22px}
+/* Top-bar dark-mode icon: same size as the menu button, sits beside it.
+   Moon shows in light mode, sun in dark mode (pure CSS swap). */
+.theme-btn{display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer;transition:transform .14s ease;flex:0 0 auto}
+.theme-btn:active{transform:scale(.9)}
+.theme-btn .ico{width:22px;height:22px}
+.theme-btn .theme-ico-sun{display:none}
+html.dark .theme-btn .theme-ico-moon{display:none}
+html.dark .theme-btn .theme-ico-sun{display:flex}
 .ico{width:18px;height:18px;flex:0 0 auto;vertical-align:-3px}
 .icon-btn{width:50px; border-radius:12px; border:1.5px solid var(--pink); background:#fff; color:var(--pink); font-size:1.2rem; cursor:pointer; display:flex;align-items:center;justify-content:center}
 .icon-btn .ico{width:22px;height:22px}
@@ -557,7 +565,7 @@ html.dark .discover-top .pill{border-color:var(--line)}
 /* Drawer + header buttons */
 html.dark .drawer{background:var(--card)}
 html.dark .drawer-nav a:hover{background:rgba(255,255,255,.07)}
-html.dark .hamb, html.dark .icon-btn, html.dark .drawer-close{background:var(--card)}
+html.dark .hamb, html.dark .theme-btn, html.dark .icon-btn, html.dark .drawer-close{background:var(--card)}
 /* Buttons + inputs (hardcoded #fff above) */
 html.dark .btn-outline, html.dark .btn-google{background:var(--card)}
 html.dark .field input[type=text], html.dark .field input[type=password],
