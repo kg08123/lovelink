@@ -1,15 +1,15 @@
 <h1 class="page-title"><%= t('paymentReceipts') %></h1>
 <p class="sub">Approving unlocks Premium for that user (and creates any pending mutual matches).</p>
-<% if (!payments.length) { %><div class="empty">No pending receipts. 🎉</div><% } %>
+<% if (!payments.length) { %><div class="empty"><%- icon('checkCircle') %>No pending receipts.</div><% } %>
 <% payments.forEach(function(p){ %>
 <div class="section">
   <p><b><%= p.user_name %></b> · <%= p.user_phone %> · <%= fmtETB(p.amount_etb) %></p>
   <p class="sub"><%= new Date(p.created_at).toLocaleString() %></p>
   <% if (p.receipt_data) { %><a href="<%= p.receipt_data %>" target="_blank" rel="noopener"><img class="receipt-thumb" style="width:200px;height:auto" src="<%= p.receipt_data %>" alt="receipt"></a><% } %>
   <div class="row-actions" style="margin-top:10px">
-    <form method="post" action="/admin/payments/<%= p.id %>/approve"><button class="btn btn-green" type="submit">✓ <%= t('approve') %> + unlock Premium</button></form>
-    <form method="post" action="/admin/payments/<%= p.id %>/reject"><button class="btn btn-red" type="submit">✕ <%= t('reject') %></button></form>
-    <a class="btn btn-outline btn-sm" href="/admin/users/<%= p.user_id %>">View user →</a>
+    <form method="post" action="/admin/payments/<%= p.id %>/approve"><button class="btn btn-green" type="submit"><%- icon('check') %> <%= t('approve') %> + unlock Premium</button></form>
+    <form method="post" action="/admin/payments/<%= p.id %>/reject"><button class="btn btn-red" type="submit"><%- icon('x') %> <%= t('reject') %></button></form>
+    <a class="btn btn-outline btn-sm" href="/admin/users/<%= p.user_id %>">View user <%- icon('chevronRight') %></a>
   </div>
 </div>
 <% }) %>

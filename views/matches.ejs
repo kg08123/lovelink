@@ -1,15 +1,14 @@
-<% var navActive='matches'; %>
 <h1 class="page-title"><%= t('matches') %></h1>
 <p class="sub">You can only chat with people you matched with.</p>
 <% if (!items.length) { %>
-  <div class="empty"><h2>No matches yet</h2><p>Keep exploring — when someone likes you back, they appear here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> →</a></div>
+  <div class="empty"><%- icon('heart') %><h2>No matches yet</h2><p>Keep exploring — when someone likes you back, they appear here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a></div>
 <% } %>
 <% items.forEach(function(it){ %>
 <a class="chat-item <%= it.unread>0?'unread':'' %>" href="/messages/<%= it.conv_id %>">
-  <% if (it.photo1) { %><img class="avatar-sm" src="<%= it.photo1 %>" alt=""><% } else { %><div class="avatar-sm avatar-ph">👤</div><% } %>
+  <% if (it.photo1) { %><img class="avatar-sm" src="<%= it.photo1 %>" alt=""><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
   <div class="grow">
     <div class="ci-top"><b><%= it.other_name %>, <%= it.other_age %></b><% if (it.unread>0) { %><span class="badge"><%= it.unread %></span><% } %></div>
-    <div class="ci-prev"><%= it.lastBody || 'Say hello! 👋' %> · <%= it.distanceText || '' %></div>
+    <div class="ci-prev"><%= it.lastBody || 'Say hello!' %> · <%= it.distanceText || '' %></div>
   </div>
 </a>
 <% }) %>

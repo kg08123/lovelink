@@ -9,7 +9,7 @@ const { googleEnabled, passport } = require('../lib/google');
 const router = express.Router();
 
 router.get('/signup', (req, res) => {
-  if (req.user) return res.redirect('/discover');
+  if (req.user) return res.redirect(req.user.role === 'admin' ? '/admin' : (req.profile ? '/discover' : '/onboarding'));
   const form = req.session.signupAttempt || {};
   delete req.session.signupAttempt;
   res.render('auth/signup', { title: res.locals.t('signUp'), form });
@@ -81,7 +81,7 @@ router.post('/signup', async (req, res, next) => {
 });
 
 router.get('/signin', (req, res) => {
-  if (req.user) return res.redirect('/discover');
+  if (req.user) return res.redirect(req.user.role === 'admin' ? '/admin' : (req.profile ? '/discover' : '/onboarding'));
   const login = req.session.loginAttempt || '';
   delete req.session.loginAttempt;
   res.render('auth/signin', { title: res.locals.t('signIn'), login });
@@ -156,7 +156,7 @@ if (googleEnabled && passport) {
     });
 
   router.get('/signup/google', (req, res) => {
-    if (req.user) return res.redirect('/discover');
+    if (req.user) return res.redirect(req.user.role === 'admin' ? '/admin' : (req.profile ? '/discover' : '/onboarding'));
     if (!req.session.pendingGoogle) return res.redirect('/signup');
     res.render('auth/signup-google', { title: res.locals.t('signUp'), g: req.session.pendingGoogle });
   });
@@ -236,7 +236,7 @@ router.get('/verify-email/:token', async (req, res, next) => {
     const r = await db.query('SELECT id, email_verified FROM users WHERE email_token=$1', [req.params.token]);
     if (!r.rows.length) {
       req.session.flash = { type: 'err', msg: t('invalidToken') };
-      return res.redirect(req.session.userId ? '/discover' : '/signin');
+      return res.redirect(req.session.userId ? '/onboarding' : '/signin');
     }
     await db.query('UPDATE users SET email_verified=TRUE, email_token=NULL WHERE id=$1', [r.rows[0].id]);
     delete req.session.pendingVerificationEmail;

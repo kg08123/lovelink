@@ -1,5 +1,5 @@
-<a class="chat-back" href="/messages">← <%= t('messages') %></a>
+<a class="chat-back" href="/messages"><%- icon('chevronLeft') %> <%= t('messages') %></a>
 <h1 class="page-title"><%= nt(notif.title) %></h1>
 <div class="section"><p><%= nt(notif.body) %></p>
-<% if (notif.link) { %><a class="btn btn-pink" href="<%= notif.link %>">Open →</a><% } %>
+<% if (notif.link) { %><a class="btn btn-pink" href="<%= notif.link %>">Open <%- icon('chevronRight') %></a><% } %>
 </div>

@@ -1,7 +1,7 @@
-<h1 class="page-title">💖 <%= t('premiumTitle') %></h1>
+<h1 class="page-title"><%- icon('star', true) %> <%= t('premiumTitle') %></h1>
 <% if (user.is_premium) { %>
   <div class="flash ok"><%= t('premiumActive') %></div>
-  <a class="btn btn-pink btn-block" href="/discover"><%= t('discover') %> →</a>
+  <a class="btn btn-pink btn-block" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a>
 <% } else { %>
   <% if (blocked) { %><div class="flash err"><%= t('premiumSub') %></div><% } %>
   <div class="section">
@@ -18,17 +18,17 @@
     <h2>Pay with Telebirr or CBE</h2>
     <p>Send <b><%= fmtETB(fee) %></b> to one of these numbers, then upload your receipt below.</p>
     <% if (TELEBIRR_NUMBER) { %>
-    <div class="copy-row"><span>📱 Telebirr: <span id="tbNum"><%= TELEBIRR_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('tbNum')">Copy</button></div>
+    <div class="copy-row"><%- icon('phone') %><span>Telebirr: <span id="tbNum"><%= TELEBIRR_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('tbNum')">Copy</button></div>
     <% } %>
     <% if (CBE_NUMBER) { %>
-    <div class="copy-row"><span>🏦 CBE: <span id="cbeNum"><%= CBE_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('cbeNum')">Copy</button></div>
+    <div class="copy-row"><%- icon('bank') %><span>CBE: <span id="cbeNum"><%= CBE_NUMBER %></span></span><button type="button" class="btn btn-outline btn-sm" onclick="copyNum('cbeNum')">Copy</button></div>
     <% } %>
     <% if (!TELEBIRR_NUMBER && !CBE_NUMBER) { %>
     <p class="sub">Payment numbers are being set up — please check back soon, or contact support.</p>
     <% } %>
     <form method="post" action="/premium" enctype="multipart/form-data">
       <div class="field"><label>Receipt screenshot / photo *</label>
-        <label class="upload-zone">📷 Tap to choose receipt image<input type="file" name="receipt" accept="image/*" id="receiptInput" required></label>
+        <label class="upload-zone"><%- icon('camera') %> Tap to choose receipt image<input type="file" name="receipt" accept="image/*" id="receiptInput" required></label>
         <img id="receiptPrev" class="receipt-prev" hidden alt="">
         <div id="receiptName" class="hint"></div>
       </div>

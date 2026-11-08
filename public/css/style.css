@@ -15,9 +15,9 @@ a{color:var(--pink)}
 /* Header */
 .topbar{position:sticky; top:0; z-index:50; background:var(--card); border-bottom:1px solid var(--line)}
 .topbar-in{max-width:640px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:10px}
-.logo{display:flex; align-items:center; gap:2px; text-decoration:none; color:var(--ink); font-weight:800; font-size:1.25rem}
-.logo-heart{font-size:1.3rem}
-.logo-heart.big{font-size:3rem}
+.logo{display:flex; align-items:center; gap:6px; text-decoration:none; color:var(--ink); font-weight:800; font-size:1.25rem}
+.logo-heart{width:1.3rem; height:1.3rem; color:var(--pink); display:inline-flex}
+.logo-heart.big{width:3rem; height:3rem}
 .logo-link{color:var(--pink)}
 .navlinks{margin-left:auto; display:flex; align-items:center; gap:10px; font-size:.9rem}
 .navlinks a{color:var(--ink); text-decoration:none; font-weight:600}
@@ -41,24 +41,43 @@ a{color:var(--pink)}
 .or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--line)}
 .or-row.light{color:#f9a8bc}
 .or-row.light::before,.or-row.light::after{background:rgba(255,255,255,.35)}
-/* Landing (dark hero like the mockup) */
+/* Landing (dark hero like the mockup: real couple photo + dark gradient) */
 body.landing{background:#111; color:#fff}
 body.landing .wrap{padding:0 16px 40px; max-width:430px}
-.landing-hero{min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:center; text-align:center; padding:24px 0}
-.landing-hearts{font-size:1.1rem; letter-spacing:8px; opacity:.9}
+.landing-hero{position:relative; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:flex-end; text-align:center; padding:24px 0 8px; margin:0 -16px; padding-left:16px; padding-right:16px}
+.landing-hero::before{content:''; position:absolute; inset:0; background:url('/img/hero-couple.jpg') center 30%/cover no-repeat, #1a0d12; z-index:0}
+.landing-hero::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,4,7,.55) 0%, rgba(10,4,7,.15) 35%, rgba(10,4,7,.25) 55%, rgba(10,4,7,.92) 82%, #0d0508 100%); z-index:1}
+.landing-hero>*{position:relative; z-index:2}
+.landing-hearts{display:flex; justify-content:center; gap:14px; color:var(--pink); margin-bottom:6px}
+.landing-hearts .ico{width:16px; height:16px; fill:currentColor}
+.landing-hearts .ico:nth-child(2){width:22px; height:22px; margin-top:-6px}
+.landing-hearts .ico:nth-child(odd){opacity:.7}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.landing-hearts .ico{animation:floaty 3s ease-in-out infinite}
 .landing-logo{margin:18px 0 0}
-.landing-title{font-size:3rem; margin:4px 0 0; font-weight:900}
+.logo-heart{width:1.3rem; height:1.3rem; color:var(--pink)}
+.logo-heart.big{width:3.2rem; height:3.2rem}
+.logo-heart .ico{width:100%; height:100%}
+.landing-title{font-size:3rem; margin:4px 0 0; font-weight:900; letter-spacing:-.5px; text-shadow:0 2px 18px rgba(0,0,0,.5)}
 .landing-tag{font-size:1.15rem; margin:6px 0 28px; color:#f3d9e0}
 .landing-fine{font-size:.8rem; color:#c9a7b1; margin-top:18px}
 .landing-fine a{color:#ffb3c6}
 .landing-lang{margin-top:10px; font-size:.9rem}
 .landing-lang a{color:#ffb3c6; text-decoration:none; font-weight:700}
 .landing-lang a.on{color:#fff; text-decoration:underline}
+/* Social sign-in: round white buttons with real brand marks, like the mockup */
+.social-row{display:flex; justify-content:center; gap:18px; margin:18px 0 4px}
+.social-btn{width:56px; height:56px; border-radius:50%; background:#fff; border:none; display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow:0 4px 16px rgba(0,0,0,.35); cursor:pointer}
+.social-btn .ico{width:28px; height:28px}
+.social-btn .brand-ico{width:28px; height:28px}
+.social-label{color:#e8cdd6; font-size:.9rem; margin:14px 0 0}
+.btn-pink{background:linear-gradient(135deg,#FF2E63,#E01E52); box-shadow:0 6px 20px rgba(255,46,99,.45)}
 /* Bottom nav (Discover / Matches / Messages / Profile) */
 .bottomnav{position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--line); display:flex; padding:6px 4px calc(8px + env(safe-area-inset-bottom))}
 .bottomnav a{flex:1; text-align:center; text-decoration:none; color:var(--muted); font-size:.72rem; font-weight:700; padding:4px 0; position:relative}
 .bottomnav a.on{color:var(--pink)}
-.bn-ico{display:block; font-size:1.3rem; line-height:1.2}
+.bn-ico{display:flex; align-items:center; justify-content:center; height:26px; margin-bottom:2px}
+.bn-ico .ico{width:24px; height:24px}
 .bn-badge{position:absolute; top:0; right:calc(50% - 22px); min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--red); color:#fff; font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center}
 /* Forms */
 .field{margin-bottom:14px}
@@ -104,30 +123,48 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .frow label{display:block;font-weight:700;font-size:.85rem;margin-bottom:6px;color:var(--muted)}
 .frow select,.frow input{width:100%;padding:11px 12px;border-radius:12px;border:1.5px solid var(--line);font-size:1rem;background:#fff;font-family:inherit}
 .frow-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-/* Discover swipe card (mockup) */
+/* Discover swipe card (mockup): full-bleed photo, info over a gradient at the
+   bottom of the photo, Online pill top-left, match % top-right, 4 round
+   action buttons below. */
 .discover-top{display:flex; gap:8px; align-items:center; margin:14px 0 10px; flex-wrap:wrap}
-.swipe-card{position:relative; background:#fff; border-radius:20px; overflow:hidden; box-shadow:0 4px 18px rgba(0,0,0,.12); margin-bottom:14px}
-.swipe-photo{width:100%; height:480px; object-fit:cover; display:block}
-.online-badge{position:absolute; top:12px; left:12px; background:rgba(0,0,0,.55); color:#fff; font-size:.78rem; font-weight:700; padding:5px 10px; border-radius:999px}
-.match-badge{position:absolute; top:12px; right:12px; background:var(--pink); color:#fff; font-size:.8rem; font-weight:800; padding:5px 11px; border-radius:999px}
-.swipe-info{padding:14px 16px 16px}
-.swipe-name{font-size:1.35rem; font-weight:800; text-decoration:none; color:var(--ink)}
-.swipe-meta{color:var(--muted); font-size:.92rem; margin:2px 0 8px}
-.swipe-bio{margin:6px 0 10px}
-.swipe-actions{display:flex; justify-content:center; gap:14px; margin:6px 0 14px}
-.swipe-btn{width:64px; height:64px; border-radius:50%; border:none; cursor:pointer; font-size:1.7rem; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow:0 3px 12px rgba(0,0,0,.15)}
+.swipe-card{position:relative; background:#111; border-radius:20px; overflow:hidden; box-shadow:0 8px 28px rgba(0,0,0,.22); margin-bottom:14px}
+.swipe-photo{width:100%; height:520px; object-fit:cover; display:block}
+.swipe-photo-link{display:block; position:relative}
+.swipe-photo-link::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(0,0,0,.18) 0%, transparent 22%, transparent 55%, rgba(0,0,0,.82) 100%)}
+.online-badge{position:absolute; top:12px; left:12px; z-index:2; background:rgba(0,0,0,.55); backdrop-filter:blur(4px); color:#fff; font-size:.78rem; font-weight:700; padding:6px 11px; border-radius:999px; display:inline-flex; align-items:center; gap:6px}
+.online-dot{width:8px; height:8px; border-radius:50%; background:#22c55e; display:inline-block; box-shadow:0 0 0 2px rgba(34,197,94,.35)}
+.match-badge{position:absolute; top:12px; right:12px; z-index:2; background:var(--pink); color:#fff; font-size:.8rem; font-weight:800; padding:6px 11px; border-radius:999px; box-shadow:0 2px 10px rgba(255,46,99,.5)}
+.swipe-info{position:absolute; left:0; right:0; bottom:0; z-index:2; padding:16px 16px 14px; color:#fff}
+.swipe-name{font-size:1.4rem; font-weight:800; text-decoration:none; color:#fff; display:inline-flex; align-items:center; gap:6px; text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.swipe-meta{color:#f1e3e8; font-size:.92rem; margin:2px 0 8px; display:flex; align-items:center; gap:5px}
+.swipe-meta .ico{width:15px; height:15px}
+.swipe-bio{margin:6px 0 10px; color:#f7eef1}
+.swipe-info .chips .chip{background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.35); color:#fff; backdrop-filter:blur(4px)}
+.verified-badge{width:19px; height:19px; border-radius:50%; background:#2196F3; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto}
+.verified-badge .ico{width:12px; height:12px; stroke-width:3}
+.swipe-info-btn{width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.92); color:#111; border:none; display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow:0 2px 10px rgba(0,0,0,.35); flex:0 0 auto; margin-top:2px}
+.swipe-info-btn .ico{width:18px; height:18px}
+.swipe-actions{display:flex; justify-content:center; align-items:center; gap:14px; margin:6px 0 14px}
+.swipe-btn{width:62px; height:62px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; background:#fff; box-shadow:0 4px 14px rgba(0,0,0,.16)}
+.swipe-btn .ico{width:28px; height:28px}
 .swipe-btn.pass{color:var(--red)}
-.swipe-btn.like{color:var(--pink); width:76px; height:76px; font-size:2rem}
+.swipe-btn.like{color:var(--pink); width:78px; height:78px; box-shadow:0 6px 22px rgba(255,46,99,.45)}
+.swipe-btn.like .ico{width:36px; height:36px}
 .swipe-btn.super{color:#2196F3}
-.swipe-btn.rewind{color:var(--amber); font-size:1.5rem}
-/* Match screen (dark, like the mockup) */
-.match-screen{background:#111; color:#fff; border-radius:20px; text-align:center; padding:28px 18px; margin:14px 0}
-.match-hearts{letter-spacing:8px; opacity:.9}
+.swipe-btn.rewind{color:var(--amber)}
+.swipe-btn.rewind .ico{width:24px; height:24px}
+/* Match screen (dark, like the mockup): pink radial glow, floating hearts */
+.match-screen{background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(255,46,99,.45), transparent 70%), #111; color:#fff; border-radius:20px; text-align:center; padding:28px 18px; margin:14px 0; overflow:hidden}
+.match-hearts{display:flex; justify-content:center; gap:12px; color:var(--pink); margin-bottom:4px}
+.match-hearts .ico{width:15px; height:15px; fill:currentColor; opacity:.85; animation:floaty 3s ease-in-out infinite}
+.match-hearts .ico:nth-child(2){width:20px; height:20px}
 .match-photos{position:relative; display:flex; justify-content:center; gap:0; margin:22px 0}
-.match-photo{width:130px; height:130px; border-radius:50%; object-fit:cover; border:4px solid var(--pink)}
+.match-photo{width:130px; height:130px; border-radius:50%; object-fit:cover; border:4px solid var(--pink); box-shadow:0 0 0 4px rgba(255,46,99,.25), 0 8px 24px rgba(0,0,0,.5)}
 .match-photo:first-child{margin-right:-18px}
-.match-photo.ph{background:#333; display:flex; align-items:center; justify-content:center; font-size:3rem}
-.match-heart{position:absolute; left:50%; bottom:-14px; transform:translateX(-50%); width:52px; height:52px; border-radius:50%; background:var(--pink); display:flex; align-items:center; justify-content:center; font-size:1.5rem; border:3px solid #111}
+.match-photo.ph{background:#2a2a2a; display:flex; align-items:center; justify-content:center; color:#888}
+.match-photo.ph .ico{width:52px; height:52px}
+.match-heart{position:absolute; left:50%; bottom:-14px; transform:translateX(-50%); width:52px; height:52px; border-radius:50%; background:linear-gradient(135deg,#FF2E63,#E01E52); display:flex; align-items:center; justify-content:center; color:#fff; border:3px solid #111; box-shadow:0 4px 16px rgba(255,46,99,.6)}
+.match-heart .ico{width:26px; height:26px}
 .match-title{font-size:2rem; margin:26px 0 4px}
 .match-sub{color:#f3d9e0; margin:0 0 20px}
 .match-screen .btn-outline{border-color:#fff; color:#fff; background:transparent}
@@ -136,7 +173,7 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .explore-card{position:relative; border-radius:16px; overflow:hidden; background:#fff; text-decoration:none; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.08); display:block}
 .explore-card img{width:100%; height:220px; object-fit:cover; display:block}
 .explore-ph{height:220px; display:flex; align-items:center; justify-content:center; font-size:3rem; background:var(--pink-soft)}
-.explore-info{position:absolute; left:0; right:0; bottom:0; padding:26px 10px 8px; background:linear-gradient(transparent, rgba(0,0,0,.75)); color:#fff}
+.explore-info{position:absolute; left:0; right:0; bottom:0; padding:26px 46px 8px 10px; background:linear-gradient(transparent, rgba(0,0,0,.75)); color:#fff}
 .explore-info b{display:block; font-size:1rem}
 .explore-info span{font-size:.8rem; opacity:.9}
 .explore-score{float:right; background:var(--pink); border-radius:999px; padding:2px 8px; font-weight:800}
@@ -232,4 +269,67 @@ table.data th{background:#fdf0f3; font-size:.78rem; text-transform:uppercase; le
 @media (max-width:380px){
   .logo{font-size:1.05rem}
   .swipe-photo{height:380px}
+}
+
+/* ---- v2: mockup-close polish ---- */
+/* Explore grid: heart button on each card, gradient labels (mockup) */
+.explore-info span{font-size:.8rem; opacity:.9}
+.explore-like{position:absolute; right:8px; bottom:8px; z-index:2; width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.92); color:var(--pink); border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.explore-like .ico{width:18px; height:18px}
+.explore-card .online-dot{position:absolute; top:8px; right:8px; width:11px; height:11px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 6px rgba(0,0,0,.5)}
+/* Section headers with a pink icon chip */
+.section-head{display:flex; align-items:center; gap:10px; margin:18px 0 10px}
+.section-head .icon-chip{width:34px; height:34px; border-radius:10px; background:var(--pink-soft); color:var(--pink); display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+.section-head .icon-chip .ico{width:19px; height:19px}
+.section-title{font-size:1.05rem; margin:0; font-weight:800}
+.section h2 .ico{width:19px; height:19px; vertical-align:-4px; margin-right:6px; color:var(--pink)}
+/* Avatar placeholders use an SVG user icon, never an emoji */
+.avatar-ph .ico{width:34px; height:34px}
+.avatar-lg.avatar-ph .ico{width:36px; height:36px}
+.avatar-sm.avatar-ph .ico{width:20px; height:20px}
+.co-avatar .ico{width:26px; height:26px}
+.drawer-avatar .ico{width:24px; height:24px}
+/* Chat: round pink send button (mockup), icon buttons */
+.chatbar .icon-btn{width:50px; height:50px; border-radius:50%; border:none; background:var(--pink); color:#fff; box-shadow:0 4px 14px rgba(255,46,99,.45)}
+.chatbar .icon-btn.ghost{background:#fff; border:1.5px solid var(--line); color:var(--muted); box-shadow:none}
+.chatbar input{border-radius:999px}
+.bubble.mine{background:#2f7df6; border-color:#2f7df6}
+/* Settings list, mockup style: icon + label + chevron rows */
+.settings-list{background:#fff; border-radius:16px; overflow:hidden; margin-bottom:12px}
+.settings-list a, .settings-list .row-item{display:flex; align-items:center; gap:12px; padding:15px 16px; text-decoration:none; color:var(--ink); font-weight:600; border-bottom:1px solid var(--line)}
+.settings-list a:last-child, .settings-list .row-item:last-child{border-bottom:none}
+.settings-list .row-ico{width:34px; height:34px; border-radius:10px; background:var(--pink-soft); color:var(--pink); display:flex; align-items:center; justify-content:center; flex:0 0 auto}
+.settings-list .row-ico .ico{width:18px; height:18px}
+.settings-list .row-ico.red{background:#fdecec; color:var(--red)}
+.settings-list .chev{margin-left:auto; color:var(--muted)}
+.settings-list .chev .ico{width:18px; height:18px}
+.settings-list .count-badge{margin-left:auto; min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:var(--red); color:#fff; font-size:.72rem; font-weight:800; display:flex; align-items:center; justify-content:center}
+.btn-logout{background:#fdecec; color:var(--red); border:none; padding:14px; border-radius:14px; width:100%; font-weight:800; font-size:1rem; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; text-decoration:none}
+.btn-logout .ico{width:19px; height:19px}
+/* Onboarding steps progress */
+.steps{display:flex; gap:6px; margin:14px 0 4px}
+.steps span{flex:1; height:5px; border-radius:99px; background:var(--line)}
+.steps span.done{background:var(--pink)}
+/* Upload zone with camera icon */
+.upload-zone .ico{width:30px; height:30px; color:var(--pink); display:block; margin:0 auto 8px}
+/* Copy rows (payment numbers) with icons */
+.copy-row .ico{width:19px; height:19px; color:var(--pink); flex:0 0 auto}
+/* Pills with icons */
+.pill{display:inline-flex; align-items:center; gap:5px}
+.pill .ico{width:13px; height:13px}
+/* Verified check next to names everywhere */
+.verified-badge{width:19px; height:19px; border-radius:50%; background:#2196F3; color:#fff; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto}
+.verified-badge .ico{width:12px; height:12px; stroke-width:3}
+/* Back links with chevron */
+.chat-back{display:inline-flex; align-items:center; gap:4px; margin-top:12px; color:var(--pink); font-weight:700; text-decoration:none; font-size:.9rem}
+.chat-back .ico{width:16px; height:16px}
+/* Empty states */
+.empty .ico{width:44px; height:44px; color:var(--pink); opacity:.7; display:block; margin:0 auto 10px}
+/* Google button: round G mark, no letter */
+.btn-google .g-logo{display:none}
+.btn-google .brand-ico{width:22px; height:22px}
+/* Swipe info on profile-public uses the same overlay card; keep bio readable */
+.swipe-card .swipe-info{padding-bottom:16px}
+@media (max-width:520px){
+  .swipe-photo{height:460px}
 }

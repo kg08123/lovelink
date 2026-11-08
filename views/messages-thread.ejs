@@ -1,6 +1,6 @@
-<a class="chat-back" href="/messages">← <%= t('messages') %></a>
+<a class="chat-back" href="/messages"><%- icon('chevronLeft') %> <%= t('messages') %></a>
 <h1 class="page-title"><%= conv.other_name %></h1>
-<p class="sub">💖 <%= t('itsAMatch') %> — <a href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
+<p class="sub"><span style="color:var(--pink)"><%- icon('heart', true) %></span> <%= t('itsAMatch') %> — <a href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
 <div class="chat" id="chat">
   <% messages.forEach(function(m){ %>
     <div class="bubble <%= m.sender_user_id===user.id?'mine':'theirs' %>">
@@ -12,14 +12,14 @@
 </div>
 <div id="imgPrev" class="img-prev" hidden>
   <img id="imgPrevImg" alt="">
-  <button type="button" id="imgRm" class="img-prev-x" aria-label="<%= t('removeImage') %>">✕</button>
+  <button type="button" id="imgRm" class="img-prev-x" aria-label="<%= t('removeImage') %>"><%- icon('x') %></button>
 </div>
 <div id="imgErr" class="img-prev-err" hidden></div>
 <form id="sendform" method="post" action="/messages/<%= conv.id %>" class="chatbar" enctype="multipart/form-data">
-  <button type="button" class="icon-btn" id="imgBtn" aria-label="<%= t('chooseImage') %>">🖼️</button>
+  <button type="button" class="icon-btn ghost" id="imgBtn" aria-label="<%= t('chooseImage') %>"><%- icon('image') %></button>
   <input type="file" id="imgInput" name="image" accept="image/*" hidden>
   <input type="text" name="body" placeholder="<%= t('typeMessage') %>" autocomplete="off" maxlength="2000">
-  <button class="icon-btn" type="submit" aria-label="<%= t('send') %>">➤</button>
+  <button class="icon-btn" type="submit" aria-label="<%= t('send') %>"><%- icon('send') %></button>
 </form>
 <script>
 (function(){

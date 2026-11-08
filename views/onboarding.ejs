@@ -1,33 +1,37 @@
 <h1 class="page-title"><%= profile ? t('editProfile') : t('onboardingTitle') %></h1>
 <p class="sub">Answer honestly — your answers pick your best matches. Your exact location is never shown to others, only the distance.</p>
-<form method="post" action="/onboarding" enctype="multipart/form-data">
+<% if (!profile) { %>
+<div class="steps" aria-hidden="true"><span class="done"></span><span class="done"></span><span></span><span></span></div>
+<p class="sub" style="font-size:.82rem">Step 1 of 1 — a few questions, then you meet your matches. Photos are shrunk automatically, so any phone photo works.</p>
+<% } %>
+<form method="post" action="/onboarding" enctype="multipart/form-data" id="onbForm">
   <div class="section">
-    <h2>📸 <%= t('profile') %></h2>
+    <h2><%- icon('camera') %> <%= t('profile') %></h2>
     <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt="" style="width:120px;height:150px;border-radius:16px;object-fit:cover"><% } %>
     <div class="field"><label>Main photo * <%= profile ? '(leave empty to keep current)' : '' %></label>
       <input type="file" name="photo1" accept="image/*" <%= profile ? '' : 'required' %>>
-      <div class="hint">Max 3MB. A clear photo of you, face visible.</div>
+      <div class="hint">Any phone photo works — it is shrunk automatically before saving. A clear photo of you, face visible.</div>
     </div>
     <div class="field"><label>Photo 2 (optional)</label><input type="file" name="photo2" accept="image/*"></div>
     <div class="field"><label>Photo 3 (optional)</label><input type="file" name="photo3" accept="image/*"></div>
     <div class="field"><label><%= t('aboutMe') %></label>
-      <textarea name="bio" maxlength="500" placeholder="Dream big, work hard, and enjoy life ❤️"><%= (profile && profile.bio) || form.bio || '' %></textarea>
+      <textarea name="bio" maxlength="500" placeholder="Dream big, work hard, and enjoy life"><%= (profile && profile.bio) || form.bio || '' %></textarea>
     </div>
   </div>
 
   <div class="section">
-    <h2>📍 <%= t('useMyLocation') %></h2>
+    <h2><%- icon('pin') %> <%= t('useMyLocation') %></h2>
     <div class="field"><label>City *</label>
       <input type="text" name="city" id="cityInput" required value="<%= (profile && profile.city) || form.city || '' %>" placeholder="Addis Ababa">
     </div>
     <input type="hidden" name="latitude" id="latInput" value="<%= (profile && profile.latitude) || form.latitude || '' %>">
     <input type="hidden" name="longitude" id="lngInput" value="<%= (profile && profile.longitude) || form.longitude || '' %>">
-    <button type="button" class="btn btn-outline btn-block" id="locBtn">📍 <%= t('useMyLocation') %></button>
+    <button type="button" class="btn btn-outline btn-block" id="locBtn"><%- icon('pin') %> <%= t('useMyLocation') %></button>
     <div class="hint" id="locStatus">We store your city + coordinates so matches are sorted by real distance. Only the distance (e.g. “2 km away”) is shown — never your exact spot.</div>
   </div>
 
   <div class="section">
-    <h2>🙋 About you</h2>
+    <h2><%- icon('user') %> About you</h2>
     <div class="field"><label>Height (cm)</label><input type="number" name="height_cm" min="120" max="230" value="<%= (profile && profile.height_cm) || form.height_cm || '' %>"></div>
     <div class="field"><label>Religion</label>
       <select name="religion">
@@ -74,7 +78,7 @@
   </div>
 
   <div class="section">
-    <h2>💖 What are you looking for?</h2>
+    <h2><%- icon('heart') %> What are you looking for?</h2>
     <div class="field"><label>Looking for</label>
       <select name="looking_for_gender">
         <option value="any" <%= (profile && profile.looking_for_gender==='any')?'selected':'' %>>Anyone</option>
@@ -108,20 +112,19 @@
     <div class="field"><label>Languages</label><input type="text" name="languages" value="<%= (profile && profile.languages) || form.languages || 'Amharic, English' %>"></div>
   </div>
 
-  <button class="btn btn-pink btn-block" type="submit"><%= t('save') %></button>
+  <button class="btn btn-pink btn-block" type="submit" id="saveBtn"><%= t('save') %></button>
+  <p class="hint" id="saveHint" style="text-align:center"></p>
 </form>
 <script>
 (function(){
   var btn=document.getElementById('locBtn'), st=document.getElementById('locStatus');
-  if(!btn) return;
-  btn.addEventListener('click', function(){
+  if(btn) btn.addEventListener('click', function(){
     if(!navigator.geolocation){ st.textContent='<%= t('locationFailed') %>'; return; }
     st.textContent='<%= t('locating') %>';
     navigator.geolocation.getCurrentPosition(function(pos){
       document.getElementById('latInput').value=pos.coords.latitude;
       document.getElementById('lngInput').value=pos.coords.longitude;
       st.textContent='<%= t('locationSaved') %>';
-      // Reverse-geocode the city name (best effort; manual city still works)
       fetch('https://nominatim.openstreetmap.org/reverse?format=json&lat='+pos.coords.latitude+'&lon='+pos.coords.longitude)
         .then(function(r){ return r.json(); })
         .then(function(d){
@@ -131,6 +134,46 @@
         })
         .catch(function(){});
     }, function(){ st.textContent='<%= t('locationFailed') %>'; }, {timeout:10000});
+  });
+  // Shrink photos in the browser before upload: a 10MB phone photo becomes
+  // ~100KB, so saving is fast even on slow data. The server shrinks again
+  // as a safety net. If shrinking fails, the original file is sent as-is.
+  var form=document.getElementById('onbForm'), saveBtn=document.getElementById('saveBtn'),
+      hint=document.getElementById('saveHint');
+  function shrink(file){
+    return new Promise(function(resolve){
+      if(!file || file.type.indexOf('image/')!==0 || file.size < 300*1024) return resolve(file);
+      var img=new Image();
+      img.onload=function(){
+        var max=800, w=img.width, h=img.height;
+        if(w>max || h>max){ var s=Math.min(max/w, max/h); w=Math.round(w*s); h=Math.round(h*s); }
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        c.toBlob(function(b){ resolve(b ? new File([b], file.name.replace(/\.[^.]+$/,'')+'.jpg', {type:'image/jpeg'}) : file); }, 'image/jpeg', 0.82);
+      };
+      img.onerror=function(){ resolve(file); };
+      img.src=URL.createObjectURL(file);
+    });
+  }
+  if(form) form.addEventListener('submit', function(e){
+    var inputs=form.querySelectorAll('input[type=file]');
+    var hasBig=false;
+    inputs.forEach(function(i){ if(i.files[0] && i.files[0].size > 300*1024) hasBig=true; });
+    if(!hasBig || form.dataset.shrunk) return;
+    e.preventDefault();
+    saveBtn.disabled=true; saveBtn.textContent='Shrinking photos…';
+    hint.textContent='Making your photos small so they save fast…';
+    var jobs=[];
+    inputs.forEach(function(inp){
+      if(inp.files[0]) jobs.push(shrink(inp.files[0]).then(function(f){
+        var dt=new DataTransfer(); dt.items.add(f); inp.files=dt.files;
+      }));
+    });
+    Promise.all(jobs).then(function(){
+      form.dataset.shrunk='1';
+      saveBtn.textContent='Saving…';
+      form.submit();
+    }).catch(function(){ form.dataset.shrunk='1'; form.submit(); });
   });
 })();
 </script>

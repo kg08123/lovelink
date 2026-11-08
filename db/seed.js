@@ -32,7 +32,7 @@ async function main(opts = {}) {
      'Video editor & motion graphics. Coffee first, then the world.', 'serious', 'female', 20, 30,
      178, 'Orthodox', 'University', 'Video Editor', 'never', 'sometimes', 'none', 'travel,music,fitness,movies', 'demo-abel.jpg'],
     ['Selam Tesfaye', '0922000222', 'female', 24, 'Addis Ababa', 9.0100, 38.7700,
-     'Dream big, work hard, and enjoy life ❤️', 'serious', 'male', 22, 32,
+     'Dream big, work hard, and enjoy life', 'serious', 'male', 22, 32,
      165, 'Orthodox', 'University', 'Nurse', 'never', 'never', 'want', 'travel,music,fitness,movies', 'demo-selam.jpg'],
     ['Sara Mekonnen', '0922000333', 'female', 25, 'Addis Ababa', 9.0200, 38.7500,
      'Love music, movies and good food. Looking for someone real.', 'serious', 'male', 22, 32,

@@ -1,11 +1,10 @@
-<% var navActive='discover'; %>
 <h1 class="page-title"><%= t('explore') %></h1>
 <div class="tabs">
   <a href="/explore?tab=nearby" class="<%= f.tab==='nearby'?'on':'' %>"><%= t('nearby') %></a>
   <a href="/explore?tab=online" class="<%= f.tab==='online'?'on':'' %>"><%= t('online') %></a>
   <a href="/explore?tab=new" class="<%= f.tab==='new'?'on':'' %>"><%= t('new') %></a>
 </div>
-<button class="btn btn-outline btn-block" type="button" onclick="document.getElementById('fp').hidden=!document.getElementById('fp').hidden">Filters</button>
+<button class="btn btn-outline btn-block" type="button" onclick="document.getElementById('fp').hidden=!document.getElementById('fp').hidden"><%- icon('filter') %> Filters</button>
 <form id="fp" class="filter-panel" method="get" action="/explore" <%= (f.ageMin||f.ageMax||f.maxKm)?'':'hidden' %>>
   <input type="hidden" name="tab" value="<%= f.tab %>">
   <div class="frow-2">
@@ -16,22 +15,23 @@
   <button class="btn btn-pink btn-block" type="submit">Apply filters</button>
 </form>
 <p class="count"><%= total %> <%= total===1?'person':'people' %> found</p>
-<% if (!items.length) { %><div class="empty">No one matches these filters yet.</div><% } %>
+<% if (!items.length) { %><div class="empty"><%- icon('search') %>No one matches these filters yet.</div><% } %>
 <div class="explore-grid">
   <% items.forEach(function(it){ %>
   <a class="explore-card" href="/u/<%= it.id %>">
-    <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph">👤</div><% } %>
+    <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
     <div class="explore-info">
       <b><%= it.name %></b>
       <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
       <span class="explore-score"><%= it.score %>% match</span>
     </div>
-    <% if (it.online) { %><span class="online-dot" title="Online">●</span><% } %>
+    <% if (it.online) { %><span class="online-dot" title="Online"></span><% } %>
+    <span class="explore-like"><%- icon('heart', true) %></span>
   </a>
   <% }) %>
 </div>
 <div class="pager">
-  <% if (page > 1) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page-1}) %>">← Prev</a><% } %>
+  <% if (page > 1) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page-1}) %>"><%- icon('chevronLeft') %> Prev</a><% } %>
   <span class="pager-info">Page <%= page %> / <%= totalPages %></span>
-  <% if (page < totalPages) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page+1}) %>">Next →</a><% } %>
+  <% if (page < totalPages) { %><a class="btn btn-outline btn-sm" href="/explore?<%= qs({page: page+1}) %>">Next <%- icon('chevronRight') %></a><% } %>
 </div>

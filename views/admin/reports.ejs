@@ -1,14 +1,14 @@
 <h1 class="page-title"><%= t('reportsQueue') %></h1>
-<% if (!reports.length) { %><div class="empty">No pending reports. 🎉</div><% } %>
+<% if (!reports.length) { %><div class="empty"><%- icon('checkCircle') %>No pending reports.</div><% } %>
 <% reports.forEach(function(r){ %>
 <div class="section">
   <p><b><%= r.reported_name %></b> (<%= r.reported_phone %>) reported by <b><%= r.reporter_name %></b></p>
   <p>“<%= r.reason %>”</p>
   <p class="sub"><%= new Date(r.created_at).toLocaleString() %></p>
   <div class="row-actions">
-    <form method="post" action="/admin/reports/<%= r.id %>/ban"><button class="btn btn-red" type="submit">🚫 <%= t('ban') %> <%= r.reported_name %></button></form>
+    <form method="post" action="/admin/reports/<%= r.id %>/ban"><button class="btn btn-red" type="submit"><%- icon('ban') %> <%= t('ban') %> <%= r.reported_name %></button></form>
     <form method="post" action="/admin/reports/<%= r.id %>/dismiss"><button class="btn btn-outline" type="submit"><%= t('dismiss') %></button></form>
-    <a class="btn btn-outline btn-sm" href="/admin/users/<%= r.reported_id %>">View user →</a>
+    <a class="btn btn-outline btn-sm" href="/admin/users/<%= r.reported_id %>">View user <%- icon('chevronRight') %></a>
   </div>
 </div>
 <% }) %>

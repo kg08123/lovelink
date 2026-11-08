@@ -1,9 +1,8 @@
-<% var navActive='profile'; %>
 <div class="profile-head">
-  <% if (p.photo1) { %><img class="avatar-lg" src="<%= p.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph">👤</div><% } %>
+  <% if (p.photo1) { %><img class="avatar-lg" src="<%= p.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
   <div>
     <h1 class="page-title" style="margin:0"><%= me.name %>, <%= me.age %></h1>
-    <p class="sub">📍 <%= p.city || '' %><%= p.country ? ', '+p.country : '' %> · <%= me.is_premium ? '💖 Premium' : matchCount + ' / ' + FREE_MATCHES + ' free matches used' %></p>
+    <p class="sub"><%- icon('pin') %> <%= p.city || '' %><%= p.country ? ', '+p.country : '' %> · <%= me.is_premium ? 'Premium' : matchCount + ' / ' + FREE_MATCHES + ' free matches used' %></p>
     <a class="btn btn-outline btn-sm" href="/profile/edit"><%= t('editProfile') %></a>
   </div>
 </div>

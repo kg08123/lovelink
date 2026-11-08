@@ -12,7 +12,7 @@ const PREMIUM_FEE = Number(process.env.PREMIUM_FEE_ETB || 99);
 
 const receiptUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only images allowed'));
@@ -62,7 +62,8 @@ router.post('/', requireAuth, (req, res, next) => {
       req.session.flash = { type: 'err', msg: t('receiptRequired') };
       return res.redirect('/premium');
     }
-    const receiptData = 'data:' + req.file.mimetype + ';base64,' + req.file.buffer.toString('base64');
+    const { processPhoto } = require('../lib/photos');
+    const receiptData = await processPhoto(req.file.buffer, req.file.mimetype, { maxWidth: 1080, quality: 85 });
     await db.query(
       "INSERT INTO payments(user_id,receipt_data,amount_etb,status,type) VALUES($1,$2,$3,'pending','premium')",
       [req.user.id, receiptData, PREMIUM_FEE]);

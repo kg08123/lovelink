@@ -1,12 +1,20 @@
-<h1 class="page-title"><%= t('settings') %></h1>
+<h1 class="page-title" style="text-align:center"><%= t('settings') %></h1>
 <div class="section">
   <div class="profile-head">
-    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph">👤</div><% } %>
+    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
     <div>
       <b><%= user.name %></b><br>
-      <a href="/profile"><%= t('viewProfile') %> →</a>
+      <a href="/profile"><%= t('viewProfile') %> <%- icon('chevronRight') %></a>
     </div>
   </div>
+</div>
+<div class="settings-list">
+  <a href="/profile/edit"><span class="row-ico"><%- icon('user') %></span> Account Settings <span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/messages"><span class="row-ico"><%- icon('bell') %></span> Notifications <% if (unreadCount > 0) { %><span class="count-badge"><%= unreadCount > 9 ? '9+' : unreadCount %></span><% } else { %><span class="chev"><%- icon('chevronRight') %></span><% } %></a>
+  <a href="/settings"><span class="row-ico"><%- icon('shield') %></span> Privacy &amp; Security <span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/settings"><span class="row-ico"><%- icon('settings') %></span> App Preferences <span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/about"><span class="row-ico"><%- icon('help') %></span> Help &amp; Support <span class="chev"><%- icon('chevronRight') %></span></a>
+  <a href="/about"><span class="row-ico"><%- icon('info') %></span> About LoveLink <span class="chev"><%- icon('chevronRight') %></span></a>
 </div>
 <div class="section">
   <h2><%= t('changePassword') %></h2>
@@ -23,4 +31,4 @@
   <p><a href="/about"><%= t('aboutUs') %></a></p>
   <p><a href="/privacy"><%= t('privacyTitle') %></a></p>
 </div>
-<a class="btn btn-outline btn-block" href="/signout" style="color:var(--red)">↪ <%= t('logOut') %></a>
+<a class="btn-logout" href="/signout"><%- icon('logout') %> <%= t('logOut') %></a>

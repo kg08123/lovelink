@@ -13,7 +13,11 @@ const FREE_MATCHES = 3;
 
 const photoUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  // 20MB cap: phone photos are routinely 3-12MB. They are shrunk with Sharp
+  // before storing (see below), so the cap is only a safety net — the old
+  // 3MB cap rejected normal phone photos and bounced users back with their
+  // answers lost, which looked like "data not going to database".
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only images allowed'));
@@ -70,7 +74,14 @@ async function getCandidates(me, meProfile, opts = {}) {
     'SELECT blocked_id FROM blocks WHERE blocker_id=$1 UNION SELECT blocker_id FROM blocks WHERE blocked_id=$1',
     [me.id]);
   const blockedIds = blocked.rows.map((x) => x.blocked_id);
-  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium, p.*
+  // Slim columns only: v1 selected p.* for up to 200 candidates, which pulled
+  // all three base64 photos per person into the Discover page (megabytes).
+  // Only photo1 is ever shown on a card; photo2/3 load on the profile page.
+  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium,
+             p.user_id, p.bio, p.city, p.country, p.latitude, p.longitude,
+             p.height_cm, p.religion, p.education, p.job, p.smoking, p.drinking, p.kids,
+             p.looking_for_gender, p.age_min, p.age_max, p.relationship_goal, p.interests,
+             p.languages, p.photo1, p.online, p.last_active, p.created_at
              FROM users u JOIN profiles p ON p.user_id = u.id
              WHERE u.role='user' AND u.id <> $1 AND u.is_banned = FALSE`;
   const params = [me.id];
@@ -90,7 +101,7 @@ async function getCandidates(me, meProfile, opts = {}) {
   if (opts.ageMin) { sql += ` AND u.age >= $${i++}`; params.push(Number(opts.ageMin)); }
   if (opts.ageMax) { sql += ` AND u.age <= $${i++}`; params.push(Number(opts.ageMax)); }
   if (opts.onlineOnly) { sql += ` AND p.online = TRUE`; }
-  sql += ' ORDER BY p.last_active DESC LIMIT 200';
+  sql += ' ORDER BY p.last_active DESC LIMIT 40';
   const r = await db.query(sql, params);
   const out = [];
   for (const c of r.rows) {
@@ -136,7 +147,16 @@ router.get('/onboarding', requireAuth, async (req, res) => {
 router.post('/onboarding', requireAuth, (req, res, next) => {
   photosUpload(req, res, (err) => {
     if (err) {
-      req.session.flash = { type: 'err', msg: err.message };
+      // Keep the typed answers so the user does NOT lose everything they
+      // typed (v1 dropped them here — that is what "data not going to
+      // database" felt like). Multer only parses files, not fields, on
+      // error — so there is nothing to keep; the message says so plainly.
+      req.session.flash = {
+        type: 'err',
+        msg: err.code === 'LIMIT_FILE_SIZE'
+          ? 'That photo is too big (over 20MB). Please pick a smaller photo — photos are shrunk automatically before saving.'
+          : err.message,
+      };
       return res.redirect('/onboarding');
     }
     next();
@@ -145,6 +165,7 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
   try {
     const t = res.locals.t;
     const b = req.body;
+    const { processPhoto } = require('../lib/photos');
     const interests = Array.isArray(b.interests) ? b.interests.join(',') : (b.interests || '');
     const lat = b.latitude ? parseFloat(b.latitude) : null;
     const lng = b.longitude ? parseFloat(b.longitude) : null;
@@ -173,13 +194,23 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
       req.session.onboardAttempt = b;
       return res.redirect('/onboarding');
     }
-    const photo = (field) => {
+    // Shrink photos before storing: a 10MB phone photo becomes ~60-150KB.
+    // Without this the INSERT carried megabytes of base64 and Discover pages
+    // did too. On failure, show the real reason instead of a silent bounce.
+    const photo = async (field) => {
       const f = req.files && req.files[field] && req.files[field][0];
-      return f ? 'data:' + f.mimetype + ';base64,' + f.buffer.toString('base64') : null;
+      if (!f) return null;
+      return processPhoto(f.buffer, f.mimetype);
     };
-    vals.photo1 = photo('photo1');
-    vals.photo2 = photo('photo2');
-    vals.photo3 = photo('photo3');
+    try {
+      vals.photo1 = await photo('photo1');
+      vals.photo2 = await photo('photo2');
+      vals.photo3 = await photo('photo3');
+    } catch (e) {
+      req.session.flash = { type: 'err', msg: e.message };
+      req.session.onboardAttempt = b;
+      return res.redirect('/onboarding');
+    }
     if (!vals.photo1 && !req.profile) {
       req.session.flash = { type: 'err', msg: t('fillAll') };
       req.session.onboardAttempt = b;
@@ -214,7 +245,9 @@ router.get('/profile', requireAuth, requireOnboarded, async (req, res, next) => 
   } catch (e) { next(e); }
 });
 
-router.get('/profile/edit', requireAuth, requireOnboarded, (req, res) => {
+router.get('/profile/edit', requireAuth, (req, res) => {
+  // Same questionnaire as onboarding; reachable with or without a profile
+  // (the global gate allows it), so a new user is never stuck in a loop.
   res.render('onboarding', { title: res.locals.t('editProfile'), profile: req.profile, form: {} });
 });
 

@@ -1,10 +1,9 @@
-<% var navActive='messages'; %>
 <h1 class="page-title"><%= t('messages') %></h1>
 <% if (notifs && notifs.length) { %>
-<div class="section-head"><h2 class="section-title">LoveLink</h2></div>
+<div class="section-head"><span class="icon-chip"><%- icon('heart', true) %></span><h2 class="section-title">LoveLink</h2></div>
 <% notifs.forEach(function(n){ %>
 <a class="chat-item" href="/messages/platform/<%= n.id %>">
-  <div class="co-avatar" style="background:var(--pink)">❤️</div>
+  <div class="co-avatar" style="background:var(--pink)"><%- icon('heart', true) %></div>
   <div class="grow">
     <div class="ci-top"><b><%= nt(n.title) %></b></div>
     <div class="ci-prev"><%= nt(n.body) %></div>
@@ -12,16 +11,16 @@
 </a>
 <% }) %>
 <% } %>
-<div class="section-head"><h2 class="section-title"><%= t('matches') %></h2></div>
+<div class="section-head"><span class="icon-chip"><%- icon('users') %></span><h2 class="section-title"><%= t('matches') %></h2></div>
 <% if (!convs.length) { %>
-  <div class="empty"><h2>No chats yet</h2><p>Match with someone first — then you can chat here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> →</a></div>
+  <div class="empty"><%- icon('comment') %><h2>No chats yet</h2><p>Match with someone first — then you can chat here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a></div>
 <% } %>
 <% convs.forEach(function(c){ %>
 <a class="chat-item <%= c.unread>0?'unread':'' %>" href="/messages/<%= c.id %>">
-  <% if (c.other_photo) { %><img class="avatar-sm" src="<%= c.other_photo %>" alt=""><% } else { %><div class="avatar-sm avatar-ph">👤</div><% } %>
+  <% if (c.other_photo) { %><img class="avatar-sm" src="<%= c.other_photo %>" alt=""><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
   <div class="grow">
     <div class="ci-top"><b><%= c.other_name %></b><% if (c.unread>0) { %><span class="badge"><%= c.unread %></span><% } %></div>
-    <div class="ci-prev"><%= c.hasImage ? '📷 Photo' : (c.lastBody || 'Say hello! 👋') %></div>
+    <div class="ci-prev"><%= c.hasImage ? 'Photo' : (c.lastBody || 'Say hello!') %></div>
   </div>
 </a>
 <% }) %>

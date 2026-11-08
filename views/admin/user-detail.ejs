@@ -1,8 +1,8 @@
-<a class="chat-back" href="/admin/users">← <%= t('allUsers') %></a>
+<a class="chat-back" href="/admin/users"><%- icon('chevronLeft') %> <%= t('allUsers') %></a>
 <h1 class="page-title"><%= user.name %></h1>
 <p class="sub"><%= user.role %> · <%= user.phone %> · <%= user.email || 'no email' %> · <%= user.age %> · <%= user.gender || '' %><%= user.is_demo ? ' · DEMO' : '' %></p>
 <table class="data kv">
-  <tr><th>Premium</th><td><%= user.is_premium ? 'Yes 💖' : 'No' %></td></tr>
+  <tr><th>Premium</th><td><%= user.is_premium ? 'Yes' : 'No' %></td></tr>
   <tr><th>Banned</th><td><%= user.is_banned ? 'Yes' : 'No' %></td></tr>
   <tr><th>Free matches used</th><td><%= user.free_matches_used %></td></tr>
   <tr><th>Matches</th><td><%= counts.matches %></td></tr>
@@ -13,7 +13,7 @@
 <% if (profile) { %>
 <div class="section"><h2>Profile</h2>
   <p><%= profile.bio || '' %></p>
-  <p>📍 <%= profile.city || '' %><%= (profile.latitude && profile.longitude) ? ' (' + profile.latitude + ', ' + profile.longitude + ')' : '' %></p>
+  <p><%- icon('pin') %> <%= profile.city || '' %><%= (profile.latitude && profile.longitude) ? ' (' + profile.latitude + ', ' + profile.longitude + ')' : '' %></p>
   <p><%= profile.height_cm || '—' %> cm · <%= profile.religion || '' %> · <%= profile.education || '' %> · <%= profile.job || '' %></p>
   <p>Goal: <%= profile.relationship_goal || '' %> · Looking for: <%= profile.looking_for_gender || '' %> <%= profile.age_min %>–<%= profile.age_max %></p>
   <p>Interests: <%= profile.interests || '' %></p>
@@ -28,7 +28,7 @@
 </div>
 <div class="row-actions">
   <% if (!user.is_premium) { %>
-  <form method="post" action="/admin/users/<%= user.id %>/premium"><button class="btn btn-amber" type="submit">💖 Grant Premium</button></form>
+  <form method="post" action="/admin/users/<%= user.id %>/premium"><button class="btn btn-amber" type="submit"><%- icon('star', true) %> Grant Premium</button></form>
   <% } %>
   <% if (!user.is_banned) { %>
   <form method="post" action="/admin/users/<%= user.id %>/ban"><button class="btn btn-red" type="submit"><%= t('ban') %></button></form>

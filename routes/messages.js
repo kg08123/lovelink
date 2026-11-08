@@ -8,7 +8,7 @@ const router = express.Router();
 
 const chatUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 3 * 1024 * 1024 },
+  limits: { fileSize: 10 * 1024 * 1024 }, // shrunk with Sharp before storing
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only images allowed'));
@@ -134,7 +134,8 @@ router.post('/:id', requireAuth, (req, res, next) => {
     const body = ((req.body && req.body.body) || '').trim().slice(0, 2000);
     let imageData = null;
     if (req.file && req.file.buffer) {
-      imageData = 'data:' + req.file.mimetype + ';base64,' + req.file.buffer.toString('base64');
+      const { processPhoto } = require('../lib/photos');
+      imageData = await processPhoto(req.file.buffer, req.file.mimetype);
     }
     if (!body && !imageData) return res.redirect('/messages/' + conv.id);
     const ins = await db.query(

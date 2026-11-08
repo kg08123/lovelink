@@ -40,5 +40,13 @@
     "url": "https://www.pexels.com/photo/smiling-handsome-model-17910791/",
     "src": "https://images.pexels.com/photos/17910791/pexels-photo-17910791.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
     "bytes": 25700
+  },
+  "hero": {
+    "id": 40455799,
+    "photographer": "Capture Point",
+    "url": "https://www.pexels.com/photo/silhouette-of-couple-40455799/",
+    "src": "https://images.pexels.com/photos/40455799/pexels-photo-40455799.jpeg",
+    "bytes": 28551,
+    "use": "landing hero background, couple silhouette at sunset"
   }
 }

@@ -6,7 +6,7 @@ const compression = require('compression');
 const path = require('path');
 const db = require('./db');
 const { t, nt, CITIES, cityName, INTERESTS } = require('./i18n');
-const { icon } = require('./lib/icons');
+const { icon, brand } = require('./lib/icons');
 const { googleEnabled, passport } = require('./lib/google');
 
 const app = express();
@@ -72,6 +72,18 @@ app.use((req, res, next) => {
   res.locals.googleEnabled = googleEnabled;
   res.locals.fmtETB = (n) => (n === null || n === undefined || n === '' ? '' : Number(n).toLocaleString('en-US') + ' ETB');
   res.locals.icon = icon;
+  res.locals.brand = brand;
+  // Bottom-nav active tab, derived from the URL (v1 set it with a `var` inside
+  // the body template, which never reached the layout — so nothing lit up).
+  res.locals.navActive = req.path.startsWith('/discover') || req.path.startsWith('/explore') || req.path.startsWith('/u/')
+    ? 'discover'
+    : req.path.startsWith('/matches') || req.path.startsWith('/match/')
+      ? 'matches'
+      : req.path.startsWith('/messages')
+        ? 'messages'
+        : req.path.startsWith('/profile') || req.path.startsWith('/settings') || req.path.startsWith('/premium')
+          ? 'profile'
+          : '';
   res.locals.CITIES = CITIES;
   res.locals.cityName = cityName;
   res.locals.INTERESTS = INTERESTS;
@@ -88,24 +100,45 @@ app.use((req, res, next) => {
   next();
 });
 
-// Attach logged-in user + profile to request + views
+// Attach logged-in user + profile to request + views.
+// One JOIN query instead of two, and the unread/notification counts are
+// skipped on landing/auth/onboarding pages where no badge is shown anyway.
+const BADGE_SKIP = ['/', '/onboarding', '/signup', '/signin', '/verify-email', '/forgot-password', '/reset-password', '/about', '/privacy', '/profile/edit'];
 app.use(async (req, res, next) => {
   req.user = null;
   req.profile = null;
   if (req.session.userId) {
     try {
-      const r = await db.query('SELECT * FROM users WHERE id=$1', [req.session.userId]);
+      const r = await db.query(
+        `SELECT u.*,
+                p.user_id AS p_user_id, p.bio AS p_bio, p.city AS p_city, p.country AS p_country,
+                p.latitude AS p_latitude, p.longitude AS p_longitude,
+                p.height_cm AS p_height_cm, p.religion AS p_religion, p.education AS p_education,
+                p.job AS p_job, p.smoking AS p_smoking, p.drinking AS p_drinking, p.kids AS p_kids,
+                p.looking_for_gender AS p_looking_for_gender, p.age_min AS p_age_min, p.age_max AS p_age_max,
+                p.relationship_goal AS p_relationship_goal, p.interests AS p_interests,
+                p.languages AS p_languages, p.photo1 AS p_photo1, p.photo2 AS p_photo2, p.photo3 AS p_photo3,
+                p.online AS p_online, p.last_active AS p_last_active, p.created_at AS p_created_at
+         FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id=$1`,
+        [req.session.userId]);
       if (r.rows.length) {
-        req.user = r.rows[0];
-        const p = await db.query('SELECT * FROM profiles WHERE user_id=$1', [req.user.id]);
-        req.profile = p.rows[0] || null;
+        const row = r.rows[0];
+        req.user = row;
+        if (row.p_user_id) {
+          req.profile = {};
+          for (const k of Object.keys(row)) {
+            if (k.startsWith('p_')) req.profile[k.slice(2)] = row[k];
+          }
+        }
       } else delete req.session.userId;
     } catch (e) { return next(e); }
   }
   res.locals.user = req.user;
   res.locals.profile = req.profile;
   res.locals.unreadCount = 0;
-  if (req.user) {
+  const skipBadges = BADGE_SKIP.some((p) => req.path === p || req.path.startsWith(p + '/'))
+    || req.path.startsWith('/auth/google');
+  if (req.user && !skipBadges) {
     try {
       const u = await db.query(
         `SELECT COUNT(*)::int AS n FROM messages m JOIN conversations c ON c.id=m.conversation_id
@@ -125,12 +158,32 @@ app.use(async (req, res, next) => {
   next();
 });
 
+// Questionnaire gate: a signed-in regular user with NO profile sees ONLY the
+// questionnaire. No Discover, Explore, home feed, messages, settings or
+// premium until the answers are saved.
+app.use((req, res, next) => {
+  if (req.user && req.user.role === 'user' && !req.profile) {
+    const p = req.path;
+    const allowed = p === '/onboarding' || p === '/profile/edit'
+      || p === '/signin' || p === '/signout' || p === '/signup' || p === '/signup/google'
+      || p.startsWith('/verify-email') || p.startsWith('/forgot-password')
+      || p.startsWith('/reset-password') || p.startsWith('/auth/google')
+      || p === '/about' || p === '/privacy';
+    if (!allowed) return res.redirect('/onboarding');
+  }
+  next();
+});
+
 // Flash messages (simple, session-based)
 app.use((req, res, next) => {
   res.locals.flash = req.session.flash || null;
   delete req.session.flash;
   next();
 });
+
+// Cheap health check for the keep-alive cron (no DB touch, so it stays fast
+// even when Neon is asleep).
+app.get('/health', (req, res) => res.json({ ok: true }));
 
 app.use('/messages', require('./routes/messages'));
 app.use('/premium', require('./routes/premium'));

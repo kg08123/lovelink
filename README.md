@@ -30,6 +30,27 @@ npm install
 USE_PGMEM=1 node server.js   # http://localhost:3000 (in-memory DB, fresh seed each start)
 ```
 
+## v2 (2026-11-08) — design + gate + speed fixes
+
+- **Design matches the mockup**: dark hero landing with a real Pexels couple-at-sunset
+  photo (`public/img/hero-couple.jpg`, Capture Point, Pexels 40455799), pink gradient
+  buttons, round Google/Apple/Facebook sign-in buttons with real brand SVGs, Discover
+  card with info overlaid on the photo, round rewind/pass/like/super-like buttons,
+  dark "It's a Match!" screen, blue/grey chat bubbles, mockup-style Settings list.
+- **No emoji anywhere in the UI** — every icon is an inline SVG from `lib/icons.js`
+  (`icon()` / `brand()`); verified by scanning all views/CSS/JS.
+- **Questionnaire gate**: a signed-in user with no profile is redirected to
+  `/onboarding` from every page (Discover, Explore, Matches, Messages, Settings,
+  Premium, home) and sees no nav to those pages until the answers are saved.
+- **Photos never block saving**: photos are shrunk in the browser (canvas, max 800px
+  JPEG) and again server-side with Sharp (max 720px, ~60-150KB) before storing, so a
+  10MB phone photo saves in under a second. Upload cap is 20MB; failures show a
+  clear message and keep the typed answers.
+- **Speed**: Discover/Explore fetch slim columns (photo1 only, 40 candidates max)
+  instead of all base64 photos; user+profile load in one JOIN query; unread-badge
+  queries are skipped on landing/auth/onboarding pages. `GET /health` is a
+  no-DB endpoint for the keep-alive cron (ping every 10 min so Neon/Render stay warm).
+
 Production: set `DATABASE_URL` (Neon Postgres) and deploy by pushing to GitHub
 (Render auto-deploys). Optional env: `SEED_DEMO=1`, `ADMIN_PASSWORD`,
 `PREMIUM_FEE_ETB`, `TELEBIRR_NUMBER`, `CBE_NUMBER`, `BREVO_API_KEY`
