@@ -8,6 +8,7 @@ const { requireAuth } = require('../middleware/auth');
 const { haversineKm, fmtDistance, splitList, matchScore } = require('../lib/match');
 const { notify } = require('../lib/notify');
 const { processDemoAutoMatches } = require('../lib/demo-auto');
+const { thumbFor, backfillProfileThumb } = require('../lib/thumbs');
 const router = express.Router();
 
 const FREE_MATCHES = 3;
@@ -82,7 +83,7 @@ async function getCandidates(me, meProfile, opts = {}) {
              p.user_id, p.bio, p.city, p.country, p.latitude, p.longitude,
              p.height_cm, p.religion, p.education, p.job, p.smoking, p.drinking, p.kids,
              p.looking_for_gender, p.age_min, p.age_max, p.relationship_goal, p.interests,
-             p.languages, p.photo1, p.online, p.last_active, p.created_at
+             p.languages, p.photo1, p.photo1_thumb, p.online, p.last_active, p.created_at
              FROM users u JOIN profiles p ON p.user_id = u.id
              WHERE u.role='user' AND u.id <> $1 AND u.is_banned = FALSE`;
   const params = [me.id];
@@ -112,6 +113,7 @@ async function getCandidates(me, meProfile, opts = {}) {
     if (opts.maxKm != null && (dist == null || dist > opts.maxKm)) continue;
     out.push({
       ...c,
+      thumb: thumbFor(c.photo1, c.photo1_thumb),
       distanceKm: dist,
       distanceText: fmtDistance(dist),
       score: matchScore(
@@ -128,6 +130,9 @@ async function getCandidates(me, meProfile, opts = {}) {
     if (dx !== dy) return dx - dy;
     return y.score - x.score;
   });
+  // Backfill missing thumbnails in the background (fire-and-forget): older
+  // profiles stored before thumbs existed serve the full photo this once.
+  for (const c of out) backfillProfileThumb(c.user_id, c.photo1, c.photo1_thumb);
   return out;
 }
 
@@ -179,7 +184,9 @@ async function sweepDemoAutoMatches(req) {
 }
 
 function photoOf(p) {
-  return p.photo1 || p.photo2 || p.photo3 || null;
+  if (!p) return null;
+  // Thumbnail first (130px circle on the match screen); full photo fallback.
+  return p.photo1_thumb || p.photo1 || p.photo2_thumb || p.photo2 || p.photo3_thumb || p.photo3 || null;
 }
 
 // ---- Onboarding questionnaire ----
@@ -245,15 +252,20 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
     // Shrink photos before storing: a 10MB phone photo becomes ~60-150KB.
     // Without this the INSERT carried megabytes of base64 and Discover pages
     // did too. On failure, show the real reason instead of a silent bounce.
-    const photo = async (field) => {
+    // A 360px thumbnail is stored alongside each photo and used in cards,
+    // grids and avatars so list pages don't re-download the full photo.
+    const { makeThumb } = require('../lib/photos');
+    const photoPair = async (field) => {
       const f = req.files && req.files[field] && req.files[field][0];
-      if (!f) return null;
-      return processPhoto(f.buffer, f.mimetype);
+      if (!f) return [null, null];
+      const full = await processPhoto(f.buffer, f.mimetype);
+      const thumb = (await makeThumb(f.buffer, f.mimetype)) || full;
+      return [full, thumb];
     };
     try {
-      vals.photo1 = await photo('photo1');
-      vals.photo2 = await photo('photo2');
-      vals.photo3 = await photo('photo3');
+      [vals.photo1, vals.photo1_thumb] = await photoPair('photo1');
+      [vals.photo2, vals.photo2_thumb] = await photoPair('photo2');
+      [vals.photo3, vals.photo3_thumb] = await photoPair('photo3');
     } catch (e) {
       req.session.flash = { type: 'err', msg: e.message };
       req.session.onboardAttempt = b;
@@ -271,9 +283,11 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
       await db.query(`INSERT INTO profiles(user_id,${cols.join(',')}) VALUES($1,${ph})`, [req.user.id, ...cols.map((c) => vals[c])]);
     } else {
       const sets = cols.map((c, idx) => `${c}=$${idx + 2}`).join(',');
-      // Keep an existing photo when no new file was uploaded
+      // Keep an existing photo (and its thumbnail) when no new file was uploaded
       const keep = {};
-      for (const c of ['photo1', 'photo2', 'photo3']) if (!vals[c]) keep[c] = true;
+      for (const c of ['photo1', 'photo2', 'photo3']) {
+        if (!vals[c]) { keep[c] = true; keep[c + '_thumb'] = true; }
+      }
       const setCols = cols.filter((c) => !keep[c]);
       const setSql = setCols.map((c, idx) => `${c}=$${idx + 2}`).join(',');
       await db.query(`UPDATE profiles SET ${setSql}, online=TRUE, last_active=NOW() WHERE user_id=$1`,
@@ -433,8 +447,10 @@ router.get('/match/:id', requireAuth, async (req, res, next) => {
     if (!m.rows.length) return res.status(404).render('404');
     const otherId = m.rows[0].user_a_id === req.user.id ? m.rows[0].user_b_id : m.rows[0].user_a_id;
     const o = await db.query(
-      'SELECT u.id, u.name, u.age, p.photo1 FROM users u JOIN profiles p ON p.user_id=u.id WHERE u.id=$1', [otherId]);
+      'SELECT u.id, u.name, u.age, p.photo1, p.photo1_thumb FROM users u JOIN profiles p ON p.user_id=u.id WHERE u.id=$1', [otherId]);
     if (!o.rows.length) return res.status(404).render('404');
+    o.rows[0].thumb = thumbFor(o.rows[0].photo1, o.rows[0].photo1_thumb);
+    backfillProfileThumb(otherId, o.rows[0].photo1, o.rows[0].photo1_thumb);
     const conv = await db.query('SELECT id FROM conversations WHERE match_id=$1', [m.rows[0].id]);
     res.render('match', {
       title: res.locals.t('itsAMatch'), match: m.rows[0], other: o.rows[0],
@@ -476,7 +492,7 @@ router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => 
     const r = await db.query(
       `SELECT m.id, m.created_at,
               CASE WHEN m.user_a_id=$1 THEN m.user_b_id ELSE m.user_a_id END AS other_id,
-              u.name AS other_name, u.age AS other_age, p.photo1, p.city, p.latitude, p.longitude,
+              u.name AS other_name, u.age AS other_age, p.photo1, p.photo1_thumb, p.city, p.latitude, p.longitude,
               c.id AS conv_id
        FROM matches m
        JOIN users u ON u.id = (CASE WHEN m.user_a_id=$1 THEN m.user_b_id ELSE m.user_a_id END)
@@ -486,6 +502,8 @@ router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => 
        ORDER BY m.created_at DESC`,
       [req.user.id]);
     for (const row of r.rows) {
+      row.thumb = thumbFor(row.photo1, row.photo1_thumb);
+      backfillProfileThumb(row.other_id, row.photo1, row.photo1_thumb);
       row.distanceText = fmtDistance(haversineKm(req.profile.latitude, req.profile.longitude, row.latitude, row.longitude));
       if (row.conv_id) {
         const lm = await db.query('SELECT body FROM messages WHERE conversation_id=$1 ORDER BY id DESC LIMIT 1', [row.conv_id]);

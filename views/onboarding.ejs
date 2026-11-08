@@ -7,7 +7,7 @@
 <form method="post" action="/onboarding" enctype="multipart/form-data" id="onbForm">
   <div class="section">
     <h2><%- icon('camera') %> <%= t('profile') %></h2>
-    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt="" style="width:120px;height:150px;border-radius:16px;object-fit:cover"><% } %>
+    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1_thumb || profile.photo1 %>" alt="" style="width:120px;height:150px;border-radius:16px;object-fit:cover"><% } %>
     <div class="field"><label>Main photo * <%= profile ? '(leave empty to keep current)' : '' %></label>
       <label class="upload-zone"><%- icon('camera') %><b>Tap to upload your main photo</b><small>Any phone photo works — shrunk automatically. Face visible.</small><input type="file" name="photo1" accept="image/*" data-upz="upz1" <%= profile ? '' : 'required' %>></label>
       <div class="upz-prev" id="upz1"><img alt=""><span class="upz-name"></span><button type="button" class="upz-x" data-clear="photo1" aria-label="Remove photo"><%- icon('x') %></button></div>

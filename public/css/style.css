@@ -93,8 +93,6 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .chip-check input{accent-color:var(--pink); width:17px; height:17px}
 .upload-zone{border:2px dashed var(--pink); border-radius:14px; padding:26px 16px; text-align:center; background:var(--pink-soft); cursor:pointer; display:block}
 .upload-zone input{display:none}
-.receipt-prev{max-width:220px;max-height:220px;border-radius:12px;display:block;margin:12px auto 0}
-.receipt-prev[hidden]{display:none}
 .copy-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap; background:var(--pink-soft); border-radius:12px; padding:12px 14px; font-weight:800; font-size:1.05rem; margin:10px 0}
 .copy-row span{min-width:0; overflow-wrap:anywhere}
 .pill{font-size:.72rem; font-weight:800; padding:4px 10px; border-radius:999px; text-decoration:none}
@@ -216,9 +214,6 @@ body.chat-page .sub{margin:0 0 8px}
 .ico{width:18px;height:18px;flex:0 0 auto;vertical-align:-3px}
 .icon-btn{width:50px; border-radius:12px; border:1.5px solid var(--pink); background:#fff; color:var(--pink); font-size:1.2rem; cursor:pointer; display:flex;align-items:center;justify-content:center}
 .icon-btn .ico{width:22px;height:22px}
-.msg-ico{position:relative;display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:#fff;color:var(--ink)}
-.msg-ico .ico{width:20px;height:20px}
-.msg-ico .badge{position:absolute;top:-7px;right:-7px;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--red);color:#fff;font-size:.68rem;font-weight:800;display:flex;align-items:center;justify-content:center}
 .drawer-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200}
 .drawer-backdrop[hidden]{display:none}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(320px,85vw);background:#fff;z-index:201;box-shadow:-8px 0 30px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .28s ease;display:flex;flex-direction:column}

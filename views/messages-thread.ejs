@@ -4,7 +4,7 @@
 <div class="chat" id="chat">
   <% messages.forEach(function(m){ %>
     <div class="bubble <%= m.sender_user_id===user.id?'mine':'theirs' %>">
-      <% if (m.image_data) { %><a href="<%= m.image_data %>" target="_blank" rel="noopener"><img class="chat-img" src="<%= m.image_data %>" alt=""></a><% } %>
+      <% if (m.image_data) { %><a href="<%= m.image_data %>" target="_blank" rel="noopener"><img class="chat-img" src="<%= m.image_thumb || m.image_data %>" alt="" loading="lazy" decoding="async"></a><% } %>
       <% if (m.body) { %><p><%= m.body %></p><% } %>
       <small><%= new Date(m.created_at).toLocaleString() %></small>
     </div>
@@ -40,8 +40,8 @@
     var div=document.createElement('div');
     div.className='bubble '+(m.mine?'mine':'theirs');
     if(m.has_image&&m.image_data){
-      var a=document.createElement('a'); a.href=m.image_data; a.target='_blank'; a.rel='noopener';
-      var im=document.createElement('img'); im.className='chat-img'; im.src=m.image_data; im.alt='';
+      var a=document.createElement('a'); a.href=m.image_full||m.image_data; a.target='_blank'; a.rel='noopener';
+      var im=document.createElement('img'); im.className='chat-img'; im.src=m.image_data; im.alt=''; im.loading='lazy'; im.decoding='async';
       a.appendChild(im); div.appendChild(a);
     }
     if(m.body){ var p=document.createElement('p'); p.textContent=m.body; div.appendChild(p); }

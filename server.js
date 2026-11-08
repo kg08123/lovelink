@@ -107,6 +107,12 @@ const BADGE_SKIP = ['/', '/onboarding', '/signup', '/signin', '/verify-email', '
 app.use(async (req, res, next) => {
   req.user = null;
   req.profile = null;
+  // The chat poll hits this middleware every few seconds. It needs req.user
+  // but never renders a photo, so for JSON polls the profile row is loaded
+  // WITHOUT the base64 photo columns (they are ~60-150KB each and would be
+  // pulled from the DB on every poll for nothing). The row itself must still
+  // load — the questionnaire gate below redirects when req.profile is null.
+  const isJsonPoll = req.xhr || req.path.endsWith('/json');
   if (req.session.userId) {
     try {
       const r = await db.query(
@@ -117,7 +123,8 @@ app.use(async (req, res, next) => {
                 p.job AS p_job, p.smoking AS p_smoking, p.drinking AS p_drinking, p.kids AS p_kids,
                 p.looking_for_gender AS p_looking_for_gender, p.age_min AS p_age_min, p.age_max AS p_age_max,
                 p.relationship_goal AS p_relationship_goal, p.interests AS p_interests,
-                p.languages AS p_languages, p.photo1 AS p_photo1, p.photo2 AS p_photo2, p.photo3 AS p_photo3,
+                p.languages AS p_languages,
+                ${isJsonPoll ? '' : 'p.photo1 AS p_photo1, p.photo1_thumb AS p_photo1_thumb, p.photo2 AS p_photo2, p.photo2_thumb AS p_photo2_thumb, p.photo3 AS p_photo3, p.photo3_thumb AS p_photo3_thumb,'}
                 p.online AS p_online, p.last_active AS p_last_active, p.created_at AS p_created_at
          FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id=$1`,
         [req.session.userId]);
@@ -139,7 +146,6 @@ app.use(async (req, res, next) => {
   // Chat speed: the thread poll hits this middleware every few seconds.
   // Badge counts are useless on JSON/XHR endpoints (nothing renders them)
   // and on /health, so skip those 2 extra queries there.
-  const isJsonPoll = req.xhr || req.path.endsWith('/json');
   const skipBadges = req.path === '/health' || isJsonPoll
     || BADGE_SKIP.some((p) => req.path === p || req.path.startsWith(p + '/'))
     || req.path.startsWith('/auth/google');

@@ -1,5 +1,5 @@
 <div class="profile-head">
-  <% if (p.photo1) { %><img class="avatar-lg" src="<%= p.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
+  <% if (p.photo1) { %><img class="avatar-lg" src="<%= p.photo1_thumb || p.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
   <div>
     <h1 class="page-title" style="margin:0"><%= me.name %>, <%= me.age %></h1>
     <p class="sub"><%- icon('pin') %> <%= p.city || '' %><%= p.country ? ', '+p.country : '' %> · <%= me.is_premium ? 'Premium' : matchCount + ' / ' + FREE_MATCHES + ' free matches used' %></p>
@@ -29,7 +29,7 @@
 <% if (p.photo2 || p.photo3) { %>
 <div class="section"><h2>More photos</h2>
   <div class="explore-grid">
-    <% [p.photo2, p.photo3].forEach(function(ph){ if (ph) { %><img class="photo-more" src="<%= ph %>" alt=""><% } }) %>
+    <% [[p.photo2, p.photo2_thumb], [p.photo3, p.photo3_thumb]].forEach(function(pair){ if (pair[0]) { %><a href="<%= pair[0] %>" target="_blank" rel="noopener"><img class="photo-more" src="<%= pair[1] || pair[0] %>" alt="" loading="lazy" decoding="async"></a><% } }) %>
   </div>
 </div>
 <% } %>

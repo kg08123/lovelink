@@ -102,7 +102,7 @@ router.post('/users/:id/delete', async (req, res, next) => {
 router.get('/payments', async (req, res, next) => {
   try {
     const r = await db.query(
-      `SELECT p.id, p.receipt_data, p.amount_etb, p.status, p.created_at, p.user_id,
+      `SELECT p.id, p.receipt_data, p.receipt_thumb, p.amount_etb, p.status, p.created_at, p.user_id,
               u.name AS user_name, u.phone AS user_phone
        FROM payments p JOIN users u ON u.id=p.user_id
        WHERE p.status='pending' ORDER BY p.created_at DESC`);

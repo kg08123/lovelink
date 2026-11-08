@@ -20,7 +20,7 @@
   <% items.forEach(function(it){ %>
   <div class="explore-card">
     <a class="explore-card-link" href="/u/<%= it.id %>">
-      <% if (it.photo1) { %><img src="<%= it.photo1 %>" alt="<%= it.name %>"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
+      <% if (it.photo1) { %><img src="<%= it.thumb || it.photo1 %>" alt="<%= it.name %>" loading="lazy" decoding="async"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
       <div class="explore-info">
         <b><%= it.name %></b>
         <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>

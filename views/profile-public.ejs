@@ -27,7 +27,7 @@
 <% if (other.photo2 || other.photo3) { %>
 <div class="section"><h2>More photos</h2>
   <div class="explore-grid">
-    <% [other.photo2, other.photo3].forEach(function(ph){ if (ph) { %><img src="<%= ph %>" style="width:100%;border-radius:12px" alt=""><% } }) %>
+    <% [[other.photo2, other.photo2_thumb], [other.photo3, other.photo3_thumb]].forEach(function(pair){ if (pair[0]) { %><a href="<%= pair[0] %>" target="_blank" rel="noopener"><img src="<%= pair[1] || pair[0] %>" style="width:100%;border-radius:12px" alt="" loading="lazy" decoding="async"></a><% } }) %>
   </div>
 </div>
 <% } %>

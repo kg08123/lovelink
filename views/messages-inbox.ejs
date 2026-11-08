@@ -17,7 +17,7 @@
 <% } %>
 <% convs.forEach(function(c){ %>
 <a class="chat-item <%= c.unread>0?'unread':'' %>" href="/messages/<%= c.id %>">
-  <% if (c.other_photo) { %><img class="avatar-sm" src="<%= c.other_photo %>" alt=""><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
+  <% if (c.other_photo) { %><img class="avatar-sm" src="<%= c.thumb || c.other_photo %>" alt="" loading="lazy" decoding="async"><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
   <div class="grow">
     <div class="ci-top"><b><%= c.other_name %></b><% if (c.unread>0) { %><span class="badge"><%= c.unread %></span><% } %></div>
     <div class="ci-prev"><%= c.hasImage ? 'Photo' : (c.lastBody || 'Say hello!') %></div>

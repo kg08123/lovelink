@@ -1,7 +1,7 @@
 <h1 class="page-title" style="text-align:center"><%= t('settings') %></h1>
 <div class="section">
   <div class="profile-head">
-    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
+    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1_thumb || profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
     <div>
       <b><%= user.name %></b><br>
       <a class="link" href="/profile"><%= t('viewProfile') %> <%- icon('chevronRight') %></a>

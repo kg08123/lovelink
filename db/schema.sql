@@ -150,3 +150,13 @@ CREATE INDEX IF NOT EXISTS idx_payments_user ON payments (user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications (user_id);
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users (phone);
+
+-- Thumbnails (light+fast): small 360px versions of photos, used in cards,
+-- grids and avatars so list pages don't re-download full ~60-150KB photos.
+-- Idempotent ALTERs: safe to re-run on every boot, old rows keep working
+-- (NULL thumb = fall back to the full photo; backfilled on the fly).
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS photo1_thumb TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS photo2_thumb TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS photo3_thumb TEXT;
+ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_thumb TEXT;
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_thumb TEXT;

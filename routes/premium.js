@@ -62,11 +62,13 @@ router.post('/', requireAuth, (req, res, next) => {
       req.session.flash = { type: 'err', msg: t('receiptRequired') };
       return res.redirect('/premium');
     }
-    const { processPhoto } = require('../lib/photos');
+    const { processPhoto, makeThumb } = require('../lib/photos');
     const receiptData = await processPhoto(req.file.buffer, req.file.mimetype, { maxWidth: 1080, quality: 85 });
+    // Thumbnail for the admin list (200px display); full receipt opens on tap.
+    const receiptThumb = (await makeThumb(req.file.buffer, req.file.mimetype, { maxWidth: 480, quality: 75 })) || receiptData;
     await db.query(
-      "INSERT INTO payments(user_id,receipt_data,amount_etb,status,type) VALUES($1,$2,$3,'pending','premium')",
-      [req.user.id, receiptData, PREMIUM_FEE]);
+      "INSERT INTO payments(user_id,receipt_data,receipt_thumb,amount_etb,status,type) VALUES($1,$2,$3,$4,'pending','premium')",
+      [req.user.id, receiptData, receiptThumb, PREMIUM_FEE]);
     req.session.flash = { type: 'ok', msg: t('paymentSent') };
     res.redirect('/premium');
   } catch (e) { next(e); }

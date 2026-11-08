@@ -17,7 +17,7 @@
   <p><%= profile.height_cm || '—' %> cm · <%= profile.religion || '' %> · <%= profile.education || '' %> · <%= profile.job || '' %></p>
   <p>Goal: <%= profile.relationship_goal || '' %> · Looking for: <%= profile.looking_for_gender || '' %> <%= profile.age_min %>–<%= profile.age_max %></p>
   <p>Interests: <%= profile.interests || '' %></p>
-  <% if (profile.photo1) { %><img src="<%= profile.photo1 %>" style="width:120px;border-radius:12px" alt=""><% } %>
+  <% if (profile.photo1) { %><img src="<%= profile.photo1_thumb || profile.photo1 %>" style="width:120px;border-radius:12px" alt="" loading="lazy" decoding="async"><% } %>
 </div>
 <% } %>
 <div class="section"><h2>Payments</h2>

@@ -2,7 +2,7 @@
   <div class="match-hearts" aria-hidden="true"><%- icon('heart', true) %><%- icon('heart', true) %><%- icon('heart', true) %><%- icon('heart', true) %><%- icon('heart', true) %></div>
   <div class="match-photos">
     <% if (myPhoto) { %><img class="match-photo" src="<%= myPhoto %>" alt="You"><% } else { %><div class="match-photo ph"><%- icon('user') %></div><% } %>
-    <% if (other.photo1) { %><img class="match-photo" src="<%= other.photo1 %>" alt="<%= other.name %>"><% } else { %><div class="match-photo ph"><%- icon('user') %></div><% } %>
+    <% if (other.photo1) { %><img class="match-photo" src="<%= other.thumb || other.photo1 %>" alt="<%= other.name %>"><% } else { %><div class="match-photo ph"><%- icon('user') %></div><% } %>
     <div class="match-heart"><%- icon('heart', true) %></div>
   </div>
   <h1 class="match-title"><%= t('itsAMatch') %></h1>

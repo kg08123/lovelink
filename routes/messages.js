@@ -49,7 +49,8 @@ router.get('/', requireAuth, async (req, res, next) => {
       `SELECT c.id, c.match_id, c.created_at,
               CASE WHEN c.user_a_id=$1 THEN bu.name ELSE au.name END AS other_name,
               CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
-              CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo
+              CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo,
+              CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_photo_thumb
        FROM conversations c
        JOIN users au ON au.id=c.user_a_id
        JOIN users bu ON bu.id=c.user_b_id
@@ -58,6 +59,11 @@ router.get('/', requireAuth, async (req, res, next) => {
        WHERE c.user_a_id=$1 OR c.user_b_id=$1
        ORDER BY c.created_at DESC`,
       [req.user.id]);
+    const { thumbFor, backfillProfileThumb } = require('../lib/thumbs');
+    for (const c of r.rows) {
+      c.thumb = thumbFor(c.other_photo, c.other_photo_thumb);
+      backfillProfileThumb(c.other_id, c.other_photo, c.other_photo_thumb);
+    }
     const convs = r.rows;
     // Chat speed: one batched query for last messages + one for unread
     // counts, instead of 2 queries per conversation (N+1).
@@ -115,8 +121,8 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     // Latest 50 only — the old LIMIT 100 pulled full base64 image_data for
     // the first 100 messages on every thread open.
     const m = await db.query(
-      `SELECT id, body, created_at, sender_user_id, image_data, sender_name FROM (
-         SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, u.name AS sender_name
+      `SELECT id, body, created_at, sender_user_id, image_data, image_thumb, sender_name FROM (
+         SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, m.image_thumb, u.name AS sender_name
          FROM messages m JOIN users u ON u.id=m.sender_user_id
          WHERE m.conversation_id=$1 ORDER BY m.id DESC LIMIT 50
        ) s ORDER BY s.id ASC`, [conv.id]);
@@ -132,7 +138,7 @@ router.get('/:id/json', requireAuth, async (req, res, next) => {
     if (!req.xhr) return res.redirect('/messages/' + conv.id);
     const after = Number(req.query.after) || 0;
     const m = await db.query(
-      `SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data
+      `SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, m.image_thumb
        FROM messages m WHERE m.conversation_id=$1 AND m.id>$2 ORDER BY m.id ASC LIMIT 100`,
       [conv.id, after]);
     // Chat speed: the old code did a markRead WRITE on every poll, even
@@ -144,7 +150,10 @@ router.get('/:id/json', requireAuth, async (req, res, next) => {
     res.json({
       messages: m.rows.map((x) => ({
         id: x.id, body: x.body, created_at: x.created_at, mine: x.sender_user_id === req.user.id,
-        has_image: !!x.image_data, image_data: x.image_data || null,
+        has_image: !!x.image_data,
+        // Thumbnail inline (small); full photo only when tapped.
+        image_data: x.image_thumb || x.image_data || null,
+        image_full: x.image_data || null,
       })),
     });
   } catch (e) { next(e); }
@@ -162,14 +171,16 @@ router.post('/:id', requireAuth, (req, res, next) => {
     if (!conv) return res.status(404).render('404');
     const body = ((req.body && req.body.body) || '').trim().slice(0, 2000);
     let imageData = null;
+    let imageThumb = null;
     if (req.file && req.file.buffer) {
-      const { processPhoto } = require('../lib/photos');
+      const { processPhoto, makeThumb } = require('../lib/photos');
       imageData = await processPhoto(req.file.buffer, req.file.mimetype);
+      imageThumb = (await makeThumb(req.file.buffer, req.file.mimetype)) || imageData;
     }
     if (!body && !imageData) return res.redirect('/messages/' + conv.id);
     const ins = await db.query(
-      'INSERT INTO messages(conversation_id, sender_user_id, body, image_data) VALUES($1,$2,$3,$4) RETURNING id',
-      [conv.id, req.user.id, body, imageData]);
+      'INSERT INTO messages(conversation_id, sender_user_id, body, image_data, image_thumb) VALUES($1,$2,$3,$4,$5) RETURNING id',
+      [conv.id, req.user.id, body, imageData, imageThumb]);
     if (req.xhr) return res.json({ ok: true, id: ins.rows[0].id });
     res.redirect('/messages/' + conv.id);
   } catch (e) { next(e); }

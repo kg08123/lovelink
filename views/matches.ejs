@@ -5,7 +5,7 @@
 <% } %>
 <% items.forEach(function(it){ %>
 <a class="chat-item <%= it.unread>0?'unread':'' %>" href="/messages/<%= it.conv_id %>">
-  <% if (it.photo1) { %><img class="avatar-sm" src="<%= it.photo1 %>" alt=""><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
+  <% if (it.photo1) { %><img class="avatar-sm" src="<%= it.thumb || it.photo1 %>" alt="" loading="lazy" decoding="async"><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
   <div class="grow">
     <div class="ci-top"><b><%= it.other_name %>, <%= it.other_age %></b><% if (it.unread>0) { %><span class="badge"><%= it.unread %></span><% } %></div>
     <div class="ci-prev"><%= it.lastBody || 'Say hello!' %> · <%= it.distanceText || '' %></div>
