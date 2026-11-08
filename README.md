@@ -71,6 +71,9 @@ USE_PGMEM=1 node server.js   # http://localhost:3000 (in-memory DB, fresh seed e
   photos that looked too old for their age, 1 bare-chest Kente portrait
   swapped for a clothed one). 4 of them pre-liked Abel; 2 extra matched
   pairs with chat threads.
+- **Live catch-up**: the boot seed only runs on an empty database, so a live
+  site that already has users gets the 10 new demos from Admin → "Add missing
+  demo users" (`POST /admin/seed-demo`, idempotent — second run adds nothing).
 
 Production: set `DATABASE_URL` (Neon Postgres) and deploy by pushing to GitHub
 (Render auto-deploys). Optional env: `SEED_DEMO=1`, `ADMIN_PASSWORD`,

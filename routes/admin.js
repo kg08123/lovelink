@@ -156,6 +156,16 @@ router.post('/reports/:id/ban', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
+// Add the v3 demo profiles to a live DB that already has users (boot seed only
+// runs on an empty users table). Idempotent — running it twice adds nothing.
+router.post('/seed-demo', async (req, res, next) => {
+  try {
+    const added = await require('../db/seed').seedExtraDemos();
+    req.session.flash = { type: 'ok', msg: added > 0 ? added + ' new demo users added.' : 'Demo users are already there — nothing new added.' };
+    res.redirect('/admin');
+  } catch (e) { next(e); }
+});
+
 // Delete ALL demo data in one action (demo users + everything tied to them)
 router.post('/delete-demo', async (req, res, next) => {
   try {
