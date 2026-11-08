@@ -67,6 +67,9 @@ app.use((req, res, next) => {
     req.lang = req.cookies.lang === 'am' ? 'am' : 'en';
   }
   res.locals.lang = req.lang;
+  // Theme: cookie wins ('dark' | 'light'); no cookie = 'light' server-side,
+  // and the <head> boot script then applies the phone's system preference.
+  res.locals.theme = req.cookies.theme === 'dark' ? 'dark' : 'light';
   res.locals.t = (key) => t(req.lang, key);
   res.locals.nt = (stored) => nt(req.lang, stored);
   res.locals.googleEnabled = googleEnabled;
@@ -75,7 +78,7 @@ app.use((req, res, next) => {
   res.locals.brand = brand;
   // Bottom-nav active tab, derived from the URL (v1 set it with a `var` inside
   // the body template, which never reached the layout — so nothing lit up).
-  res.locals.navActive = req.path.startsWith('/discover') || req.path.startsWith('/explore') || req.path.startsWith('/u/')
+  res.locals.navActive = req.path.startsWith('/discover') || req.path.startsWith('/u/')
     ? 'discover'
     : req.path.startsWith('/matches') || req.path.startsWith('/match/')
       ? 'matches'

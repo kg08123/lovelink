@@ -4,48 +4,10 @@
   <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium <%- icon('chevronRight') %></a><% } else { %><span class="pill ok"><%- icon('star', true) %> Premium</span><% } %>
 </div>
 <% if (!card) { %>
-  <div class="empty"><%- icon('heart') %><h2><%= t('noMoreProfiles') %></h2>
-    <p class="sub">Here are more people nearby — including ones you already passed. Tap the heart to like anyone.</p>
+  <div class="empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
       <button class="btn btn-pink" type="submit"><%= t('showAgain') %></button>
     </form></div>
-  <% if (grid && grid.items.length) { %>
-  <div class="tabs">
-    <a href="/discover?tab=nearby" class="<%= grid.f.tab==='nearby'?'on':'' %>"><%= t('nearby') %></a>
-    <a href="/discover?tab=online" class="<%= grid.f.tab==='online'?'on':'' %>"><%= t('online') %></a>
-    <a href="/discover?tab=new" class="<%= grid.f.tab==='new'?'on':'' %>"><%= t('new') %></a>
-  </div>
-  <div class="explore-grid">
-    <% grid.items.forEach(function(it){ %>
-    <div class="explore-card">
-      <a class="explore-card-link" href="/u/<%= it.id %>">
-        <% if (it.photo1) { %><img src="<%= it.thumb || it.photo1 %>" alt="<%= it.name %>" loading="lazy" decoding="async"><% } else { %><div class="explore-ph"><%- icon('user') %></div><% } %>
-        <div class="explore-info">
-          <b><%= it.name %></b>
-          <span><%= it.age %> · <%= it.distanceText || it.city || '' %></span>
-        </div>
-        <span class="explore-score-chip"><%= it.score %>%</span>
-        <% if (it.online) { %><span class="online-dot pulse" title="Online"></span><% } %>
-      </a>
-      <% if (it.matched) { %>
-        <button class="explore-like liked" type="button" disabled title="Matched"><%- icon('heart', true) %></button>
-      <% } else if (it.swipedKind === 'like' || it.swipedKind === 'super') { %>
-        <button class="explore-like liked" type="button" disabled title="Liked"><%- icon('heart', true) %></button>
-      <% } else { %>
-        <form class="explore-like-form js-grid-like-form" method="post" action="/discover/grid-like">
-          <input type="hidden" name="to" value="<%= it.id %>">
-          <button class="explore-like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %> <%= it.name %>"><%- icon('heart') %></button>
-        </form>
-      <% } %>
-    </div>
-    <% }) %>
-  </div>
-  <div class="pager">
-    <% if (grid.page > 1) { %><a class="btn btn-outline btn-sm" href="/discover?<%= qs({tab: grid.f.tab, page: grid.page-1}) %>"><%- icon('chevronLeft') %> Prev</a><% } %>
-    <span class="pager-info">Page <%= grid.page %> / <%= grid.totalPages %></span>
-    <% if (grid.page < grid.totalPages) { %><a class="btn btn-outline btn-sm" href="/discover?<%= qs({tab: grid.f.tab, page: grid.page+1}) %>">Next <%- icon('chevronRight') %></a><% } %>
-  </div>
-  <% } %>
 <% } else { %>
   <div class="swipe-stack">
     <% if (typeof next !== 'undefined' && next) { %>

@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="<%= lang %>">
+<html lang="<%= lang %>"<% if (typeof theme !== 'undefined' && theme === 'dark') { %> class="dark"<% } %>>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>/* Theme boot: apply dark BEFORE first paint, so there is no white flash. Cookie wins; else localStorage; else the phone's system preference. */(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var v=m?m[1]:null;if(!v){try{v=localStorage.getItem('theme')}catch(e){}}if(v==='dark'||(!v&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();</script>
 <title>LoveLink — <%= typeof title !== 'undefined' ? title : t('appTag') %></title>
-<link rel="stylesheet" href="/css/style.css?v=9">
+<link rel="stylesheet" href="/css/style.css?v=11">
 <% if (typeof bodyClass !== 'undefined' && bodyClass === 'landing') { %><link rel="preload" as="image" href="/img/hero-couple.jpg"><% } %>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF2E63'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E">
 </head>
@@ -49,7 +50,6 @@
       <a href="/messages"><%- icon('comment') %><%= t('messages') %></a>
     <% } else { %>
       <a href="/discover"><%- icon('flame') %><%= t('discover') %></a>
-      <a href="/explore"><%- icon('search') %><%= t('explore') %></a>
       <a href="/premium"><%- icon('star') %><%= t('premiumTitle') %></a>
     <% } %>
     <a href="/settings"><%- icon('settings') %><%= t('settings') %></a>
@@ -74,7 +74,7 @@
 <% if (!isLanding) { %>
 <footer class="footer">LoveLink · <%= t('appTag') %> · Addis Ababa, Ethiopia<br><a class="link" href="/about"><%= t('aboutUs') %></a> · <a class="link" href="/privacy"><%= t('privacyTitle') %></a></footer>
 <% } %>
-<script src="/js/instant.js?v=4" defer></script>
+<script src="/js/instant.js?v=6" defer></script>
 <script>
 function copyNum(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard&&navigator.clipboard.writeText(el.innerText.trim());}
 (function(){

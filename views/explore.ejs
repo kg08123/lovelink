@@ -1,9 +1,0 @@
-<h1 class="page-title"><%= t('explore') %></h1>
-<div class="tabs">
-  <a href="/explore?tab=nearby" class="<%= f.tab==='nearby'?'on':'' %>"><%= t('nearby') %></a>
-  <a href="/explore?tab=online" class="<%= f.tab==='online'?'on':'' %>"><%= t('online') %></a>
-  <a href="/explore?tab=new" class="<%= f.tab==='new'?'on':'' %>"><%= t('new') %></a>
-</div>
-<div id="explore-grid-root">
-<%- include('partials/explore-grid') %>
-</div>

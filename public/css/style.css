@@ -110,17 +110,6 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .flash.ok{background:#e3f5e9; color:var(--green-dark)}
 .flash.err{background:#fdecec; color:var(--red)}
 .count{color:var(--muted); font-size:.9rem; margin:6px 0 10px}
-.pager{display:flex; align-items:center; justify-content:center; gap:12px; margin:18px 0 8px}
-.pager-info{color:var(--muted); font-size:.9rem; font-weight:600}
-/* Explore / Discover tabs are PLAIN TEXT, not buttons (user: make identical
-   to the screenshot): bold "Explore" heading above, grey text tabs in a row,
-   active tab pink with a pink underline + soft shadow. */
-.tabs{display:flex; gap:28px; margin:2px 0 14px; overflow-x:auto; padding:0 2px 6px}
-.tabs a{flex:0 0 auto; white-space:nowrap; text-align:center; padding:8px 2px 10px; background:none; border:none; border-radius:0; text-decoration:none; color:#8a8f98; font-weight:600; font-size:.95rem; border-bottom:2.5px solid transparent}
-.tabs a.on{color:var(--pink); border-bottom-color:var(--pink); font-weight:700; box-shadow:0 10px 16px -10px rgba(255,46,99,.55)}
-/* Smooth Explore tab switches: the grid fades out, swaps, fades back in. */
-#explore-grid-root{transition:opacity .18s ease, transform .18s ease}
-#explore-grid-root.grid-switching{opacity:0; transform:translateY(6px)}
 .filter-panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin:4px 0 12px}
 .filter-panel[hidden]{display:none}
 .frow{margin-bottom:12px}
@@ -181,13 +170,6 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .match-screen .btn-outline{border-color:#fff; color:#fff; background:transparent}
 /* Explore grid */
 .explore-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-.explore-card{position:relative; border-radius:16px; overflow:hidden; background:#fff; text-decoration:none; color:var(--ink); box-shadow:0 2px 8px rgba(0,0,0,.08); display:block}
-.explore-card img{width:100%; height:220px; object-fit:cover; display:block}
-.explore-ph{height:220px; display:flex; align-items:center; justify-content:center; font-size:3rem; background:var(--pink-soft)}
-.explore-info{position:absolute; left:0; right:0; bottom:0; padding:26px 46px 8px 10px; background:linear-gradient(transparent, rgba(0,0,0,.75)); color:#fff}
-.explore-info b{display:block; font-size:1rem}
-.explore-info span{font-size:.8rem; opacity:.9}
-.explore-score{float:right; background:var(--pink); border-radius:999px; padding:2px 8px; font-weight:800}
 .online-dot{position:absolute; top:8px; right:8px; color:#22c55e; font-size:1rem; text-shadow:0 0 4px #000}
 /* Chat */
 .chat-item{display:flex;gap:10px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px;text-decoration:none;color:inherit}
@@ -281,13 +263,6 @@ table.data th{background:#fdf0f3; font-size:.78rem; text-transform:uppercase; le
 
 /* ---- v2: mockup-close polish ---- */
 /* Explore grid: heart button on each card, gradient labels (mockup) */
-.explore-info span{font-size:.8rem; opacity:.9}
-.explore-like-form{position:absolute; right:8px; bottom:8px; z-index:3; margin:0}
-.explore-like{width:34px; height:34px; border-radius:50%; background:rgba(255,255,255,.92); color:var(--pink); border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.3); cursor:pointer; padding:0}
-.explore-like .ico{width:18px; height:18px}
-.explore-like.liked{position:absolute; right:8px; bottom:8px; z-index:3; background:var(--pink); color:#fff}
-.explore-card-link{display:block; text-decoration:none; color:inherit}
-.explore-card .online-dot{position:absolute; top:8px; right:8px; width:11px; height:11px; border-radius:50%; background:#22c55e; border:2px solid #fff; box-shadow:0 0 6px rgba(0,0,0,.5)}
 /* Section headers with a pink icon chip */
 .section-head{display:flex; align-items:center; gap:10px; margin:18px 0 10px}
 .section-head .icon-chip{width:34px; height:34px; border-radius:10px; background:var(--pink-soft); color:var(--pink); display:flex; align-items:center; justify-content:center; flex:0 0 auto}
@@ -351,15 +326,15 @@ table.data th{background:#fdf0f3; font-size:.78rem; text-transform:uppercase; le
 a{color:var(--pink); text-decoration:none}
 a:hover{text-decoration:underline}
 .btn, .btn-pink, .btn-outline, .btn-red, .btn-green, .btn-amber, .btn-signin,
-.btn-google, .btn-logout, .pill, .chip, .tabs a, .bottomnav a, .drawer-nav a,
-.settings-list a, .chat-item, .explore-card, .swipe-name, .logo, .lang-toggle a,
-.pager a, .chat-back, .swipe-info-btn, .explore-like{text-decoration:none}
+.btn-google, .btn-logout, .pill, .chip, .bottomnav a, .drawer-nav a,
+.settings-list a, .chat-item, .swipe-name, .logo, .lang-toggle a,
+.chat-back, .swipe-info-btn{text-decoration:none}
 .btn:hover, .btn-pink:hover, .btn-outline:hover, .btn-red:hover, .btn-green:hover,
 .btn-amber:hover, .btn-signin:hover, .btn-google:hover, .btn-logout:hover,
-.pill:hover, .chip:hover, .tabs a:hover, .bottomnav a:hover, .drawer-nav a:hover,
-.settings-list a:hover, .chat-item:hover, .explore-card:hover, .swipe-name:hover,
-.logo:hover, .lang-toggle a:hover, .pager a:hover, .chat-back:hover,
-.swipe-info-btn:hover, .explore-like:hover{text-decoration:none}
+.pill:hover, .chip:hover, .bottomnav a:hover, .drawer-nav a:hover,
+.settings-list a:hover, .chat-item:hover, .swipe-name:hover,
+.logo:hover, .lang-toggle a:hover, .chat-back:hover,
+.swipe-info-btn:hover{text-decoration:none}
 .link{color:var(--pink); font-weight:700; text-decoration:none; white-space:nowrap}
 .link:hover{text-decoration:underline}
 .signout-link{font-weight:700; color:var(--red); text-decoration:none; white-space:nowrap}
@@ -497,25 +472,9 @@ a:hover{text-decoration:underline}
 .swipe-btn.like{box-shadow:0 8px 26px rgba(255,46,99,.5)}
 /* Sticky action bar on public profiles: floats above the bottom nav */
 .sticky-actions{position:sticky; bottom:calc(84px + env(safe-area-inset-bottom)); z-index:30; width:max-content; max-width:100%; margin:14px auto; padding:10px 14px; border-radius:999px; background:rgba(255,255,255,.92); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); box-shadow:var(--shadow-md); border:1px solid rgba(16,10,14,.06)}
-/* ---- Explore grid: photo-forward, taller, press states ---- */
 .explore-grid{gap:12px}
-.explore-card{border-radius:var(--r-md); box-shadow:var(--shadow-md); border:1px solid rgba(16,10,14,.05); transition:transform .16s ease, box-shadow .2s ease}
-.explore-card:active{transform:scale(.965); box-shadow:var(--shadow-sm)}
-.explore-card img{height:252px; transition:transform .35s ease}
-.explore-card:active img{transform:scale(1.03)}
-.explore-ph{height:252px}
-.explore-info{padding:34px 48px 10px 12px; background:var(--grad-scrim); z-index:2}
-.explore-info b{font-size:1.02rem; letter-spacing:-.01em; text-shadow:0 1px 6px rgba(0,0,0,.45); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.explore-info span{font-size:.82rem; text-shadow:0 1px 6px rgba(0,0,0,.45)}
-.explore-score-chip{position:absolute; top:10px; right:10px; z-index:2; background:var(--grad-pink); color:#fff; font-size:.78rem; font-weight:800; padding:5px 10px; border-radius:999px; box-shadow:0 3px 12px rgba(255,46,99,.55)}
-.explore-card .online-dot{top:10px; left:10px; right:auto; width:12px; height:12px; border:2px solid #fff; z-index:2}
-.online-dot.pulse{animation:pulseRing 2s ease-out infinite}
 @keyframes pulseRing{0%{box-shadow:0 0 0 0 rgba(34,197,94,.55), 0 0 6px rgba(0,0,0,.4)} 70%{box-shadow:0 0 0 8px rgba(34,197,94,0), 0 0 6px rgba(0,0,0,.4)} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0), 0 0 6px rgba(0,0,0,.4)}}
 .online-badge .online-dot{animation:pulseRing 2s ease-out infinite}
-.explore-like{transition:transform .14s ease, background .2s ease, color .2s ease}
-.explore-like:active{transform:scale(.82)}
-.explore-like.liked{animation:heartPop .35s cubic-bezier(.2,1.6,.4,1)}
-@keyframes heartPop{0%{transform:scale(1)} 45%{transform:scale(1.35)} 100%{transform:scale(1)}}
 /* ---- Chat: on-brand pink bubbles, pill input, press send ---- */
 .bubble{border-radius:18px; box-shadow:var(--shadow-sm); border:none; padding:11px 14px; animation:msgIn .25s ease both}
 @keyframes msgIn{from{opacity:0; transform:translateY(6px) scale(.98)} to{opacity:1; transform:translateY(0) scale(1)}}
@@ -549,10 +508,10 @@ a:hover{text-decoration:underline}
 .match-heart{animation:heartBeat 1.4s ease-in-out infinite}
 @keyframes heartBeat{0%,100%{transform:translateX(-50%) scale(1)} 25%{transform:translateX(-50%) scale(1.18)} 45%{transform:translateX(-50%) scale(1)}}
 /* ---- Skeleton shimmer: photo containers shimmer until the image loads ---- */
-.swipe-photo-link, .explore-card{position:relative}
-.swipe-photo-link::before, .explore-card::before{content:''; position:absolute; inset:0; z-index:0; background:linear-gradient(100deg,#ffe3ea 35%,#fff5f7 50%,#ffe3ea 65%); background-size:200% 100%; animation:shimmer 1.5s linear infinite; pointer-events:none}
-.swipe-photo-link.img-loaded::before, .explore-card.img-loaded::before{animation:none; opacity:0}
-.swipe-photo, .explore-card img{position:relative; z-index:1; animation:imgIn .45s ease both}
+.swipe-photo-link{position:relative}
+.swipe-photo-link::before{content:''; position:absolute; inset:0; z-index:0; background:linear-gradient(100deg,#ffe3ea 35%,#fff5f7 50%,#ffe3ea 65%); background-size:200% 100%; animation:shimmer 1.5s linear infinite; pointer-events:none}
+.swipe-photo-link.img-loaded::before{animation:none; opacity:0}
+.swipe-photo{position:relative; z-index:1; animation:imgIn .45s ease both}
 @keyframes shimmer{from{background-position:200% 0} to{background-position:-200% 0}}
 @keyframes imgIn{from{opacity:0} to{opacity:1}}
 /* Filter panel + forms: same premium card language */
@@ -566,10 +525,70 @@ a:hover{text-decoration:underline}
 @media (max-width:520px){
   .swipe-photo{height:470px}
   .profile-hero-photo{height:320px}
-  .explore-card img, .explore-ph{height:240px}
 }
 @media (max-width:380px){
   .swipe-photo{height:420px}
   .profile-hero-photo{height:300px}
-  .explore-card img, .explore-ph{height:220px}
 }
+
+/* ============================================================
+   Dark mode — toggle in Settings. Choice = cookie (server renders
+   <html class="dark">, so no white flash) + localStorage (the <head>
+   boot script applies it when there is no cookie yet, e.g. the
+   system-preference default). Light theme above is untouched.
+   Palette: near-black backgrounds, light text, pink accent stays.
+   ============================================================ */
+html.dark{color-scheme:dark;
+  --ink:#f3eef0; --muted:#a3a7b0; --line:#2b2b31; --bg:#121214; --card:#1d1d21;
+  --pink-soft:#2c151d; --green:#4ade80; --green-dark:#86efac; --green-soft:#142619;
+  --amber-soft:#2b2210; --red:#ff7070;
+}
+/* Glass chrome */
+html.dark .topbar{background:rgba(20,20,24,.86); border-bottom-color:rgba(255,255,255,.06)}
+html.dark .bottomnav{background:rgba(20,20,24,.85); border-top-color:rgba(255,255,255,.06); box-shadow:0 -8px 30px rgba(0,0,0,.4)}
+html.dark .sticky-actions{background:rgba(28,28,32,.92); border-color:rgba(255,255,255,.08)}
+/* Cards, sections, lists, tables */
+html.dark .section, html.dark .empty, html.dark .stat4 .box, html.dark table.data,
+html.dark .settings-list, html.dark .admin-actions, html.dark .loc-box,
+html.dark .filter-panel{background:var(--card); border-color:var(--line)}
+html.dark table.data th{background:#241a1e}
+html.dark table.data tr{background:var(--card)}
+html.dark .discover-top .pill{border-color:var(--line)}
+/* Drawer + header buttons */
+html.dark .drawer{background:var(--card)}
+html.dark .drawer-nav a:hover{background:rgba(255,255,255,.07)}
+html.dark .hamb, html.dark .icon-btn, html.dark .drawer-close{background:var(--card)}
+/* Buttons + inputs (hardcoded #fff above) */
+html.dark .btn-outline, html.dark .btn-google{background:var(--card)}
+html.dark .field input[type=text], html.dark .field input[type=password],
+html.dark .field input[type=number], html.dark .field input[type=email],
+html.dark .field textarea, html.dark .frow select, html.dark .frow input,
+html.dark .chatbar input{background-color:var(--card); color:var(--ink)}
+html.dark .field select{background-color:var(--card); color:var(--ink)}
+html.dark .chatbar .icon-btn.ghost{background:var(--card)}
+html.dark .chip, html.dark .chip-check{background:var(--card)}
+html.dark .chip-check:has(input:checked){color:#ff8fb0}
+html.dark .lang-toggle{background:#2a1d23}
+/* Swipe action buttons: dark circles, coloured icons */
+html.dark .swipe-btn{background:#232328; border:1px solid var(--line); box-shadow:0 4px 14px rgba(0,0,0,.5)}
+/* Chat */
+html.dark .bubble.theirs{background:#26262b}
+/* Status colours that were too dark on a dark background */
+html.dark .flash.ok{background:#142619; color:#86efac}
+html.dark .flash.err{background:#2b1618; color:#ff8f8f}
+html.dark .pill.ok{background:#142619; color:#86efac}
+html.dark .pill.wait{background:#232328; color:var(--muted)}
+html.dark .pill.bad{background:#2b1618; color:#ff8f8f}
+html.dark .pill.warn{color:#f5b942}
+html.dark .btn-logout{background:#2b1618}
+html.dark .settings-list .row-ico.red{background:#2b1618}
+html.dark .settings-list a:active, html.dark .settings-list .row-item:active{background:rgba(255,255,255,.06)}
+/* Dark mode switch in Settings */
+.theme-switch{margin-left:auto; position:relative; display:inline-flex; flex:0 0 auto; cursor:pointer}
+.theme-switch input{position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer}
+.theme-track{width:52px; height:30px; border-radius:999px; background:#d4d4d8; display:block; position:relative; transition:background .2s ease; flex:0 0 auto}
+.theme-track::after{content:''; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.25); transition:transform .2s ease}
+.theme-switch input:checked + .theme-track{background:var(--pink)}
+.theme-switch input:checked + .theme-track::after{transform:translateX(22px)}
+.theme-switch input:focus-visible + .theme-track{outline:2px solid var(--pink); outline-offset:2px}
+html.dark .theme-track{background:#3a3a41}

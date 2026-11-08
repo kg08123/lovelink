@@ -26,6 +26,7 @@
   </form>
 </div>
 <div class="settings-list">
+  <span class="row-item"><span class="row-ico"><%- icon('moon') %></span><span class="lbl">Dark mode</span><label class="theme-switch"><input type="checkbox" id="themeToggle" aria-label="Dark mode"><span class="theme-track"></span></label></span>
   <span class="row-item"><span class="row-ico"><%- icon('globe') %></span><span class="lbl">Language</span><span class="lang-toggle"><a href="?lang=en" class="<%= lang==='en'?'on':'' %>">EN</a><a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማ</a></span></span>
   <a href="/about"><span class="row-ico"><%- icon('info') %></span><span class="lbl"><%= t('aboutUs') %></span><span class="chev"><%- icon('chevronRight') %></span></a>
   <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl"><%= t('privacyTitle') %></span><span class="chev"><%- icon('chevronRight') %></span></a>

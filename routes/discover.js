@@ -139,7 +139,7 @@ async function getCandidates(me, meProfile, opts = {}) {
 // After a like is recorded: if the other side already liked me, it is a
 // mutual like — create the match (paywall first) and go to the match
 // screen. Returns the redirect target. Shared by the swipe buttons and
-// the Explore/Discover grid hearts so all three behave identically.
+// the public-profile swipe buttons so all of them behave identically.
 async function processLike(req, toId, targetName) {
   const mutual = await db.query(
     "SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
@@ -156,26 +156,6 @@ async function processLike(req, toId, targetName) {
   return '/match/' + matchId;
 }
 
-async function attachSwipeKind(userId, items) {
-  if (!items.length) return items;
-  const ids = items.map((i) => i.id);
-  const ph = ids.map((_, i) => `$${i + 2}`).join(',');
-  const sw = await db.query(
-    `SELECT to_user_id, kind FROM swipes WHERE from_user_id=$1 AND to_user_id IN (${ph})`,
-    [userId, ...ids]);
-  const m = await db.query(
-    `SELECT CASE WHEN user_a_id=$1 THEN user_b_id ELSE user_a_id END AS other_id FROM matches WHERE user_a_id=$1 OR user_b_id=$1`,
-    [userId]);
-  const matched = new Set(m.rows.map((r) => r.other_id));
-  const byId = {};
-  for (const r of sw.rows) byId[r.to_user_id] = r.kind;
-  for (const it of items) {
-    it.swipedKind = byId[it.id] || null;
-    it.matched = matched.has(it.id);
-  }
-  return items;
-}
-
 // Best-effort demo auto-match sweep on page load. A failure here must
 // never break the page the user actually asked for.
 async function sweepDemoAutoMatches(req) {
@@ -189,34 +169,20 @@ function photoOf(p) {
   return p.photo1_thumb || p.photo1 || p.photo2_thumb || p.photo2 || p.photo3_thumb || p.photo3 || null;
 }
 
-// Shared Discover data: the card, the remaining count and (when the cards
-// run out) the Explore-style grid. Used by GET /discover and by the
-// instant XHR buttons, so both render exactly the same page.
+// Shared Discover data: the card, the remaining count. Used by GET
+// /discover and by the instant XHR buttons, so both render exactly the
+// same page. When the cards run out the page shows a clean "caught up"
+// state with the reset button — swiping is the only way to see people.
 async function discoverData(req) {
   await sweepDemoAutoMatches(req);
   await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
   const cands = await getCandidates(req.user, req.profile);
   const card = cands[0] || null;
   const n = await matchCount(req.user.id);
-  let grid = null;
-  if (!card) {
-    const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
-    const f = { tab, onlineOnly: tab === 'online' };
-    let items = await getCandidates(req.user, req.profile, { includeSwiped: true, ...f });
-    if (tab === 'new') items.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const PER = 8;
-    const total = items.length;
-    const totalPages = Math.max(1, Math.ceil(total / PER));
-    const safePage = Math.min(page, totalPages);
-    const pageItems = items.slice((safePage - 1) * PER, safePage * PER);
-    await attachSwipeKind(req.user.id, pageItems);
-    grid = { items: pageItems, f, total, page: safePage, totalPages };
-  }
   return {
     card, next: cands[1] || null, remaining: cands.length,
     matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
-    interestsList: card ? splitList(card.interests) : [], grid,
+    interestsList: card ? splitList(card.interests) : [],
   };
 }
 
@@ -372,10 +338,8 @@ router.get('/profile/edit', requireAuth, (req, res) => {
 });
 
 // ---- Discover: one card at a time, nearest + best match first ----
-// When the cards run out, the page does NOT go dead: it shows the
-// Explore-style grid (Nearby / Online / New tabs, 2-column cards) with
-// the same candidates including already-swiped ones, plus the reset
-// button — so there is always something to look at and like.
+// When the cards run out, the page shows a clean "caught up" state with
+// the reset button — swiping is the only way to see people.
 router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const data = await discoverData(req);
@@ -430,46 +394,6 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
   } catch (e) { next(e); }
 });
 
-// Like from a grid heart (Discover end-state grid / Explore grid). Same
-// rules as the swipe buttons: a previous pass is upgraded to a like
-// (changed your mind), an existing like stays a like, mutual likes go
-// through the same match + paywall logic.
-router.post('/discover/grid-like', requireAuth, requireOnboarded, async (req, res, next) => {
-  try {
-    const toId = Number(req.body.to);
-    if (!toId || toId === req.user.id) return isXhr(req) ? res.json({ ok: false }) : res.redirect('/discover');
-    const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
-    if (!target.rows.length) return isXhr(req) ? res.json({ ok: false }) : res.redirect('/discover');
-    const existing = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-    if (existing.rows.length && existing.rows[0].kind !== 'pass') {
-      // Already liked: nothing to do — the heart is already filled in.
-      return isXhr(req) ? res.json({ ok: true, liked: true }) : res.redirect('/discover');
-    }
-    if (existing.rows.length && existing.rows[0].kind === 'pass') {
-      await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind='pass'", [req.user.id, toId]);
-      if (req.session.lastPass === toId) delete req.session.lastPass; // it is no longer a pass to rewind to
-    }
-    await db.query("INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,'like') ON CONFLICT (from_user_id,to_user_id) DO NOTHING",
-      [req.user.id, toId]);
-    let hint = null;
-    if (target.rows[0].is_demo) {
-      const alreadyLikedBack = await db.query(
-        "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
-        [toId, req.user.id]);
-      if (!alreadyLikedBack.rows.length) {
-        hint = req.res.locals.t('demoReplyHint');
-        if (!isXhr(req)) req.session.flash = { type: 'ok', msg: hint };
-      }
-    }
-    const dest = await processLike(req, toId, target.rows[0].name);
-    if (dest !== '/discover') {
-      return isXhr(req) ? res.json({ ok: true, redirect: dest, hint }) : res.redirect(dest);
-    }
-    // Instant heart: the button fills in place, no page reload.
-    return isXhr(req) ? res.json({ ok: true, liked: true, hint }) : res.redirect(dest);
-  } catch (e) { next(e); }
-});
-
 // Rewind once: bring back the last passed profile
 router.post('/discover/rewind', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
@@ -521,41 +445,9 @@ router.get('/match/:id', requireAuth, async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// ---- Explore grid: nearby / online / new, with filters ----
-router.get('/explore', requireAuth, requireOnboarded, async (req, res, next) => {
-  try {
-    await sweepDemoAutoMatches(req);
-    // Fragment mode (?fragment=1): the smooth-tab JS fetches just the grid
-    // HTML (no layout) and swaps it in place — no full page reload.
-    // Strip it from req.query first so qs() never leaks fragment=1 into
-    // pager links (a plain click on those must render a full page).
-    const fragment = req.query.fragment === '1';
-    delete req.query.fragment;
-    const tab = ['nearby', 'online', 'new'].includes(req.query.tab) ? req.query.tab : 'nearby';
-    const f = {
-      tab,
-      ageMin: req.query.age_min ? Number(req.query.age_min) : null,
-      ageMax: req.query.age_max ? Number(req.query.age_max) : null,
-      maxKm: req.query.max_km ? Number(req.query.max_km) : null,
-      onlineOnly: tab === 'online' || req.query.online === '1',
-    };
-    let cands = await getCandidates(req.user, req.profile, { includeSwiped: true, ...f });
-    if (tab === 'new') cands.sort((x, y) => new Date(y.created_at) - new Date(x.created_at));
-    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
-    const PER = 8;
-    const total = cands.length;
-    const totalPages = Math.max(1, Math.ceil(total / PER));
-    const safePage = Math.min(page, totalPages);
-    const pageItems = cands.slice((safePage - 1) * PER, safePage * PER);
-    await attachSwipeKind(req.user.id, pageItems);
-    if (fragment) {
-      return res.render('partials/explore-grid', {
-        items: pageItems, page: safePage, totalPages, layout: false,
-      });
-    }
-    res.render('explore', { title: res.locals.t('explore'), items: pageItems, f, total, page: safePage, totalPages, photoOf });
-  } catch (e) { next(e); }
-});
+// ---- Explore is gone: the app is swipe-only now. Any old link or
+// bookmark to /explore lands on the Discover deck instead of a dead page.
+router.get('/explore', (req, res) => res.redirect('/discover'));
 
 // ---- Matches list ----
 router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => {
