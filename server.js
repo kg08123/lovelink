@@ -136,7 +136,12 @@ app.use(async (req, res, next) => {
   res.locals.user = req.user;
   res.locals.profile = req.profile;
   res.locals.unreadCount = 0;
-  const skipBadges = BADGE_SKIP.some((p) => req.path === p || req.path.startsWith(p + '/'))
+  // Chat speed: the thread poll hits this middleware every few seconds.
+  // Badge counts are useless on JSON/XHR endpoints (nothing renders them)
+  // and on /health, so skip those 2 extra queries there.
+  const isJsonPoll = req.xhr || req.path.endsWith('/json');
+  const skipBadges = req.path === '/health' || isJsonPoll
+    || BADGE_SKIP.some((p) => req.path === p || req.path.startsWith(p + '/'))
     || req.path.startsWith('/auth/google');
   if (req.user && !skipBadges) {
     try {

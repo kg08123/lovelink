@@ -28,16 +28,6 @@ async function getConv(id, userId) {
   return r.rows[0];
 }
 
-async function unreadFor(convId, userId) {
-  const r = await db.query(
-    `SELECT COUNT(*)::int AS n FROM messages m
-     LEFT JOIN conversation_reads r ON r.conversation_id=m.conversation_id AND r.user_id=$1
-     WHERE m.conversation_id=$2 AND m.sender_user_id<>$1
-       AND m.created_at > COALESCE(r.last_read_at, '1970-01-01')`,
-    [userId, convId]);
-  return r.rows[0].n;
-}
-
 async function markRead(convId, userId) {
   await db.query(
     `INSERT INTO conversation_reads(user_id, conversation_id, last_read_at) VALUES($1,$2,NOW())
@@ -69,12 +59,35 @@ router.get('/', requireAuth, async (req, res, next) => {
        ORDER BY c.created_at DESC`,
       [req.user.id]);
     const convs = r.rows;
-    for (const c of convs) {
+    // Chat speed: one batched query for last messages + one for unread
+    // counts, instead of 2 queries per conversation (N+1).
+    if (convs.length) {
+      const ids = convs.map((c) => c.id);
+      const ph = ids.map((_, i) => `$${i + 1}`).join(',');
       const lm = await db.query(
-        'SELECT body, image_data IS NOT NULL AS has_image FROM messages WHERE conversation_id=$1 ORDER BY id DESC LIMIT 1', [c.id]);
-      c.lastBody = lm.rows.length ? lm.rows[0].body : '';
-      c.hasImage = lm.rows.length ? !!lm.rows[0].has_image : false;
-      c.unread = await unreadFor(c.id, req.user.id);
+        `SELECT m.conversation_id, m.body, m.image_data IS NOT NULL AS has_image
+         FROM messages m
+         JOIN (SELECT conversation_id, MAX(id) AS max_id FROM messages
+               WHERE conversation_id IN (${ph}) GROUP BY conversation_id) x
+           ON x.max_id = m.id`,
+        ids);
+      const lastByConv = {};
+      for (const row of lm.rows) lastByConv[row.conversation_id] = row;
+      const uc = await db.query(
+        `SELECT m.conversation_id, COUNT(*)::int AS n FROM messages m
+         LEFT JOIN conversation_reads rd ON rd.conversation_id=m.conversation_id AND rd.user_id=$${ids.length + 1}
+         WHERE m.conversation_id IN (${ph}) AND m.sender_user_id<>$${ids.length + 1}
+           AND m.created_at > COALESCE(rd.last_read_at, '1970-01-01')
+         GROUP BY m.conversation_id`,
+        [...ids, req.user.id]);
+      const unreadByConv = {};
+      for (const row of uc.rows) unreadByConv[row.conversation_id] = row.n;
+      for (const c of convs) {
+        const last = lastByConv[c.id];
+        c.lastBody = last ? last.body : '';
+        c.hasImage = last ? !!last.has_image : false;
+        c.unread = unreadByConv[c.id] || 0;
+      }
     }
     const nr = await db.query(
       'SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100', [req.user.id]);
@@ -99,10 +112,14 @@ router.get('/:id', requireAuth, async (req, res, next) => {
     const conv = await getConv(req.params.id, req.user.id);
     if (!conv) return res.status(404).render('404');
     await markRead(conv.id, req.user.id);
+    // Latest 50 only — the old LIMIT 100 pulled full base64 image_data for
+    // the first 100 messages on every thread open.
     const m = await db.query(
-      `SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, u.name AS sender_name
-       FROM messages m JOIN users u ON u.id=m.sender_user_id
-       WHERE m.conversation_id=$1 ORDER BY m.id ASC LIMIT 100`, [conv.id]);
+      `SELECT id, body, created_at, sender_user_id, image_data, sender_name FROM (
+         SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, u.name AS sender_name
+         FROM messages m JOIN users u ON u.id=m.sender_user_id
+         WHERE m.conversation_id=$1 ORDER BY m.id DESC LIMIT 50
+       ) s ORDER BY s.id ASC`, [conv.id]);
     res.render('messages-thread', { title: conv.other_name, conv, messages: m.rows, bodyClass: 'chat-page' });
   } catch (e) { next(e); }
 });
@@ -118,7 +135,12 @@ router.get('/:id/json', requireAuth, async (req, res, next) => {
       `SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data
        FROM messages m WHERE m.conversation_id=$1 AND m.id>$2 ORDER BY m.id ASC LIMIT 100`,
       [conv.id, after]);
-    await markRead(conv.id, req.user.id);
+    // Chat speed: the old code did a markRead WRITE on every poll, even
+    // when nothing new arrived. Only mark read when a new message from the
+    // other side actually came in (thread open already marks read once).
+    if (m.rows.some((x) => x.sender_user_id !== req.user.id)) {
+      await markRead(conv.id, req.user.id);
+    }
     res.json({
       messages: m.rows.map((x) => ({
         id: x.id, body: x.body, created_at: x.created_at, mine: x.sender_user_id === req.user.id,

@@ -49,15 +49,35 @@
     div.appendChild(s); chat.appendChild(div);
     chat.scrollTop=chat.scrollHeight;
   }
-  async function poll(){
+  // Chat speed: poll every 3s as a chained timeout (never overlapping).
+  // A tick is skipped while a fetch is still in flight, polling pauses
+  // entirely while the tab is hidden, and failures back off (3s, 6s,
+  // 12s, 24s, 48s) instead of hammering the server every 2s.
+  var POLL_MS = 3000, pollTimer = null, pollInFlight = false, pollBackoff = 0;
+  function schedulePoll(ms){ clearTimeout(pollTimer); pollTimer = setTimeout(tick, ms); }
+  async function tick(){
+    // While hidden, keep the timer chain alive (no fetch) so the chain
+    // can never die if the page loads in a background tab; the
+    // visibilitychange handler restarts polling immediately on return.
+    if (document.hidden) { schedulePoll(POLL_MS); return; }
+    if (pollInFlight) { schedulePoll(500); return; }
+    pollInFlight = true;
     try{
       var r=await fetch('/messages/<%= conv.id %>/json?after='+lastId,{headers:{'Accept':'application/json','X-Requested-With':'XMLHttpRequest'}});
-      if(!r.ok) return;
+      if(!r.ok) throw new Error('poll '+r.status);
       var d=await r.json();
       d.messages.forEach(addMsg);
-    }catch(e){}
+      pollBackoff = 0;
+    }catch(e){ pollBackoff = Math.min(pollBackoff + 1, 4); }
+    finally{ pollInFlight = false; }
+    schedulePoll(POLL_MS * Math.pow(2, pollBackoff));
   }
-  setInterval(poll,2000);
+  function poll(){ clearTimeout(pollTimer); tick(); }
+  schedulePoll(POLL_MS);
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden) { clearTimeout(pollTimer); }
+    else { tick(); }
+  });
   var form=document.getElementById('sendform');
   var input=form.querySelector('input[name=body]');
   var imgInput=document.getElementById('imgInput'), imgFile=null;
