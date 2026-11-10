@@ -226,42 +226,42 @@
  },
  "liya": {
   "id": 13597866,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/smiling-woman-with-curly-hair-sitting-in-traditional-clothing-13597866/",
   "src": "https://images.pexels.com/photos/13597866/pexels-photo-13597866.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 58443
  },
  "liya_2": {
   "id": 13597863,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/a-woman-in-white-top-with-yellow-and-brown-headband-and-choker-13597863/",
   "src": "https://images.pexels.com/photos/13597863/pexels-photo-13597863.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 48635
  },
  "liya_3": {
   "id": 13597864,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/smiling-woman-in-blue-dress-squatting-under-clouds-13597864/",
   "src": "https://images.pexels.com/photos/13597864/pexels-photo-13597864.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 34351
  },
  "hiwot": {
   "id": 33609158,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/traditional-ethiopian-woman-in-cultural-dress-33609158/",
   "src": "https://images.pexels.com/photos/33609158/pexels-photo-33609158.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 67234
  },
  "hiwot_2": {
   "id": 33609157,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/elegant-traditional-portrait-in-black-and-white-33609157/",
   "src": "https://images.pexels.com/photos/33609157/pexels-photo-33609157.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 40025
  },
  "hiwot_3": {
   "id": 33609163,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/elegant-ethiopian-woman-in-traditional-garb-outdoors-33609163/",
   "src": "https://images.pexels.com/photos/33609163/pexels-photo-33609163.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 40812
@@ -282,14 +282,14 @@
  },
  "yordanos": {
   "id": 12393881,
-  "photographer": "Gift Habeshaw \ud83c\uddea\ud83c\uddf9",
+  "photographer": "Gift Habeshaw 🇪🇹",
   "url": "https://www.pexels.com/photo/woman-wearing-a-headband-12393881/",
   "src": "https://images.pexels.com/photos/12393881/pexels-photo-12393881.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 31592
  },
  "samuel": {
   "id": 38427522,
-  "photographer": "\ud835\udc02\ud835\udc1d\ud835\udc1e\ud835\udc1e\ud835\udc10_ \ud835\udc29\ud835\udc21\ud835\udc28\ud835\udc2d\ud835\udc28\ud835\udc20\ud835\udc2b\ud835\udc1a\ud835\udc29\ud835\udc21\ud835\udc18",
+  "photographer": "𝐂𝐝𝐞𝐞𝐐_ 𝐩𝐡𝐨𝐭𝐨𝐠𝐫𝐚𝐩𝐡𝐘",
   "url": "https://www.pexels.com/photo/young-man-in-traditional-ethiopian-attire-outdoors-38427522/",
   "src": "https://images.pexels.com/photos/38427522/pexels-photo-38427522.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 37476
@@ -328,5 +328,152 @@
   "url": "https://www.pexels.com/photo/portrait-of-a-man-in-traditional-attire-39586818/",
   "src": "https://images.pexels.com/photos/39586818/pexels-photo-39586818.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 37776
+ },
+ "ayana": {
+  "id": 9037132,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/smiling-woman-in-black-knit-cap-and-black-jacket-9037132/",
+  "src": "https://images.pexels.com/photos/9037132/pexels-photo-9037132.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 72500
+ },
+ "ayana_2": {
+  "id": 9037133,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/a-woman-in-green-leather-jacket-smiling-9037133/",
+  "src": "https://images.pexels.com/photos/9037133/pexels-photo-9037133.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 68582
+ },
+ "ayana_3": {
+  "id": 9037134,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/shallow-focus-photo-of-woman-in-yellow-jacket-and-yellow-pants-9037134/",
+  "src": "https://images.pexels.com/photos/9037134/pexels-photo-9037134.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 64617
+ },
+ "helen": {
+  "id": 31968867,
+  "photographer": "Abel Alemseged",
+  "url": "https://www.pexels.com/photo/elegant-woman-with-umbrella-at-vintage-bowling-venue-31968867/",
+  "src": "https://images.pexels.com/photos/31968867/pexels-photo-31968867.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 72734
+ },
+ "helen_2": {
+  "id": 31968869,
+  "photographer": "Abel Alemseged",
+  "url": "https://www.pexels.com/photo/stylish-woman-with-umbrella-on-a-rainy-day-31968869/",
+  "src": "https://images.pexels.com/photos/31968869/pexels-photo-31968869.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 69360
+ },
+ "feven": {
+  "id": 4341045,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/woman-holding-a-throw-pillow-smiling-4341045/",
+  "src": "https://images.pexels.com/photos/4341045/pexels-photo-4341045.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 59838
+ },
+ "kidist": {
+  "id": 7877665,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/side-view-of-a-curly-haired-woman-wearing-denim-jacket-7877665/",
+  "src": "https://images.pexels.com/photos/7877665/pexels-photo-7877665.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 58483
+ },
+ "mihret": {
+  "id": 8376471,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/a-woman-in-knitted-sweater-sitting-near-the-window-while-looking-at-the-cup-of-coffee-8376471/",
+  "src": "https://images.pexels.com/photos/8376471/pexels-photo-8376471.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 71499
+ },
+ "yodit": {
+  "id": 17460251,
+  "photographer": "Abel Alemseged",
+  "url": "https://www.pexels.com/photo/woman-standing-with-arm-raised-on-street-17460251/",
+  "src": "https://images.pexels.com/photos/17460251/pexels-photo-17460251.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 48294
+ },
+ "netsanet": {
+  "id": 18574102,
+  "photographer": "Eden Kefale",
+  "url": "https://www.pexels.com/photo/head-shot-18574102/",
+  "src": "https://images.pexels.com/photos/18574102/pexels-photo-18574102.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 48582
+ },
+ "genet": {
+  "id": 7784440,
+  "photographer": "begna belay",
+  "url": "https://www.pexels.com/photo/a-woman-with-afro-hair-smiling-at-the-camera-7784440/",
+  "src": "https://images.pexels.com/photos/7784440/pexels-photo-7784440.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 73338
+ },
+ "almaz": {
+  "id": 31443956,
+  "photographer": "Abenezer Shewaga",
+  "url": "https://www.pexels.com/photo/captivating-portrait-of-a-beautiful-ethiopian-woman-31443956/",
+  "src": "https://images.pexels.com/photos/31443956/pexels-photo-31443956.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 57518
+ },
+ "eyerusalem": {
+  "id": 17460252,
+  "photographer": "Abel Alemseged",
+  "url": "https://www.pexels.com/photo/a-woman-in-stylish-streetwear-poses-on-a-busy-street-in-addis-ababa-ethiopia-17460252/",
+  "src": "https://images.pexels.com/photos/17460252/pexels-photo-17460252.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 59036
+ },
+ "yared": {
+  "id": 3826422,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/ethnic-man-with-afro-hairstyle-walking-along-street-3826422/",
+  "src": "https://images.pexels.com/photos/3826422/pexels-photo-3826422.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 63149
+ },
+ "yared_2": {
+  "id": 4005554,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/man-wearing-denim-jacket-4005554/",
+  "src": "https://images.pexels.com/photos/4005554/pexels-photo-4005554.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 36348
+ },
+ "yared_3": {
+  "id": 4005556,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/man-wearing-denim-jacket-4005556/",
+  "src": "https://images.pexels.com/photos/4005556/pexels-photo-4005556.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 69546
+ },
+ "fikre": {
+  "id": 6275759,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/photograph-of-a-man-in-a-gray-blazer-smiling-6275759/",
+  "src": "https://images.pexels.com/photos/6275759/pexels-photo-6275759.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 58413
+ },
+ "samson": {
+  "id": 7345675,
+  "photographer": "Gift Habeshaw 🇪🇹",
+  "url": "https://www.pexels.com/photo/man-wearing-a-scarf-around-his-neck-7345675/",
+  "src": "https://images.pexels.com/photos/7345675/pexels-photo-7345675.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 61522
+ },
+ "getnet": {
+  "id": 17435965,
+  "photographer": "Abel Alemseged",
+  "url": "https://www.pexels.com/photo/man-in-hat-and-suit-standing-with-cellphone-17435965/",
+  "src": "https://images.pexels.com/photos/17435965/pexels-photo-17435965.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 73445
+ },
+ "mikiyas": {
+  "id": 8532530,
+  "photographer": "Dawit Bogale",
+  "url": "https://www.pexels.com/photo/portrait-of-a-man-sitting-in-a-room-8532530/",
+  "src": "https://images.pexels.com/photos/8532530/pexels-photo-8532530.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 59712
+ },
+ "verify_pose": {
+  "id": 8053507,
+  "photographer": "Thirdman",
+  "url": "https://www.pexels.com/photo/man-in-blue-long-sleeve-with-hand-on-chin-8053507/",
+  "src": "https://images.pexels.com/photos/8053507/pexels-photo-8053507.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
+  "bytes": 70445
  }
 }

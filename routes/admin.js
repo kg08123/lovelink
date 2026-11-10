@@ -17,6 +17,7 @@ router.get('/', async (req, res, next) => {
     const messages = await db.query('SELECT COUNT(*) AS c FROM messages');
     const pending = await db.query("SELECT COUNT(*) AS c FROM payments WHERE status='pending'");
     const reports = await db.query("SELECT COUNT(*) AS c FROM reports WHERE status='pending'");
+    const verifs = await db.query("SELECT COUNT(*) AS c FROM verifications WHERE status='pending'");
     const premium = await db.query("SELECT COUNT(*) AS c FROM users WHERE is_premium=TRUE");
     const revenue = await db.query("SELECT COUNT(*) AS c FROM payments WHERE status='approved'");
     res.render('admin/dashboard', {
@@ -26,6 +27,7 @@ router.get('/', async (req, res, next) => {
       totalMessages: messages.rows[0].c,
       pendingPayments: pending.rows[0].c,
       pendingReports: reports.rows[0].c,
+      pendingVerifications: verifs.rows[0].c,
       premiumUsers: premium.rows[0].c,
       revenue: Number(revenue.rows[0].c) * PREMIUM_FEE,
     });
@@ -153,6 +155,55 @@ router.post('/reports/:id/ban', async (req, res, next) => {
       await db.query("UPDATE reports SET status='actioned' WHERE id=$1", [req.params.id]);
     }
     res.redirect('/admin/reports');
+  } catch (e) { next(e); }
+});
+
+// Selfie verification queue: compare the selfie with the profile photo
+// side by side. Approve grants the blue verified badge + notifies the
+// user; reject sends them back to retake.
+router.get('/verifications', async (req, res, next) => {
+  try {
+    const r = await db.query(
+      `SELECT v.id, v.photo, v.status, v.created_at,
+              u.id AS user_id, u.name AS user_name, u.age AS user_age, u.phone AS user_phone,
+              p.photo1, p.photo1_thumb
+       FROM verifications v JOIN users u ON u.id=v.user_id
+       LEFT JOIN profiles p ON p.user_id=v.user_id
+       WHERE v.status='pending' ORDER BY v.created_at ASC`);
+    const done = await db.query(
+      `SELECT v.id, v.status, v.created_at, v.reviewed_at,
+              u.name AS user_name, u.age AS user_age
+       FROM verifications v JOIN users u ON u.id=v.user_id
+       WHERE v.status<>'pending' ORDER BY v.reviewed_at DESC LIMIT 20`);
+    res.render('admin/verifications', {
+      title: res.locals.t('verificationsQueue'), pending: r.rows, reviewed: done.rows,
+    });
+  } catch (e) { next(e); }
+});
+
+router.post('/verifications/:id/approve', async (req, res, next) => {
+  try {
+    const v = await db.query('SELECT * FROM verifications WHERE id=$1', [req.params.id]);
+    if (!v.rows.length) return res.redirect('/admin/verifications');
+    const row = v.rows[0];
+    await db.query("UPDATE verifications SET status='approved', reviewed_at=NOW() WHERE id=$1", [row.id]);
+    await db.query('UPDATE users SET selfie_verified=TRUE WHERE id=$1', [row.user_id]);
+    const { notify } = require('../lib/notify');
+    await notify(db, row.user_id, 'verified', '/profile', 'verifyApprovedTitle', 'verifyApprovedBody', []);
+    req.session.flash = { type: 'ok', msg: 'Verified — badge granted.' };
+    res.redirect('/admin/verifications');
+  } catch (e) { next(e); }
+});
+
+router.post('/verifications/:id/reject', async (req, res, next) => {
+  try {
+    const v = await db.query('SELECT * FROM verifications WHERE id=$1', [req.params.id]);
+    if (!v.rows.length) return res.redirect('/admin/verifications');
+    const row = v.rows[0];
+    await db.query("UPDATE verifications SET status='rejected', reviewed_at=NOW() WHERE id=$1", [row.id]);
+    const { notify } = require('../lib/notify');
+    await notify(db, row.user_id, 'verified', '/verify', 'verifyRejectedTitle', 'verifyRejectedBody', []);
+    res.redirect('/admin/verifications');
   } catch (e) { next(e); }
 });
 

@@ -87,7 +87,7 @@ app.use((req, res, next) => {
       ? 'messages'
       : req.path.startsWith('/messages')
         ? 'messages'
-        : req.path.startsWith('/profile') || req.path.startsWith('/settings') || req.path.startsWith('/premium')
+        : req.path.startsWith('/profile') || req.path.startsWith('/settings') || req.path.startsWith('/premium') || req.path.startsWith('/verify')
           ? 'profile'
           : '';
   res.locals.APP_VERSION = require('./package.json').version || '1.0.0';
@@ -106,6 +106,19 @@ app.use((req, res, next) => {
   };
   next();
 });
+
+// Presence: real last_active for the "Online / Recently Online" labels.
+// Throttled to one UPDATE per user per 5 min (in-memory) so the 3s chat
+// poll never hammers the DB. Fire-and-forget, never blocks the request.
+const lastSeenTouch = new Map();
+const LAST_SEEN_MS = 5 * 60 * 1000;
+function touchLastSeen(userId) {
+  const last = lastSeenTouch.get(userId) || 0;
+  if (Date.now() - last < LAST_SEEN_MS) return;
+  lastSeenTouch.set(userId, Date.now());
+  db.query("UPDATE profiles SET last_active=NOW() WHERE user_id=$1 AND last_active < NOW() - INTERVAL '5 minutes'", [userId])
+    .catch(() => {});
+}
 
 // Attach logged-in user + profile to request + views.
 // One JOIN query instead of two, and the unread/notification counts are
@@ -155,6 +168,8 @@ app.use(async (req, res, next) => {
   res.locals.user = req.user;
   res.locals.profile = req.profile;
   res.locals.unreadCount = 0;
+  // Stamp real activity for presence (see touchLastSeen above).
+  if (req.user && req.profile) touchLastSeen(req.user.id);
   // Chat speed: the thread poll hits this middleware every few seconds.
   // Badge counts are useless on JSON/XHR endpoints (nothing renders them)
   // and on /health, so skip those 2 extra queries there.
@@ -237,6 +252,7 @@ if (demoSweepTimer.unref) demoSweepTimer.unref();
 app.use('/messages', require('./routes/messages'));
 app.use('/premium', require('./routes/premium'));
 app.use('/settings', require('./routes/settings'));
+app.use('/verify', require('./routes/verify'));
 app.use('/', require('./routes/index'));
 app.use('/', require('./routes/auth'));
 app.use('/', require('./routes/discover'));

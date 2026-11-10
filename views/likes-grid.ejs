@@ -13,7 +13,7 @@
     <% if (it.thumb) { %><img src="<%= it.thumb %>" alt="<%= it.name %>" loading="lazy" decoding="async"><% } else { %><div class="like-card-ph"><%- icon('user') %></div><% } %>
     <div class="like-info">
       <div class="like-name"><%= it.name %>, <%= it.age %> <% if (it.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></div>
-      <% if (it.online) { %><div class="like-online"><span class="online-dot"></span> Online</div><% } %>
+      <% if (it.presence === 'online') { %><div class="like-online"><span class="online-dot"></span> Online</div><% } else if (it.presence === 'recent') { %><div class="like-online recent"><span class="online-dot"></span> <%= t('recentlyOnline') %></div><% } %>
       <div class="like-meta"><%= it.country || '' %><% if (it.distanceText) { %> • <%= it.distanceText.replace(' away', '') %><% } %></div>
     </div>
   </a>

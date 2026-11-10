@@ -4,6 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { presenceOf } = require('../lib/presence');
 const router = express.Router();
 
 const chatUpload = multer({
@@ -33,7 +34,10 @@ async function getConv(id, userId) {
             CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
             CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_thumb,
             CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo,
-            CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online
+            CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online,
+            CASE WHEN c.user_a_id=$1 THEN bu.selfie_verified ELSE au.selfie_verified END AS other_selfie_verified,
+            CASE WHEN c.user_a_id=$1 THEN bu.is_demo ELSE au.is_demo END AS other_is_demo,
+            CASE WHEN c.user_a_id=$1 THEN bp.last_active ELSE ap.last_active END AS other_last_active
      FROM conversations c
      JOIN users au ON au.id=c.user_a_id
      JOIN users bu ON bu.id=c.user_b_id
@@ -67,7 +71,10 @@ router.get('/', requireAuth, async (req, res, next) => {
               CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
               CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo,
               CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_photo_thumb,
-              CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online
+              CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online,
+              CASE WHEN c.user_a_id=$1 THEN bu.selfie_verified ELSE au.selfie_verified END AS other_selfie_verified,
+              CASE WHEN c.user_a_id=$1 THEN bu.is_demo ELSE au.is_demo END AS other_is_demo,
+              CASE WHEN c.user_a_id=$1 THEN bp.last_active ELSE ap.last_active END AS other_last_active
        FROM conversations c
        JOIN users au ON au.id=c.user_a_id
        JOIN users bu ON bu.id=c.user_b_id
@@ -126,6 +133,9 @@ router.get('/', requireAuth, async (req, res, next) => {
       name: c.other_name,
       thumb: c.thumb,
       online: !!c.other_online,
+      // Blue badge = selfie-verified or demo; presence from real last_active.
+      verified: !!(c.other_selfie_verified || c.other_is_demo),
+      presence: presenceOf(c.other_last_active),
       unread: c.unread,
       previewKind: c.hasImage ? 'photo' : (c.lastBody ? 'text' : 'new'),
       previewText: c.lastBody || '',
@@ -140,6 +150,7 @@ router.get('/', requireAuth, async (req, res, next) => {
         name: 'LoveLink',
         verified: true,
         online: true,
+        presence: 'online',
         unread: unreadNotifs,
         previewKind: 'platform',
         previewRaw: latest.body,
@@ -167,6 +178,8 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const conv = await getConv(req.params.id, req.user.id);
     if (!conv) return res.status(404).render('404');
+    conv.other_presence = presenceOf(conv.other_last_active);
+    conv.other_verified = !!(conv.other_selfie_verified || conv.other_is_demo);
     await markRead(conv.id, req.user.id);
     // Latest 50 only — the old LIMIT 100 pulled full base64 image_data for
     // the first 100 messages on every thread open.

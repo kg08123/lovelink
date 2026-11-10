@@ -8,6 +8,31 @@
 (function () {
   'use strict';
 
+  // Discover loading screen: it is in the HTML by default so it shows the
+  // moment Discover opens. Fade it out once the first card is ready, but
+  // never later than 3s (the CSS auto-hide at 3.4s is the final backstop,
+  // so a slow/cold server can never leave the screen stuck). Minimum
+  // ~900ms on screen so the animation is actually seen. XHR card swaps
+  // never render the overlay, so it cannot flash on a swipe.
+  (function () {
+    var lo = document.getElementById('discoverLoading');
+    if (!lo) return;
+    var done = false;
+    function hide() {
+      if (done) return;
+      done = true;
+      lo.classList.add('dl-done');
+      setTimeout(function () { if (lo.parentNode) lo.parentNode.removeChild(lo); }, 550);
+    }
+    var img = document.querySelector('#discover-root .fs-photo');
+    if (img && !img.complete) {
+      img.addEventListener('load', function () { setTimeout(hide, 900); }, { once: true });
+      img.addEventListener('error', function () { setTimeout(hide, 300); }, { once: true });
+    }
+    setTimeout(hide, 900);
+    setTimeout(hide, 3000);
+  })();
+
   function toast(msg) {
     if (!msg) return;
     var el = document.getElementById('instant-toast');

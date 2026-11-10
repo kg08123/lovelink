@@ -1,0 +1,43 @@
+<h1 class="page-title"><%= t('verificationsQueue') %></h1>
+<h2><%= t('pendingVerifications') %> (<%= pending.length %>)</h2>
+<% if (!pending.length) { %>
+  <p class="sub"><%= t('noPendingVerifications') %></p>
+<% } else { %>
+  <% pending.forEach(function(v){ %>
+  <div class="verify-admin-card">
+    <div class="verify-admin-who">
+      <b><a class="table-link" href="/admin/users/<%= v.user_id %>"><%= v.user_name %></a>, <%= v.user_age %></b>
+      <span class="sub"><%= v.user_phone %> · <%= new Date(v.created_at).toLocaleString('en-US', { timeZone: 'Africa/Addis_Ababa' }) %></span>
+    </div>
+    <div class="verify-admin-photos">
+      <figure>
+        <img src="<%= v.photo %>" alt="<%= t('verifySelfie') %>">
+        <figcaption><%= t('verifySelfie') %></figcaption>
+      </figure>
+      <figure>
+        <% if (v.photo1) { %><img src="<%= v.photo1_thumb || v.photo1 %>" alt="<%= t('verifyProfilePhoto') %>"><% } else { %><div class="verify-admin-nophoto">No profile photo</div><% } %>
+        <figcaption><%= t('verifyProfilePhoto') %></figcaption>
+      </figure>
+    </div>
+    <div class="verify-admin-actions">
+      <form method="post" action="/admin/verifications/<%= v.id %>/approve">
+        <button class="btn btn-green" type="submit"><%= t('approve') %></button>
+      </form>
+      <form method="post" action="/admin/verifications/<%= v.id %>/reject">
+        <button class="btn btn-red" type="submit"><%= t('reject') %></button>
+      </form>
+    </div>
+  </div>
+  <% }) %>
+<% } %>
+<% if (reviewed.length) { %>
+<h2 style="margin-top:22px"><%= t('reviewedVerifications') %></h2>
+<table class="data">
+  <thead><tr><th>Name</th><th>Status</th><th>Reviewed</th></tr></thead>
+  <tbody>
+  <% reviewed.forEach(function(v){ %>
+    <tr><td><%= v.user_name %>, <%= v.user_age %></td><td><%= v.status %></td><td><%= v.reviewed_at ? new Date(v.reviewed_at).toLocaleString('en-US', { timeZone: 'Africa/Addis_Ababa' }) : '—' %></td></tr>
+  <% }) %>
+  </tbody>
+</table>
+<% } %>

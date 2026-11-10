@@ -1,4 +1,21 @@
 <div id="discover-root" class="discover-root">
+<% if (typeof loadingOverlay !== 'undefined' && loadingOverlay) { %>
+<div class="dl-overlay" id="discoverLoading" aria-hidden="true">
+  <div class="dl-orbit">
+    <div class="dl-ring r1"></div>
+    <div class="dl-ring r2"></div>
+    <div class="dl-heart"><%- icon('heart', true) %></div>
+    <span class="dl-chip c1"><%- icon('user') %></span>
+    <span class="dl-chip c2"><%- icon('sparkles') %></span>
+    <span class="dl-chip c3"><%- icon('heart', true) %></span>
+    <span class="dl-chip c4"><%- icon('pin') %></span>
+  </div>
+  <h1 class="dl-title"><%= t('loadingMatches') %></h1>
+  <p class="dl-sub"><%- icon('crosshair') %> <%= t('loadingNearYou') %></p>
+  <div class="dl-dots"><span></span><span></span><span></span><span></span></div>
+  <div class="dl-bar"><span></span></div>
+</div>
+<% } %>
 <% if (!card) { %>
   <div class="empty fs-empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
@@ -26,7 +43,7 @@
     <span class="stamp stamp-nope" aria-hidden="true">NOPE</span>
     <div class="swipe-info fs-info">
       <div class="fs-name-row">
-        <a href="/u/<%= card.id %>" class="swipe-name"><span class="nm"><%= card.name %>, <%= card.age %></span> <% if (card.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %><% if (card.online) { %><span class="online-dot fs-online-dot"></span><span class="online-txt">Online</span><% } %></a>
+        <a href="/u/<%= card.id %>" class="swipe-name"><span class="nm"><%= card.name %>, <%= card.age %></span> <% if (card.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %><% if (card.presence === 'online') { %><span class="online-dot fs-online-dot"></span><span class="online-txt">Online</span><% } else if (card.presence === 'recent') { %><span class="online-dot fs-online-dot recent"></span><span class="online-txt recent"><%= t('recentlyOnline') %></span><% } %></a>
         <a class="fs-expand" href="/u/<%= card.id %>" aria-label="View full profile"><%- icon('chevronUp') %></a>
       </div>
       <div class="fs-infobox">

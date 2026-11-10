@@ -6,6 +6,7 @@ const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { haversineKm, fmtDistance, splitList, matchScore } = require('../lib/match');
+const { presenceOf } = require('../lib/presence');
 const { notify } = require('../lib/notify');
 const { processDemoAutoMatches } = require('../lib/demo-auto');
 const { thumbFor, backfillProfileThumb } = require('../lib/thumbs');
@@ -72,8 +73,8 @@ async function ensureMatchesFor(userId) {
 // ---- Candidates: not me, not banned, has a profile, not swiped yet,
 // ---- not blocked either way, fits my looking-for + age range (and I fit theirs).
 // ---- Settings prefs are REAL filters here: my age range, my preferred
-// ---- religion, Verified Only (verified = email verified, or a demo
-// ---- profile — demos have no email to verify, and the badge already
+// ---- religion, Verified Only (verified = selfie-verified, or a demo
+// ---- profile — demos have no selfie to verify, and the badge already
 // ---- shows for them), and other users' Incognito (they stay hidden from
 // ---- my deck unless they already liked me).
 async function getCandidates(me, meProfile, opts = {}) {
@@ -86,7 +87,7 @@ async function getCandidates(me, meProfile, opts = {}) {
   // photo2/3 ride along now for the story-progress photo viewer, as
   // 360px thumbs are NOT used on the full-screen card — the full photo is
   // one image, and the card is the whole screen.
-  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.email_verified, u.is_demo,
+  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.selfie_verified, u.is_demo,
              p.user_id, p.bio, p.city, p.country, p.latitude, p.longitude,
              p.height_cm, p.religion, p.education, p.job, p.smoking, p.drinking, p.kids,
              p.looking_for_gender, p.age_min, p.age_max, p.relationship_goal, p.interests,
@@ -123,7 +124,7 @@ async function getCandidates(me, meProfile, opts = {}) {
   if (opts.ageMin) { sql += ` AND u.age >= $${i++}`; params.push(Number(opts.ageMin)); }
   if (opts.ageMax) { sql += ` AND u.age <= $${i++}`; params.push(Number(opts.ageMax)); }
   if (opts.religion) { sql += ` AND p.religion = $${i++}`; params.push(opts.religion); }
-  if (opts.verifiedOnly) { sql += ` AND (u.email_verified = TRUE OR u.is_demo = TRUE)`; }
+  if (opts.verifiedOnly) { sql += ` AND (u.selfie_verified = TRUE OR u.is_demo = TRUE)`; }
   if (opts.onlineOnly) { sql += ` AND p.online = TRUE`; }
   sql += ' ORDER BY p.last_active DESC LIMIT 40';
   const r = await db.query(sql, params);
@@ -140,7 +141,10 @@ async function getCandidates(me, meProfile, opts = {}) {
       // main <img> still shows the full first photo, and the public
       // profile page shows the full versions.
       photos: [thumbFor(c.photo1, c.photo1_thumb), thumbFor(c.photo2, c.photo2_thumb), thumbFor(c.photo3, c.photo3_thumb)].filter(Boolean),
-      verified: !!(c.email_verified || c.is_demo),
+      verified: !!(c.selfie_verified || c.is_demo),
+      // Real presence from last_active: 'online' (green, <5 min),
+      // 'recent' (amber, <24h), 'none' (no label). Never faked.
+      presence: presenceOf(c.last_active),
       distanceKm: dist,
       distanceText: fmtDistance(dist),
       score: matchScore(
@@ -245,7 +249,7 @@ async function discoverData(req) {
 function renderDiscoverBody(req, res, data) {
   return new Promise((resolve, reject) => {
     res.render('discover', {
-      title: res.locals.t('discover'), ...data, photoOf, layout: false,
+      title: res.locals.t('discover'), ...data, photoOf, layout: false, loadingOverlay: false,
     }, (err, html) => (err ? reject(err) : resolve(html)));
   });
 }
@@ -382,10 +386,14 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
 router.get('/profile', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const n = await matchCount(req.user.id);
+    const { latestVerification } = require('./verify');
+    const v = await latestVerification(req.user.id);
+    const verifyStatus = req.user.selfie_verified ? 'verified' : (v ? v.status : 'none');
     res.render('my-profile', {
       title: req.user.name, me: req.user, p: req.profile, matchCount: n,
       freeLeft: Math.max(0, FREE_MATCHES - n),
       interestsList: splitList(req.profile.interests),
+      verifyStatus,
     });
   } catch (e) { next(e); }
 });
@@ -465,7 +473,7 @@ router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) =>
   try {
     const data = await discoverData(req);
     res.render('discover', {
-      title: res.locals.t('discover'), ...data, photoOf, bodyClass: 'discover-page',
+      title: res.locals.t('discover'), ...data, photoOf, bodyClass: 'discover-page', loadingOverlay: true,
     });
   } catch (e) { next(e); }
 });
@@ -675,15 +683,15 @@ router.get('/likes', requireAuth, requireOnboarded, async (req, res, next) => {
     const params = [req.user.id, ...blockedIds];
     const rows = tab === 'received'
       ? (await db.query(
-        `SELECT u.id, u.name, u.age, u.email_verified, u.is_demo,
-                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online,
+        `SELECT u.id, u.name, u.age, u.selfie_verified, u.is_demo,
+                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online, p.last_active,
                 s.created_at AS liked_at
          FROM swipes s JOIN users u ON u.id = s.from_user_id JOIN profiles p ON p.user_id = u.id
          WHERE s.to_user_id = $1 AND s.kind IN ('like','super') AND u.role='user' AND u.is_banned=FALSE${notBlocked}
          ORDER BY s.created_at DESC`, params)).rows
       : (await db.query(
-        `SELECT u.id, u.name, u.age, u.email_verified, u.is_demo,
-                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online,
+        `SELECT u.id, u.name, u.age, u.selfie_verified, u.is_demo,
+                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online, p.last_active,
                 s.created_at AS liked_at
          FROM swipes s JOIN users u ON u.id = s.to_user_id JOIN profiles p ON p.user_id = u.id
          WHERE s.from_user_id = $1 AND s.kind IN ('like','super') AND u.role='user' AND u.is_banned=FALSE${notBlocked}
@@ -691,7 +699,8 @@ router.get('/likes', requireAuth, requireOnboarded, async (req, res, next) => {
     const items = rows.map((row) => ({
       ...row,
       thumb: thumbFor(row.photo1, row.photo1_thumb),
-      verified: !!(row.email_verified || row.is_demo),
+      verified: !!(row.selfie_verified || row.is_demo),
+      presence: presenceOf(row.last_active),
       distanceText: fmtDistance(haversineKm(req.profile.latitude, req.profile.longitude, row.latitude, row.longitude)),
     }));
     for (const it of items) backfillProfileThumb(it.id, it.photo1, it.photo1_thumb);
@@ -719,21 +728,23 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
       const other = {
         ...req.profile, id: req.user.id, name: req.user.name, gender: req.user.gender,
         age: req.user.age, is_premium: req.user.is_premium,
-        email_verified: req.user.email_verified, is_demo: req.user.is_demo,
+        selfie_verified: req.user.selfie_verified, is_demo: req.user.is_demo,
+        presence: presenceOf(req.profile.last_active),
       };
       return res.render('profile-public', {
         title: other.name, other, distanceText: null, score: null,
         interestsList: splitList(other.interests), swiped: null,
         matched: null, convId: null, isBlocked: false,
-        verified: !!(other.email_verified || other.is_demo), preview: true,
+        verified: !!(other.selfie_verified || other.is_demo), preview: true,
       });
     }
     const r = await db.query(
-      `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.email_verified, u.is_demo, p.*
+      `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.selfie_verified, u.is_demo, p.*
        FROM users u JOIN profiles p ON p.user_id=u.id
        WHERE u.id=$1 AND u.role='user' AND u.is_banned=FALSE`, [id]);
     if (!r.rows.length) return res.status(404).render('404');
     const other = r.rows[0];
+    other.presence = presenceOf(other.last_active);
     const dist = haversineKm(req.profile.latitude, req.profile.longitude, other.latitude, other.longitude);
     const score = matchScore(
       { age: req.user.age, age_min: req.profile.age_min, age_max: req.profile.age_max, interests: req.profile.interests, relationship_goal: req.profile.relationship_goal, smoking: req.profile.smoking, drinking: req.profile.drinking },
@@ -748,7 +759,7 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
       interestsList: splitList(other.interests), swiped: sw.rows[0] || null,
       matched: matched.rows[0] || null, convId: matched.rows[0] ? matched.rows[0].conv_id : null,
       isBlocked: blocked.rows.length > 0,
-      verified: !!(other.email_verified || other.is_demo), preview: false,
+      verified: !!(other.selfie_verified || other.is_demo), preview: false,
     });
   } catch (e) { next(e); }
 });

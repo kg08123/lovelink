@@ -10,7 +10,7 @@
 <a class="msg-row" href="<%= r.href %>" data-name="<%= (r.name || '').toLowerCase() %>" data-preview="<%= (r.previewKind === 'text' ? (r.previewText || '') : (r.previewKind === 'photo' ? t('photo') : (r.previewKind === 'new' ? t('newMatch') : nt(r.previewRaw)))).toLowerCase() %>">
   <span class="msg-av">
     <% if (r.kind === 'platform') { %><span class="msg-av-ph"><%- icon('heart', true) %></span><% } else if (r.thumb) { %><img src="<%= r.thumb %>" alt="" loading="lazy" decoding="async"><% } else { %><span class="msg-av-ph msg-av-user"><%- icon('user') %></span><% } %>
-    <% if (r.online) { %><span class="msg-dot"></span><% } %>
+    <% if (r.presence === 'online') { %><span class="msg-dot"></span><% } else if (r.presence === 'recent') { %><span class="msg-dot recent"></span><% } %>
   </span>
   <span class="msg-mid">
     <span class="msg-name"><%= r.name %><% if (r.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></span>

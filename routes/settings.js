@@ -24,7 +24,7 @@ router.get('/', requireAuth, async (req, res, next) => {
 // - age range: SQL filter on the other person's age
 // - gender: looking_for_gender (the deck filter)
 // - religion: pref_religion ('Any' = no filter)
-// - verified only: only email-verified profiles (demos count as verified)
+// - verified only: only selfie-verified profiles (demos count as verified)
 // - incognito: hide me from other people's decks unless they liked me
 router.post('/preferences', requireAuth, async (req, res, next) => {
   try {

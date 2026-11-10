@@ -4,7 +4,7 @@
   <a class="chat-head-back" href="/messages" aria-label="Back to messages"><%- icon('chevronLeft') %></a>
   <a class="chat-head-who" href="/u/<%= conv.other_id %>">
     <% if (conv.other_thumb || conv.other_photo) { %><img class="chat-head-avatar" src="<%= conv.other_thumb || conv.other_photo %>" alt=""><% } else { %><div class="chat-head-avatar avatar-ph"><%- icon('user') %></div><% } %>
-    <span class="chat-head-name"><%= conv.other_name %><% if (conv.other_online) { %><small class="chat-head-online"><span class="online-dot"></span> Online</small><% } %></span>
+    <span class="chat-head-name"><span class="chat-head-name-row"><%= conv.other_name %><% if (conv.other_verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></span><% if (conv.other_presence === 'online') { %><small class="chat-head-online"><span class="online-dot"></span> Online</small><% } else if (conv.other_presence === 'recent') { %><small class="chat-head-online recent"><span class="online-dot"></span> <%= t('recentlyOnline') %></small><% } %></span>
   </a>
   <button class="chat-head-menu-btn" type="button" id="chatMenuBtn" aria-label="More options" aria-haspopup="true"><%- icon('more') %></button>
   <div class="chat-menu" id="chatMenu" hidden>

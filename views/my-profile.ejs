@@ -29,15 +29,12 @@
   </div>
   <input type="file" id="photoReplaceInput" accept="image/*" hidden>
 </div>
-<% if (me.email_verified) { %>
-<span class="me-row"><span class="row-ico c-green"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Verified</small></span><span class="chev ok"><%- icon('checkCircle') %></span></span>
-<% } else if (me.email) { %>
+<a class="me-row" href="/verify"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl"><%= t('verifyYourself') %><small><% if (verifyStatus === 'verified') { %><%= t('verifiedBadge') %><% } else if (verifyStatus === 'pending') { %><%= t('verifyPendingShort') %><% } else { %><%= t('verifyTap') %><% } %></small></span><span class="chev<%= verifyStatus === 'verified' ? ' ok' : '' %>"><%- icon(verifyStatus === 'verified' ? 'checkCircle' : 'chevronRight') %></span></a>
+<% if (me.email && !me.email_verified) { %>
 <form method="post" action="/verify-email/resend" class="me-row-form">
   <input type="hidden" name="email" value="<%= me.email %>">
-  <button type="submit" class="me-row"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Tap to send a verification link to your email</small></span><span class="chev"><%- icon('chevronRight') %></span></button>
+  <button type="submit" class="me-row"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verify your email<small>Tap to send a verification link to your email</small></span><span class="chev"><%- icon('chevronRight') %></span></button>
 </form>
-<% } else { %>
-<span class="me-row"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Add an email to verify your profile</small></span></span>
 <% } %>
 <div class="me-section">
   <h2>About Me</h2>

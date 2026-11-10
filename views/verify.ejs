@@ -1,0 +1,97 @@
+<div class="verify-page">
+  <div class="verify-head">
+    <a class="verify-back" href="/profile" aria-label="<%= t('back') %>"><%- icon('chevronLeft') %></a>
+    <h1 class="verify-title"><%= t('getVerified') %></h1>
+    <button class="verify-help-btn" type="button" id="verifyHelpBtn" aria-label="Help"><%- icon('help') %></button>
+  </div>
+
+  <div class="verify-info">
+    <span class="verify-info-ico"><%- icon('checkCircle') %></span>
+    <p><%= t('verifyInfo') %></p>
+  </div>
+
+  <div class="verify-help" id="verifyHelp" hidden>
+    <h2><%= t('verifyHelpTitle') %></h2>
+    <p><%= t('verifyHelpBody') %></p>
+  </div>
+
+  <% if (status === 'verified') { %>
+  <div class="verify-status ok">
+    <span class="verify-status-ico"><%- icon('checkCircle') %></span>
+    <div><b><%= t('verifyApprovedTitle') %></b><p><%= t('verifyApprovedBody') %></p></div>
+  </div>
+  <% } else if (status === 'pending') { %>
+  <div class="verify-status pending">
+    <span class="verify-status-ico"><%- icon('info') %></span>
+    <div><b><%= t('verifyPending') %></b><p><%= t('verifyPendingSub') %></p></div>
+  </div>
+  <% } else if (status === 'rejected') { %>
+  <div class="verify-status bad">
+    <span class="verify-status-ico"><%- icon('x') %></span>
+    <div><b><%= t('verifyRejected') %></b><p><%= t('verifyRejectedSub') %></p></div>
+  </div>
+  <% } %>
+
+  <h2 class="verify-pose-label"><%= t('matchPose') %></h2>
+  <div class="verify-pose">
+    <% if (poseImg) { %>
+      <img src="<%= poseImg %>" alt="<%= t('matchPose') %>">
+    <% } else { %>
+      <svg class="verify-pose-svg" viewBox="0 0 300 360" aria-hidden="true">
+        <ellipse cx="150" cy="128" rx="62" ry="78" fill="none" stroke="#ff2e63" stroke-width="3"/>
+        <path d="M68 360 C68 262 104 224 150 224 C196 224 232 262 232 360" fill="none" stroke="#ff2e63" stroke-width="3"/>
+        <path d="M196 214 C212 192 228 186 238 196 C246 205 241 218 229 224 L206 238" fill="none" stroke="#f5b942" stroke-width="4" stroke-linecap="round"/>
+        <circle cx="150" cy="128" r="4" fill="#ff2e63"/>
+      </svg>
+      <p class="verify-pose-hint">Hand on chin, face the camera</p>
+    <% } %>
+  </div>
+
+  <p class="verify-privacy"><%- icon('lock') %> <%= t('verifyPrivacy') %></p>
+
+  <% if (status !== 'verified') { %>
+  <form method="post" action="/verify/submit" enctype="multipart/form-data" id="verifyForm">
+    <input type="file" id="verifySelfieInput" name="selfie" accept="image/*" capture="user" hidden>
+    <div class="verify-preview" id="verifyPreview" hidden>
+      <img id="verifyPreviewImg" alt="">
+      <button type="button" class="btn btn-outline" id="verifyRetake">Retake</button>
+    </div>
+    <label class="btn btn-pink btn-block verify-take" for="verifySelfieInput" id="verifyTakeLabel"><%= status === 'pending' ? t('retakeSelfie') : t('takeSelfie') %></label>
+    <button class="btn btn-pink btn-block" type="submit" id="verifySend" hidden><%= t('sendForVerification') %></button>
+  </form>
+  <% } %>
+
+  <p class="verify-24h"><%= t('verifyWithin24h') %></p>
+</div>
+<script>
+(function () {
+  var helpBtn = document.getElementById('verifyHelpBtn');
+  var help = document.getElementById('verifyHelp');
+  if (helpBtn && help) helpBtn.addEventListener('click', function () { help.hidden = !help.hidden; });
+  var input = document.getElementById('verifySelfieInput');
+  if (!input) return;
+  var preview = document.getElementById('verifyPreview');
+  var img = document.getElementById('verifyPreviewImg');
+  var takeLabel = document.getElementById('verifyTakeLabel');
+  var send = document.getElementById('verifySend');
+  input.addEventListener('change', function () {
+    var f = input.files && input.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      img.src = e.target.result;
+      preview.hidden = false;
+      takeLabel.hidden = true;
+      send.hidden = false;
+    };
+    reader.readAsDataURL(f);
+  });
+  document.getElementById('verifyRetake').addEventListener('click', function () {
+    input.value = '';
+    img.removeAttribute('src');
+    preview.hidden = true;
+    takeLabel.hidden = false;
+    send.hidden = true;
+  });
+})();
+</script>

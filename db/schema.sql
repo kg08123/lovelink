@@ -167,3 +167,20 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS birth_place TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS incognito BOOLEAN DEFAULT FALSE;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS verified_only BOOLEAN DEFAULT FALSE;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pref_religion TEXT;
+
+-- Selfie verification (v6): the blue verified badge now means the user
+-- passed a selfie check (or is a demo profile) — email verification no
+-- longer grants the badge. One pending selfie per user at a time; a new
+-- submission replaces the old pending one. Selfies are shown ONLY to the
+-- admin, never on any public profile.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS selfie_verified BOOLEAN DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS verifications (
+  id SERIAL PRIMARY KEY,
+  user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  photo TEXT NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  reviewed_at TIMESTAMPTZ
+);
+CREATE INDEX IF NOT EXISTS idx_verifications_status ON verifications (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_verifications_user ON verifications (user_id);
