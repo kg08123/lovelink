@@ -26,6 +26,9 @@
   <form method="post" action="/admin/reset-demo-swipes" style="margin-bottom:8px">
     <button class="btn btn-outline btn-block" type="submit">Reset demo swipes (demo accounts can swipe again)</button>
   </form>
+  <form method="post" action="/admin/delete-old-demos" style="margin-bottom:8px" onsubmit="return confirm('Delete the 30 OLD demo users only? The 15 new profiles, Abel and admin stay.')">
+    <button class="btn btn-outline btn-block" type="submit">Delete old demo users (keeps the 15 new + Abel)</button>
+  </form>
   <form method="post" action="/admin/delete-demo" onsubmit="return confirm('Delete ALL demo users and their data?')">
     <button class="btn btn-red" type="submit"><%= t('deleteDemo') %></button>
   </form>

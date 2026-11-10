@@ -11,6 +11,14 @@ SELFIE = ROOT + "/public/img/demo-abel.jpg"
 NEW_GIRLS = ["Ayana Bekele", "Helen Teshome", "Feven Girma", "Kidist Alemu", "Mihret Haile",
              "Yodit Fikre", "Netsanet Worku", "Genet Tadesse", "Almaz Kassa", "Eyerusalem Gebru"]
 NEW_BOYS = ["Yared Tesfaye", "Fikre Alemayehu", "Samson Haile", "Getnet Berhe", "Mikiyas Worku"]
+# Item 5: these 31 old demos must NEVER appear again (seed + live).
+OLD_GIRLS = ["Selam Tesfaye", "Sara Mekonnen", "Mimi Alemu", "Ruth Girma", "Helina Girma",
+             "Tigist Bekele", "Bethlehem Tadesse", "Hanna Solomon", "Meron Alemayehu",
+             "Mekdes Tadesse", "Frehiwot Alemu", "Mahlet Girma", "Eden Bekele", "Rahel Haile",
+             "Liya Tesfaye", "Hiwot Daniel", "Selamawit Kassa", "Tsion Worku", "Yordanos Gebru"]
+OLD_BOYS = ["Abel Tesfaye", "Daniel Haile", "Yonas Tesfaye", "Dawit Haile", "Nahom Gebru",
+            "Fitsum Berhe", "Kaleb Worku", "Samuel Fikre", "Natnael Teshome", "Henok Alemayehu",
+            "Bereket Tadesse", "Yohannes Girma"]
 errors, failed = [], []
 
 def check(name, cond, extra=""):
@@ -71,19 +79,27 @@ try:
         page.on("pageerror", lambda e: errors.append(f"pageerror: {e}"))
 
         signin_admin = make_user_page(b, "0911000000", "admin123")
-        selam = make_user_page(b, "0922000222")
+        selam = make_user_page(b, "0922003232")
         adminPage, selamPage = signin_admin, selam
 
-        # fresh seed count: 46 demo users (role='user'; admin is not counted)
+        # fresh seed count: 15 demo users (role='user'; admin is not counted)
         adminPage.goto(BASE + "/admin")
         adminPage.wait_for_selector(".box", timeout=10000)
         boxes = adminPage.query_selector_all(".box")
         first_box = boxes[0].inner_text().strip() if boxes else ""
-        check("seed: 46 demo users (31 old + 15 new)", first_box.startswith("46"), first_box)
+        check("seed: 15 demo users (only the new modern ones)", first_box.startswith("15"), first_box)
+
+        # item 5: "Add missing demo users" adds 0 — the old demos are gone
+        # from the seed and can never come back. Delete-old-demos deletes 0
+        # on a fresh seed (nothing old exists to delete).
+        txt = adminPage.evaluate("""async () => { const r = await fetch('/admin/seed-demo', {method: 'POST', credentials: 'same-origin'}); return await r.text(); }""")
+        check("seed-demo adds 0 (old demos never come back)", "nothing new added" in txt, txt[:200])
+        txt2 = adminPage.evaluate("""async () => { const r = await fetch('/admin/delete-old-demos', {method: 'POST', credentials: 'same-origin'}); return await r.text(); }""")
+        check("delete-old-demos deletes 0 on fresh seed", "0 old demo users deleted" in txt2, txt2[:200])
 
         # ---------- 1. Loading screen ----------
         page.goto(BASE + "/signin")
-        page.fill('input[name=login]', "0922000111")
+        page.fill('input[name=login]', "0922004242")
         page.fill('input[name=password]', "password123")
         page.click('button[type=submit]')
         page.wait_for_url("**/discover", timeout=10000)
@@ -136,7 +152,7 @@ try:
         adminPage.goto(BASE + "/admin/verifications")
         adminPage.wait_for_selector("h1", timeout=10000)
         body = adminPage.inner_text("body")
-        check("admin queue: Abel pending row", "Abel Tesfaye" in body, body[:400])
+        check("admin queue: Yared pending row", "Yared Tesfaye" in body, body[:400])
         check("admin queue: selfie + profile photo shown", len(adminPage.query_selector_all(".verify-admin-photos img")) >= 2)
         adminPage.screenshot(path=f"{OUT}/ref6-verify-admin.png")
         check("admin queue no overflow", overflow(adminPage) == 0, overflow(adminPage))
@@ -145,21 +161,21 @@ try:
         time.sleep(0.5)
         # Approved rows move to the "Recently reviewed" table below, so the
         # pending count (not the name) is the signal.
-        check("admin queue: Abel no longer pending", "Pending Verifications (0)" in adminPage.inner_text("body"))
+        check("admin queue: Yared no longer pending", "Pending Verifications (0)" in adminPage.inner_text("body"))
 
-        # badge on Abel's public profile (seen as Selam)
+        # badge on Yared's public profile (seen as Ayana)
         # Abel's id: from the admin users page
         adminPage.goto(BASE + "/admin/users")
         users_html = adminPage.content()
-        m = re.search(r'/admin/users/(\d+)"[^>]*>\s*Abel Tesfaye', users_html)
+        m = re.search(r'/admin/users/(\d+)"[^>]*>\s*Yared Tesfaye', users_html)
         abel_id = m.group(1) if m else None
-        check("admin users: Abel id found", abel_id is not None)
+        check("admin users: Yared id found", abel_id is not None)
         selamPage.goto(BASE + "/u/" + abel_id)
         selamPage.wait_for_selector(".pub-hero, .pub-name-row", timeout=10000)
-        check("badge: verified badge on Abel public profile", selamPage.query_selector(".verified-badge") is not None)
+        check("badge: verified badge on Yared public profile", selamPage.query_selector(".verified-badge") is not None)
         check("public profile no overflow", overflow(selamPage) == 0, overflow(selamPage))
 
-        # ---------- 2c. Reject path: Selam submits, admin rejects, retake works ----------
+        # ---------- 2c. Reject path: Ayana submits, admin rejects, retake works ----------
         selamPage.goto(BASE + "/verify")
         selamPage.wait_for_selector(".verify-page", timeout=10000)
         selamPage.set_input_files("#verifySelfieInput", SELFIE)
@@ -169,7 +185,7 @@ try:
         time.sleep(0.5)
         adminPage.goto(BASE + "/admin/verifications")
         body = adminPage.inner_text("body")
-        check("admin queue: Selam pending row", "Selam Tesfaye" in body)
+        check("admin queue: Ayana pending row", "Ayana Bekele" in body)
         adminPage.click(".verify-admin-actions form[action$='/reject'] button")
         adminPage.wait_for_url("**/admin/verifications", timeout=10000)
         time.sleep(0.5)
@@ -223,9 +239,11 @@ try:
                     break
                 seen.add(n)
                 pass_card(page)
-            print("girls seen as Abel:", sorted(seen))
+            print("girls seen as Yared:", sorted(seen))
             for g in NEW_GIRLS:
                 check(f"new girl in deck: {g}", any(n.startswith(g + ",") for n in seen))
+            for g in OLD_GIRLS:
+                check(f"old girl gone: {g}", not any(n.startswith(g + ",") for n in seen))
             page.screenshot(path=f"{OUT}/ref6-new-demos.png")
             selamPage.goto(BASE + "/discover")
             selamPage.wait_for_selector(".fs-card", timeout=10000)
@@ -239,9 +257,11 @@ try:
                     break
                 seen_b.add(n)
                 pass_card(selamPage)
-            print("boys seen as Selam:", sorted(seen_b))
+            print("boys seen as Ayana:", sorted(seen_b))
             for bname in NEW_BOYS:
                 check(f"new boy in deck: {bname}", any(n.startswith(bname + ",") for n in seen_b))
+            for bname in OLD_BOYS:
+                check(f"old boy gone: {bname}", not any(n.startswith(bname + ",") for n in seen_b))
 
     # ---------- presence unit checks (no browser) ----------
     r = subprocess.run(["node", "-e",

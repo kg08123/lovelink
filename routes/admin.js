@@ -218,12 +218,38 @@ router.post('/seed-demo', async (req, res, next) => {
   } catch (e) { next(e); }
 });
 
-// Reset demo swipes only (demo accounts can swipe again; pre-seeded likes
-// restored). Matches, messages and real users' swipes are never touched.
+// Reset demo swipes only (demo accounts can swipe again).
+// Matches, messages and real users' swipes are never touched.
 router.post('/reset-demo-swipes', async (req, res, next) => {
   try {
     const cleared = await require('../db/seed').resetDemoSwipes();
-    req.session.flash = { type: 'ok', msg: cleared + ' demo swipes cleared — demo accounts can swipe again. Pre-seeded likes restored.' };
+    req.session.flash = { type: 'ok', msg: cleared + ' demo swipes cleared — demo accounts can swipe again.' };
+    res.redirect('/admin');
+  } catch (e) { next(e); }
+});
+
+// Delete ONLY the old demo users, by phone (2026-11-10 removal).
+// The 30 phones below are the original 16 (v1+v3) + the 15 cultural
+// profiles from 2026-11-10. KEPT, untouched: the 15 new modern demos,
+// the Abel test account (0922000111), the admin, and the user's real KG
+// account (not demo). All FKs are ON DELETE CASCADE, so their profiles,
+// swipes, matches, chats, reports and payments go with them. One-time
+// cleanup — on a fresh DB it deletes 0. Never use /delete-demo here:
+// that deletes ALL demos, including the new 15.
+const OLD_DEMO_PHONES = [
+  '0922000222', '0922000333', '0922000444', '0922000555', '0922000666',
+  '0922000777', '0922000888', '0922000999', '0922001010', '0922001112',
+  '0922001212', '0922001313', '0922001414', '0922001515', '0922001616',
+  '0922001717', '0922001818', '0922001919', '0922002020', '0922002121',
+  '0922002222', '0922002323', '0922002424', '0922002525', '0922002626',
+  '0922002727', '0922002828', '0922002929', '0922003030', '0922003131',
+];
+router.post('/delete-old-demos', async (req, res, next) => {
+  try {
+    const r = await db.query(
+      'DELETE FROM users WHERE phone = ANY($1) AND is_demo=TRUE AND role=$2',
+      [OLD_DEMO_PHONES, 'user']);
+    req.session.flash = { type: 'ok', msg: r.rowCount + ' old demo users deleted. The 15 new profiles, Abel and admin are untouched.' };
     res.redirect('/admin');
   } catch (e) { next(e); }
 });

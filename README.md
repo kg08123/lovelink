@@ -82,33 +82,57 @@ Production: set `DATABASE_URL` (Neon Postgres) and deploy by pushing to GitHub
 log in dev), `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` (Google sign-in),
 `SESSION_SECRET`, `BASE_URL`.
 
+## v6 (2026-11-10) — loading screen, selfie verification, new demos, removal
+
+- **Discover loading screen**: "Finding Your Matches" — maroon gradient,
+  pulsing pink heart with 4 orbiting icon chips, animated dots + progress
+  bar; fades when the first card is ready, hard-capped at 3s, bottom nav
+  stays visible above it.
+- **Selfie verification** (`/verify`): user takes a selfie in the reference
+  pose (camera capture), admin reviews it side by side with the profile
+  photo in Admin → Verifications, approve grants the blue verified badge +
+  notifies the user, reject sends them to retake. The badge now means
+  selfie-verified OR demo (was email-verified OR demo). Selfies are shown
+  only to the admin, never on any public profile.
+- **15 new modern demos** (10 girls, 5 boys): stylish young adults, modern
+  clothes, city / café / nightlife / street style — NOT traditional dress.
+  Pexels, Ethiopian photographers only, every photo looked at.
+- **Recently Online**: real presence from `last_active` — online <5 min
+  (green), recently online <24h (amber), none otherwise. Shown on Discover,
+  Likes, public profile, inbox and chat thread.
+- **Old demo people REMOVED** (user order): the original 16 + the 15
+  cultural profiles from 2026-11-10 were deleted from the seed and from live
+  (`POST /admin/delete-old-demos`, keeps the 15 new + Abel + admin). The seed
+  now contains ONLY the 15 new demos, so "Add missing demo users" can never
+  bring the old ones back. Abel (0922000111) is kept LIVE only — not in the
+  seed. No pre-seeded likes/matches/chats exist any more; demo auto-match
+  (60s like-back) still works for real users and Abel.
+
 ## Demo logins (seed data — delete from Admin before real users)
 
 | Who | Phone | Password |
 | --- | --- | --- |
 | Admin | 0911000000 | admin123 |
-| Abel Tesfaye (demo user, male, 26, Addis Ababa) | 0922000111 | password123 |
-| Selam Tesfaye (24) | 0922000222 | password123 |
-| Sara Mekonnen (25) | 0922000333 | password123 |
-| Mimi Alemu (27) | 0922000444 | password123 |
-| Daniel Haile (26) | 0922000555 | password123 |
-| Ruth Girma (26) | 0922000666 | password123 |
-| Helina Girma (25, Addis Ababa) — already liked Abel | 0922000777 | password123 |
-| Tigist Bekele (23, Addis Ababa) — already liked Abel | 0922000888 | password123 |
-| Bethlehem Tadesse (21, Bahir Dar) | 0922000999 | password123 |
-| Hanna Solomon (24, Hawassa) — already liked Abel | 0922001010 | password123 |
-| Meron Alemayehu (26, Mekelle) — already liked Abel | 0922001112 | password123 |
-| Yonas Tesfaye (28, Addis Ababa) | 0922001212 | password123 |
-| Dawit Haile (27, Hawassa) | 0922001313 | password123 |
-| Nahom Gebru (29, Addis Ababa) | 0922001414 | password123 |
-| Fitsum Berhe (24, Bahir Dar) | 0922001515 | password123 |
-| Kaleb Worku (25, Adama) | 0922001616 | password123 |
+| Abel Tesfaye (test account, male, 26, Addis Ababa) — LIVE ONLY, not in the seed | 0922000111 | password123 |
+| Ayana Bekele (23, Addis Ababa) — 3 photos | 0922003232 | password123 |
+| Helen Teshome (25, Addis Ababa) — 2 photos | 0922003333 | password123 |
+| Feven Girma (22, Hawassa) | 0922003434 | password123 |
+| Kidist Alemu (24, Bahir Dar) | 0922003535 | password123 |
+| Mihret Haile (21, Gondar) | 0922003636 | password123 |
+| Yodit Fikre (26, Addis Ababa) | 0922003737 | password123 |
+| Netsanet Worku (24, Mekelle) | 0922003838 | password123 |
+| Genet Tadesse (27, Dire Dawa) | 0922003939 | password123 |
+| Almaz Kassa (20, Jimma) | 0922004040 | password123 |
+| Eyerusalem Gebru (19, Adama) | 0922004141 | password123 |
+| Yared Tesfaye (26, Addis Ababa) — 3 photos | 0922004242 | password123 |
+| Fikre Alemayehu (24, Hawassa) | 0922004343 | password123 |
+| Samson Haile (27, Bahir Dar) | 0922004444 | password123 |
+| Getnet Berhe (23, Mekelle) | 0922004545 | password123 |
+| Mikiyas Worku (25, Dessie) | 0922004646 | password123 |
 
-Demo notes: **Selam, Helina, Tigist, Hanna and Meron already liked Abel** —
-when Abel likes any of them back it is an instant match (3 free matches, then
-the paywall — the rule still applies). Sara ↔ Daniel, Helina ↔ Yonas and
-Bethlehem ↔ Dawit are already matched with a chat thread each. Mimi has a
-pending Premium receipt for the admin to approve. Sara reported Daniel.
+Demo notes: all 15 are modern, stylish young adults — no traditional dress,
+no cultural scenes. No pre-seeded likes or matches; a demo likes back 60s
+after a real user (or Abel) likes them, so matches feel alive.
 
 Demo photos: Pexels (Pexels License, free to use). See
 `public/img/demo-photos.json` for photographer + source links. All demo users
@@ -119,14 +143,14 @@ are marked `is_demo` and can be deleted in one click from Admin → Delete demo 
 ```
 server.js            thin boot + middleware (gzip, sessions, lang, unread badge)
 db/schema.sql        tables + indexes (every FK / hot path)
-db/seed.js           admin + 16 demo profiles + 3 matches + 1 pending payment + 1 report
+db/seed.js           admin + 15 modern demo profiles (old demos removed 2026-11-10)
 db/index.js          pg Pool or pg-mem when USE_PGMEM=1
 lib/match.js         haversine distance + match score + mutual-match creation
 routes/auth.js       signup/signin/verify/forgot-reset (+Google when configured)
 routes/discover.js   onboarding, Discover swipe, Explore, Matches, public profiles
 routes/messages.js   match-only chat (2s poll, optimistic, images)
 routes/premium.js    paywall + receipt upload
-routes/admin.js      dashboard, users, payments, reports, delete-demo
+routes/admin.js      dashboard, users, payments, reports, verifications, delete-demo, delete-old-demos
 views/               layout.ejs (drawer + bottom nav) + one page per screen
 public/css/style.css mobile-first pink theme, 390px tested
 i18n.js              English + Amharic strings
