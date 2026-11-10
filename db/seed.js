@@ -42,6 +42,60 @@ const ADMIN_PASS = 'admin123';
      179, 'Protestant', 'University', 'Banker', 'never', 'sometimes', 'none', 'fitness,movies,travel,music', 'demo-kaleb.jpg'],
   ];
 
+  // v5 (2026-11-10): 15 NEW real-Ethiopian demo profiles (10 girls, 5 boys).
+  // Photos are real Ethiopian portraits from Pexels (Ethiopian photographers,
+  // habesha kemis / traditional dress / Addis settings — NOT generic African
+  // stock). Same-person series share one profile: photo2/photo3 are extra
+  // shots of the SAME person. Sources documented in public/img/demo-photos.json.
+  // No pre-likes for these profiles (existing pre-like setup untouched).
+  const newDemos = [
+    ['Mekdes Tadesse', '0922001717', 'female', 24, 'Addis Ababa', 9.0120, 38.7680,
+     'White dress, green hills, and a heart that laughs easily.', 'serious', 'male', 18, 35,
+     165, 'Orthodox', 'University', 'Boutique Owner', 'never', 'never', 'want', 'travel,music,fitness,photography', 'demo2-mekdes.jpg', 'demo2-mekdes-2.jpg', 'demo2-mekdes-3.jpg'],
+    ['Frehiwot Alemu', '0922001818', 'female', 22, 'Hawassa', 7.0620, 38.4720,
+     'Krar player, coffee lover, and proud Hawassa girl.', 'serious', 'male', 18, 35,
+     163, 'Orthodox', 'College', 'Music Teacher', 'never', 'never', 'want', 'music,travel,cooking,movies', 'demo2-frehiwot.jpg', 'demo2-frehiwot-2.jpg', 'demo2-frehiwot-3.jpg'],
+    ['Mahlet Girma', '0922001919', 'female', 25, 'Addis Ababa', 9.0080, 38.7550,
+     'Rooftop sunsets and traditional dresses. Addis is home.', 'marriage', 'male', 18, 35,
+     167, 'Orthodox', 'University', 'Graphic Designer', 'never', 'sometimes', 'want', 'travel,photography,music,fitness', 'demo2-mahlet.jpg', 'demo2-mahlet-2.jpg', 'demo2-mahlet-3.jpg'],
+    ['Eden Bekele', '0922002020', 'female', 23, 'Bahir Dar', 11.5760, 37.3920,
+     'Festival lights, big hair, bigger dreams.', 'serious', 'male', 18, 35,
+     166, 'Orthodox', 'University', 'Nurse', 'never', 'never', 'want', 'music,travel,fitness,movies', 'demo2-eden.jpg', 'demo2-eden-2.jpg', 'demo2-eden-3.jpg'],
+    ['Rahel Haile', '0922002121', 'female', 21, 'Gondar', 12.6000, 37.4700,
+     'Wheat fields and slow Sundays. Looking for something real.', 'serious', 'male', 18, 35,
+     164, 'Orthodox', 'High School', 'Student', 'never', 'never', 'want', 'travel,music,reading,fitness', 'demo2-rahel.jpg', 'demo2-rahel-2.jpg', 'demo2-rahel-3.jpg'],
+    ['Liya Tesfaye', '0922002222', 'female', 26, 'Addis Ababa', 9.0200, 38.7500,
+     'City lights and traditional nights. Dance with me?', 'casual', 'male', 18, 35,
+     168, 'Protestant', 'University', 'Event Planner', 'never', 'sometimes', 'none', 'music,movies,travel,fitness', 'demo2-liya.jpg', 'demo2-liya-2.jpg', 'demo2-liya-3.jpg'],
+    ['Hiwot Daniel', '0922002323', 'female', 24, 'Mekelle', 13.4980, 39.4710,
+     'Desert dunes and quiet strength. Coffee first, always.', 'serious', 'male', 18, 35,
+     165, 'Orthodox', 'University', 'Teacher', 'never', 'never', 'want', 'travel,reading,music,photography', 'demo2-hiwot.jpg', 'demo2-hiwot-2.jpg', 'demo2-hiwot-3.jpg'],
+    ['Selamawit Kassa', '0922002424', 'female', 27, 'Dire Dawa', 9.6000, 41.8500,
+     'Blue cars and bold smiles. Dire Dawa raised me right.', 'marriage', 'male', 18, 35,
+     166, 'Orthodox', 'College', 'Shop Owner', 'never', 'sometimes', 'want', 'travel,music,movies,cooking', 'demo2-selamawit.jpg', null, null],
+    ['Tsion Worku', '0922002525', 'female', 20, 'Jimma', 7.6700, 36.8300,
+     'Curly hair, green hills, and a laugh you will remember.', 'serious', 'male', 18, 35,
+     162, 'Protestant', 'College', 'Student', 'never', 'never', 'want', 'music,travel,fitness,reading', 'demo2-tsion.jpg', null, null],
+    ['Yordanos Gebru', '0922002626', 'female', 19, 'Adama', 8.5420, 39.2720,
+     'Young, curious, and full of dreams. Blue skies only.', 'serious', 'male', 18, 35,
+     164, 'Orthodox', 'High School', 'Student', 'never', 'never', 'want', 'travel,music,movies,fitness', 'demo2-yordanos.jpg', null, null],
+    ['Samuel Fikre', '0922002727', 'male', 26, 'Addis Ababa', 9.0054, 38.7636,
+     'Traditional soul, modern mind. Let us talk over buna.', 'serious', 'female', 18, 35,
+     180, 'Orthodox', 'University', 'Engineer', 'never', 'sometimes', 'none', 'travel,music,football,fitness', 'demo2-samuel.jpg', null, null],
+    ['Natnael Teshome', '0922002828', 'male', 24, 'Hawassa', 7.0550, 38.4650,
+     'Lake side walks and honest talk. Simple and real.', 'serious', 'female', 18, 35,
+     178, 'Protestant', 'University', 'Accountant', 'never', 'never', 'want', 'music,travel,fitness,movies', 'demo2-natnael.jpg', null, null],
+    ['Henok Alemayehu', '0922002929', 'male', 27, 'Bahir Dar', 11.5700, 37.3850,
+     'White netela, warm heart. Bahir Dar evenings are the best.', 'marriage', 'female', 18, 35,
+     182, 'Orthodox', 'University', 'Banker', 'never', 'sometimes', 'want', 'travel,music,cooking,fitness', 'demo2-henok.jpg', null, null],
+    ['Bereket Tadesse', '0922003030', 'male', 23, 'Mekelle', 13.4900, 39.4650,
+     'Fresh graduate, big plans. Looking for my person.', 'serious', 'female', 18, 35,
+     179, 'Orthodox', 'University', 'Software Developer', 'never', 'never', 'none', 'music,travel,reading,fitness', 'demo2-bereket.jpg', null, null],
+    ['Yohannes Girma', '0922003131', 'male', 25, 'Dessie', 11.1300, 39.6300,
+     'Afro hair, easy smile. Dessie boy with Addis dreams.', 'casual', 'female', 18, 35,
+     177, 'Orthodox', 'College', 'Photographer', 'sometimes', 'sometimes', 'none', 'travel,photography,music,fitness', 'demo2-yohannes.jpg', 'demo2-yohannes-2.jpg', null],
+  ];
+
 async function main(opts = {}) {
   const schema = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
   await db.query(schema);
@@ -81,9 +135,9 @@ async function main(opts = {}) {
      164, 'Protestant', 'University', 'Accountant', 'never', 'never', 'want', 'movies,reading,travel,music', 'demo-ruth.jpg'],
   ];
   const ids = {};
-  for (const d of [...demos, ...extraDemos]) {
+  for (const d of [...demos, ...extraDemos, ...newDemos]) {
     const [name, phone, gender, age, city, lat, lng, bio, goal, looking, aMin, aMax,
-      height, religion, edu, job, smoking, drinking, kids, interests, photo] = d;
+      height, religion, edu, job, smoking, drinking, kids, interests, photo, photo2, photo3] = d;
     const u = await db.query(
       "INSERT INTO users(role,name,phone,password_hash,gender,age,is_demo) VALUES('user',$1,$2,$3,$4,$5,TRUE) RETURNING id",
       [name, phone, hash, gender, age]);
@@ -91,10 +145,11 @@ async function main(opts = {}) {
     ids[name] = uid;
     await db.query(
       `INSERT INTO profiles(user_id,bio,city,country,latitude,longitude,height_cm,religion,education,job,
-        smoking,drinking,kids,looking_for_gender,age_min,age_max,relationship_goal,interests,languages,photo1,online)
-       VALUES($1,$2,$3,'Ethiopia',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'Amharic, English',$18,TRUE)`,
+        smoking,drinking,kids,looking_for_gender,age_min,age_max,relationship_goal,interests,languages,photo1,photo2,photo3,online)
+       VALUES($1,$2,$3,'Ethiopia',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'Amharic, English',$18,$19,$20,TRUE)`,
       [uid, bio, city, lat, lng, height, religion, edu, job, smoking, drinking, kids,
-       looking, aMin, aMax, goal, interests, '/img/' + photo]);
+       looking, aMin, aMax, goal, interests, '/img/' + photo,
+       photo2 ? '/img/' + photo2 : null, photo3 ? '/img/' + photo3 : null]);
   }
 
   // Selam already liked Abel -> when Abel likes her back, it is an instant match.
@@ -161,18 +216,18 @@ async function main(opts = {}) {
   if (!opts.keepAlive && typeof db.pool.end === 'function') await db.pool.end();
 }
 
-// Add only the 10 v3 demo profiles (and their pre-likes / matched pairs) to a
-// database that already has users. Idempotent: every insert is guarded, so
-// running it twice changes nothing.
+// Add only the v3 extra demos + v5 new demos (and their pre-likes / matched
+// pairs) to a database that already has users. Idempotent: every insert is
+// guarded, so running it twice changes nothing.
 async function seedExtraDemos() {
   const hash = bcrypt.hashSync(DEMO_PASS, 10);
   const ids = {};
   const all = await db.query('SELECT id, name, phone FROM users');
   for (const u of all.rows) ids[u.name] = u.id;
   let added = 0;
-  for (const d of extraDemos) {
+  for (const d of [...extraDemos, ...newDemos]) {
     const [name, phone, gender, age, city, lat, lng, bio, goal, looking, aMin, aMax,
-      height, religion, edu, job, smoking, drinking, kids, interests, photo] = d;
+      height, religion, edu, job, smoking, drinking, kids, interests, photo, photo2, photo3] = d;
     let uid = ids[name];
     if (!uid) {
       const ex = await db.query('SELECT id FROM users WHERE phone=$1', [phone]);
@@ -188,10 +243,11 @@ async function seedExtraDemos() {
     if (!pex.rows.length) {
       await db.query(
         `INSERT INTO profiles(user_id,bio,city,country,latitude,longitude,height_cm,religion,education,job,
-          smoking,drinking,kids,looking_for_gender,age_min,age_max,relationship_goal,interests,languages,photo1,online)
-         VALUES($1,$2,$3,'Ethiopia',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'Amharic, English',$18,TRUE)`,
+          smoking,drinking,kids,looking_for_gender,age_min,age_max,relationship_goal,interests,languages,photo1,photo2,photo3,online)
+         VALUES($1,$2,$3,'Ethiopia',$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,'Amharic, English',$18,$19,$20,TRUE)`,
         [uid, bio, city, lat, lng, height, religion, edu, job, smoking, drinking, kids,
-         looking, aMin, aMax, goal, interests, '/img/' + photo]);
+         looking, aMin, aMax, goal, interests, '/img/' + photo,
+         photo2 ? '/img/' + photo2 : null, photo3 ? '/img/' + photo3 : null]);
     }
   }
   const abel = ids['Abel Tesfaye'];

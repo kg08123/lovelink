@@ -52,7 +52,7 @@
   <a href="/profile" class="<%= navActive==='profile' ? 'on' : '' %>" aria-label="Profile"><span class="bn-ico"><% if (profile.photo1_thumb || profile.photo1) { %><img class="bn-avatar" src="<%= profile.photo1_thumb || profile.photo1 %>" alt=""><% } else { %><%- icon('user') %><% } %></span></a>
 </nav>
 <% } %>
-<script src="/js/instant.js?v=10" defer></script>
+<script src="/js/instant.js?v=11" defer></script>
 <script>
 /* PWA: installable app shell. Registers the service worker (same-origin
    only, so it simply no-ops on plain http or when it fails). */

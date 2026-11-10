@@ -234,12 +234,21 @@
   // Photo tap zones: left third = previous photo, right = next photo.
   // A drag (10px+) never reaches here as a click — the drag handler
   // swallows the click that follows it.
+  // NOTE: the drag handler calls setPointerCapture on the card during
+  // pointerdown, which retargets the following click to the card itself —
+  // so e.target is the card, not the .pz span under the finger. Resolve
+  // the zone from the click coordinates instead (elementFromPoint ignores
+  // pointer capture). Without this, tapping a photo never cycled it.
   var suppressClickUntil = 0;
   document.addEventListener('click', function (e) {
     if (Date.now() < suppressClickUntil) return;
     var t = e.target;
     if (!t || !t.closest) return;
     var zone = t.closest('.pz');
+    if (!zone && e.clientX != null) {
+      var at = document.elementFromPoint(e.clientX, e.clientY);
+      if (at && at.closest) zone = at.closest('.pz');
+    }
     if (!zone) return;
     var card = t.closest('.swipe-card:not(.peek)');
     var hero = t.closest('.pub-hero');
