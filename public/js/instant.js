@@ -1,9 +1,10 @@
-// Instant buttons: swipe / like / rewind / reset / report actions run over
-// fetch and update the page in place instead of a full POST -> redirect ->
-// GET cycle (which cost ~1.5-2s per tap on the free tier). Every handler
-// falls back to a normal form submit on any failure, so a broken fetch
-// can never strand a tap. Attached by delegation on `document`, so forms
-// swapped in by an XHR response keep working without rebinding.
+// Instant buttons: swipe / like / message / rewind / reset / report actions
+// run over fetch and update the page in place instead of a full POST ->
+// redirect -> GET cycle (which cost ~1.5-2s per tap on the free tier).
+// Every handler falls back to a normal form submit on any failure, so a
+// broken fetch can never strand a tap. Attached by delegation on
+// `document`, so forms swapped in by an XHR response keep working
+// without rebinding.
 (function () {
   'use strict';
 
@@ -42,9 +43,93 @@
     });
   }
 
+  function postJson(url, obj) {
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/json' },
+      body: JSON.stringify(obj),
+      credentials: 'same-origin',
+    }).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.json();
+    });
+  }
+
   function showMessages(d) {
     if (d.msg) toast(d.msg);
     if (d.hint) toast(d.hint);
+  }
+
+  // ---- Bottom sheets (premium gate / report) ----
+  function openSheet(id) {
+    var sheet = document.getElementById(id);
+    if (!sheet) return false;
+    var backdrop = document.getElementById(id + 'Backdrop');
+    sheet.hidden = false;
+    if (backdrop) backdrop.hidden = false;
+    return true;
+  }
+  function closeSheet(id) {
+    var sheet = document.getElementById(id);
+    if (sheet) sheet.hidden = true;
+    var backdrop = document.getElementById(id + 'Backdrop');
+    if (backdrop) backdrop.hidden = true;
+  }
+  function closeAllSheets() {
+    document.querySelectorAll('.sheet').forEach(function (s) { s.hidden = true; });
+    document.querySelectorAll('.sheet-backdrop').forEach(function (b) { b.hidden = true; });
+  }
+
+  // ---- Photo viewer: story-progress tap zones on Discover + public profile ----
+  // Discover card: photos[] holds the 360px thumbs; index 0 shows the full
+  // first photo (the <img>'s initial src). Public profile: full photos.
+  function initPhotoViewers() {
+    var card = document.querySelector('#discover-root .swipe-card:not(.peek)');
+    if (card && !card._photosInit) {
+      card._photosInit = true;
+      var img = card.querySelector('.fs-photo');
+      var list = [];
+      try { list = JSON.parse(card.dataset.photos || '[]'); } catch (e) { list = []; }
+      card._photos = list;
+      card._photoIdx = 0;
+      card._fullFirst = img ? img.src : null;
+    }
+    var heroWrap = document.querySelector('.pub-hero');
+    var hero = document.getElementById('pubHeroImg');
+    if (heroWrap && hero && !heroWrap._photosInit) {
+      heroWrap._photosInit = true;
+      var list2 = [hero.src];
+      document.querySelectorAll('.pub-more img[data-full]').forEach(function (im) {
+        list2.push(im.getAttribute('data-full') || im.src);
+      });
+      heroWrap._photos = list2;
+      heroWrap._photoIdx = 0;
+      heroWrap._fullFirst = hero.src;
+    }
+  }
+
+  function cyclePhoto(container, dir) {
+    if (!container || !container._photos || container._photos.length < 2) return;
+    var n = container._photos.length;
+    var idx = (container._photoIdx + dir + n) % n;
+    container._photoIdx = idx;
+    var img = container.classList.contains('fs-card')
+      ? container.querySelector('.fs-photo')
+      : document.getElementById('pubHeroImg');
+    if (!img) return;
+    img.src = idx === 0 ? container._fullFirst : container._photos[idx];
+    container.querySelectorAll('.story-bar').forEach(function (b, i) {
+      b.classList.toggle('on', i === idx);
+    });
+  }
+
+  var recycledToastShown = false;
+  function maybeRecycledToast() {
+    var root = document.getElementById('discover-root');
+    if (root && root.dataset.recycled && !recycledToastShown) {
+      recycledToastShown = true;
+      toast(root.dataset.recycledMsg || 'Showing profiles again.');
+    }
   }
 
   // Discover swipe / rewind / reset: the card flies out at once, then the
@@ -64,6 +149,37 @@
       if (d.html) {
         var root = document.getElementById('discover-root');
         if (root) root.outerHTML = d.html;
+        initPhotoViewers();
+        maybeRecycledToast();
+      }
+      if (d.sheet === 'premium') openSheet('pointsSheet');
+      showMessages(d);
+    }).catch(function () { form.submit(); });
+  }
+
+  // Message button on a card: matched -> chat; not matched -> like first.
+  // On Discover the next card swaps in; on a public profile the actions
+  // area becomes a "You liked this profile" note (there is no deck there).
+  function handleMessageForm(form, e) {
+    if (e) e.preventDefault();
+    var actions = form.closest('.swipe-actions');
+    if (actions) actions.classList.add('busy');
+    postForm(form).then(function (d) {
+      if (d.redirect) { window.location.href = d.redirect; return; }
+      if (d.sheet === 'premium') {
+        if (!openSheet('pointsSheet')) { window.location.href = '/premium?blocked=1'; return; }
+      }
+      var root = document.getElementById('discover-root');
+      if (d.html && root) {
+        root.outerHTML = d.html;
+        initPhotoViewers();
+        maybeRecycledToast();
+      } else if (actions) {
+        var p = document.createElement('p');
+        p.className = 'sub';
+        p.style.textAlign = 'center';
+        p.textContent = 'You liked this profile.';
+        actions.replaceWith(p);
       }
       showMessages(d);
     }).catch(function () { form.submit(); });
@@ -80,6 +196,7 @@
     if (actions) actions.classList.add('busy');
     postForm(form).then(function (d) {
       if (d.redirect) { window.location.href = d.redirect; return; }
+      if (d.sheet === 'premium') { window.location.href = '/premium?blocked=1'; return; }
       if (actions) {
         var p = document.createElement('p');
         p.className = 'sub';
@@ -91,7 +208,7 @@
     }).catch(function () { form.submit(); });
   }
 
-  // Report on a public profile: no reload, just a toast.
+  // Report on a public profile: no reload, just a toast + close the sheet.
   function handleReport(form, e) {
     e.preventDefault();
     var btn = form.querySelector('button[type=submit]');
@@ -101,6 +218,7 @@
       var input = form.querySelector('input[name=reason]');
       if (input) input.value = '';
       if (btn) btn.disabled = false;
+      closeAllSheets();
     }).catch(function () { form.submit(); });
   }
 
@@ -108,8 +226,62 @@
     var form = e.target;
     if (!(form instanceof HTMLFormElement)) return;
     if (form.classList.contains('js-swipe-form')) { handleProfileSwipe(form, e); return; }
+    if (form.classList.contains('js-message-form')) { handleMessageForm(form, e); return; }
     if (form.classList.contains('js-reset-form')) { handleDiscoverAction(form, e); return; }
     if (form.classList.contains('js-report-form')) { handleReport(form, e); return; }
+  });
+
+  // Sheet open/close wiring (delegated: sheets are re-rendered by swaps).
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest('#pointsSheetClose')) { closeSheet('pointsSheet'); return; }
+    if (t.closest('#pointsSheetBackdrop')) { closeSheet('pointsSheet'); return; }
+    if (t.closest('#pubReportBtn')) { openSheet('reportSheet'); return; }
+    if (t.closest('#reportSheetClose')) { closeSheet('reportSheet'); return; }
+    if (t.closest('#reportSheetBackdrop')) { closeSheet('reportSheet'); return; }
+  });
+
+  // Photo tap zones: left third = previous photo, right = next photo.
+  // A drag (10px+) never reaches here as a click — the drag handler
+  // swallows the click that follows it.
+  var suppressClickUntil = 0;
+  document.addEventListener('click', function (e) {
+    if (Date.now() < suppressClickUntil) return;
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var zone = t.closest('.pz');
+    if (!zone) return;
+    var card = t.closest('.swipe-card:not(.peek)');
+    var hero = t.closest('.pub-hero');
+    if (card) cyclePhoto(card, zone.classList.contains('pz-prev') ? -1 : 1);
+    else if (hero) cyclePhoto(hero, zone.classList.contains('pz-prev') ? -1 : 1);
+  });
+
+  // Likes tabs: swap the grid over fetch, no full reload; back button
+  // reloads the page so the tab always matches the URL.
+  document.addEventListener('click', function (e) {
+    var tab = e.target && e.target.closest ? e.target.closest('#likesTabs a[data-tab]') : null;
+    if (!tab) return;
+    e.preventDefault();
+    var name = tab.dataset.tab;
+    fetch('/likes?tab=' + name + '&fragment=1', {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    }).then(function (r) {
+      if (!r.ok) throw new Error('http ' + r.status);
+      return r.text();
+    }).then(function (html) {
+      var wrap = document.getElementById('likesGridWrap');
+      if (wrap) wrap.innerHTML = html;
+      document.querySelectorAll('#likesTabs .text-tab').forEach(function (t) {
+        t.classList.toggle('on', t === tab);
+      });
+      try { history.pushState(null, '', '/likes?tab=' + name); } catch (err) { /* ignore */ }
+    }).catch(function () { window.location.href = '/likes?tab=' + name; });
+  });
+  window.addEventListener('popstate', function () {
+    if (document.getElementById('likesTabs')) window.location.reload();
   });
 
   // Skeleton shimmer: photo containers shimmer until their image loads.
@@ -126,28 +298,20 @@
     }
   }, true);
 
-  // ---- Dark mode: Settings switch + top-bar icon, one shared state ----
+  // ---- Dark mode: Settings switch, one shared state ----
   // The choice lives in a cookie (the server renders <html class="dark">,
   // so there is no white flash) AND localStorage (the <head> boot script
-  // reads it when there is no cookie yet, e.g. system-preference
-  // default). Flipping either control changes the theme instantly, no
-  // reload, and both controls always show the same state.
+  // reads it when there is no cookie yet). Dark is the default now.
   var themeToggle = document.getElementById('themeToggle');
-  var themeBtn = document.getElementById('themeBtn');
   function applyTheme(dark) {
     document.documentElement.classList.toggle('dark', dark);
     try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) { /* private mode */ }
     document.cookie = 'theme=' + (dark ? 'dark' : 'light') + '; max-age=31536000; path=/; SameSite=Lax';
     if (themeToggle) themeToggle.checked = dark;
-    if (themeBtn) themeBtn.setAttribute('aria-pressed', dark ? 'true' : 'false');
   }
   if (themeToggle) {
     themeToggle.checked = document.documentElement.classList.contains('dark');
     themeToggle.addEventListener('change', function () { applyTheme(themeToggle.checked); });
-  }
-  if (themeBtn) {
-    themeBtn.setAttribute('aria-pressed', document.documentElement.classList.contains('dark') ? 'true' : 'false');
-    themeBtn.addEventListener('click', function () { applyTheme(!document.documentElement.classList.contains('dark')); });
   }
 
   // ---- Drag to swipe (Discover card) ----
@@ -158,7 +322,7 @@
   // the card still work: a drag only starts after 10px of movement, and
   // a tap-length press is never treated as a drag.
   var DRAG_MIN = 10, SWIPE_PX = 90;
-  var drag = null, suppressClickUntil = 0;
+  var drag = null;
 
   function dragCard() {
     return document.querySelector('#discover-root .swipe-card:not(.peek)');
@@ -264,4 +428,115 @@
   document.addEventListener('click', function (e) {
     if (Date.now() < suppressClickUntil) { e.preventDefault(); e.stopPropagation(); }
   }, true);
+
+  // ---- My Profile photo grid: tap to replace, drag to reorder ----
+  // Pointer drag: press a tile and move >8px to drag it; dropping it on
+  // another tile reorders the photos (saved at once). A plain tap opens
+  // the file picker for that slot. The × removes that photo.
+  var grid = document.getElementById('photoGrid');
+  var replaceInput = document.getElementById('photoReplaceInput');
+  var pendingSlot = null;
+  if (grid && replaceInput) {
+    var tileDrag = null;
+    grid.addEventListener('pointerdown', function (e) {
+      var tile = e.target.closest ? e.target.closest('.photo-tile') : null;
+      if (!tile) return;
+      if (e.target.closest('.photo-x')) return;
+      tileDrag = { tile: tile, x0: e.clientX, y0: e.clientY, active: false, pointerId: e.pointerId };
+      try { tile.setPointerCapture(e.pointerId); } catch (err) { /* older browsers */ }
+    });
+    grid.addEventListener('pointermove', function (e) {
+      if (!tileDrag || e.pointerId !== tileDrag.pointerId) return;
+      var dx = e.clientX - tileDrag.x0, dy = e.clientY - tileDrag.y0;
+      if (!tileDrag.active) {
+        if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;
+        tileDrag.active = true;
+        tileDrag.tile.classList.add('dragging');
+        tileDrag.tile.style.pointerEvents = 'none';
+      }
+      tileDrag.tile.style.transform = 'translate(' + dx + 'px,' + dy + 'px) scale(1.04)';
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var over = el && el.closest ? el.closest('.photo-tile') : null;
+      grid.querySelectorAll('.photo-tile').forEach(function (t) { t.classList.remove('drop-target'); });
+      if (over && over !== tileDrag.tile) over.classList.add('drop-target');
+    });
+    function tileDragEnd(e) {
+      if (!tileDrag || e.pointerId !== tileDrag.pointerId) return;
+      var d = tileDrag; tileDrag = null;
+      var tile = d.tile;
+      tile.style.transform = '';
+      tile.style.pointerEvents = '';
+      tile.classList.remove('dragging');
+      grid.querySelectorAll('.photo-tile').forEach(function (t) { t.classList.remove('drop-target'); });
+      if (!d.active) return;
+      suppressClickUntil = Date.now() + 350;
+      var el = document.elementFromPoint(e.clientX, e.clientY);
+      var over = el && el.closest ? el.closest('.photo-tile') : null;
+      if (over && over !== tile) {
+        var rect = over.getBoundingClientRect();
+        var after = (e.clientX - rect.left) > rect.width / 2;
+        if (after) grid.insertBefore(tile, over.nextSibling);
+        else grid.insertBefore(tile, over);
+        savePhotoOrder();
+      }
+    }
+    grid.addEventListener('pointerup', tileDragEnd);
+    grid.addEventListener('pointercancel', function (e) {
+      if (!tileDrag || e.pointerId !== tileDrag.pointerId) return;
+      var t = tileDrag.tile; tileDrag = null;
+      t.style.transform = ''; t.style.pointerEvents = ''; t.classList.remove('dragging');
+    });
+    grid.addEventListener('click', function (e) {
+      if (Date.now() < suppressClickUntil) return;
+      var x = e.target.closest ? e.target.closest('.photo-x') : null;
+      if (x) {
+        e.stopPropagation();
+        var slot = Number(x.dataset.remove);
+        fetch('/profile/photos/remove', {
+          method: 'POST',
+          headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({ slot: String(slot) }),
+          credentials: 'same-origin',
+        }).then(function (r) {
+          if (!r.ok) throw new Error('http ' + r.status);
+          window.location.reload();
+        }).catch(function () { toast('Could not remove that photo — try again.'); });
+        return;
+      }
+      var tile = e.target.closest ? e.target.closest('.photo-tile') : null;
+      if (!tile) return;
+      pendingSlot = Number(tile.dataset.slot);
+      replaceInput.click();
+    });
+    replaceInput.addEventListener('change', function () {
+      var f = replaceInput.files[0];
+      if (!f || !pendingSlot) { replaceInput.value = ''; return; }
+      var fd = new FormData();
+      fd.append('slot', String(pendingSlot));
+      fd.append('photo', f);
+      fetch('/profile/photos/replace', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd,
+        credentials: 'same-origin',
+      }).then(function (r) {
+        if (!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      }).then(function () { window.location.reload(); })
+        .catch(function () { toast('Could not save that photo — try a smaller one.'); });
+      replaceInput.value = '';
+    });
+    function savePhotoOrder() {
+      var order = [];
+      grid.querySelectorAll('.photo-tile').forEach(function (t) {
+        order.push(Number(t.dataset.slot));
+      });
+      postJson('/profile/photos/reorder', { order: order })
+        .then(function () { window.location.reload(); })
+        .catch(function () { window.location.reload(); });
+    }
+  }
+
+  initPhotoViewers();
+  maybeRecycledToast();
 })();

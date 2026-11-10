@@ -1,12 +1,28 @@
-<a class="chat-back" href="/messages"><%- icon('chevronLeft') %> <%= t('messages') %></a>
-<h1 class="page-title"><%= conv.other_name %></h1>
-<p class="sub"><span style="color:var(--pink)"><%- icon('heart', true) %></span> <%= t('itsAMatch') %> — <a class="link" href="/u/<%= conv.other_id %>"><%= t('viewProfile') %></a></p>
+<% function dayLabel(d){ var now = new Date(); var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()); var day = new Date(d.getFullYear(), d.getMonth(), d.getDate()); var diff = Math.round((today - day) / 86400000); if (diff === 0) return 'Today'; if (diff === 1) return 'Yesterday'; return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }); } %>
+<% function timeLabel(d){ return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }); } %>
+<header class="chat-head">
+  <a class="chat-head-back" href="/messages" aria-label="Back to messages"><%- icon('chevronLeft') %></a>
+  <a class="chat-head-who" href="/u/<%= conv.other_id %>">
+    <% if (conv.other_thumb || conv.other_photo) { %><img class="chat-head-avatar" src="<%= conv.other_thumb || conv.other_photo %>" alt=""><% } else { %><div class="chat-head-avatar avatar-ph"><%- icon('user') %></div><% } %>
+    <span class="chat-head-name"><%= conv.other_name %><% if (conv.other_online) { %><small class="chat-head-online"><span class="online-dot"></span> Online</small><% } %></span>
+  </a>
+  <button class="chat-head-menu-btn" type="button" id="chatMenuBtn" aria-label="More options" aria-haspopup="true"><%- icon('more') %></button>
+  <div class="chat-menu" id="chatMenu" hidden>
+    <a href="/u/<%= conv.other_id %>"><%- icon('user') %> View Profile</a>
+    <form method="post" action="/u/<%= conv.other_id %>/block"><button type="submit"><%- icon('ban') %> Block <%= conv.other_name %></button></form>
+  </div>
+</header>
 <div class="chat" id="chat">
+  <% var lastDay = null; %>
   <% messages.forEach(function(m){ %>
+    <% var d = new Date(m.created_at); var dayKey = d.toDateString(); %>
+    <% if (dayKey !== lastDay) { lastDay = dayKey; %>
+    <div class="chat-date" data-day="<%= dayKey %>"><%= dayLabel(d) %></div>
+    <% } %>
     <div class="bubble <%= m.sender_user_id===user.id?'mine':'theirs' %>">
       <% if (m.image_data) { %><a href="<%= m.image_data %>" target="_blank" rel="noopener"><img class="chat-img" src="<%= m.image_thumb || m.image_data %>" alt="" loading="lazy" decoding="async"></a><% } %>
       <% if (m.body) { %><p><%= m.body %></p><% } %>
-      <small><%= new Date(m.created_at).toLocaleString() %></small>
+      <small><%= timeLabel(d) %></small>
     </div>
   <% }) %>
 </div>
@@ -25,7 +41,18 @@
 (function(){
   var chat=document.getElementById('chat');
   var lastId=<%= messages.length ? messages[messages.length-1].id : 0 %>;
+  var lastDayKey=<%= messages.length ? "'" + new Date(messages[messages.length-1].created_at).toDateString() + "'" : 'null' %>;
   chat.scrollTop=chat.scrollHeight;
+  function dayLabelFor(d){
+    var now=new Date();
+    var today=new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var day=new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    var diff=Math.round((today-day)/86400000);
+    if(diff===0) return 'Today';
+    if(diff===1) return 'Yesterday';
+    return d.toLocaleDateString('en-US',{month:'short',day:'2-digit',year:'numeric'});
+  }
+  function timeLabelFor(d){ return d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'}); }
   function addMsg(m){
     if(m.id<=lastId) return;
     lastId=m.id;
@@ -37,6 +64,15 @@
         if(tBody===(m.body||'') && tImg===!!m.has_image){ t.remove(); }
       });
     }
+    var d=new Date(m.created_at);
+    var dayKey=d.toDateString();
+    if(dayKey!==lastDayKey){
+      lastDayKey=dayKey;
+      var sep=document.createElement('div');
+      sep.className='chat-date'; sep.setAttribute('data-day', dayKey);
+      sep.textContent=dayLabelFor(d);
+      chat.appendChild(sep);
+    }
     var div=document.createElement('div');
     div.className='bubble '+(m.mine?'mine':'theirs');
     if(m.has_image&&m.image_data){
@@ -45,7 +81,7 @@
       a.appendChild(im); div.appendChild(a);
     }
     if(m.body){ var p=document.createElement('p'); p.textContent=m.body; div.appendChild(p); }
-    var s=document.createElement('small'); s.textContent=new Date(m.created_at).toLocaleString();
+    var s=document.createElement('small'); s.textContent=timeLabelFor(d);
     div.appendChild(s); chat.appendChild(div);
     chat.scrollTop=chat.scrollHeight;
   }
@@ -78,6 +114,12 @@
     if (document.hidden) { clearTimeout(pollTimer); }
     else { tick(); }
   });
+  // 3-dot menu: View Profile / Block.
+  var menuBtn=document.getElementById('chatMenuBtn'), menu=document.getElementById('chatMenu');
+  if(menuBtn && menu){
+    menuBtn.addEventListener('click', function(e){ e.stopPropagation(); menu.hidden = !menu.hidden; });
+    document.addEventListener('click', function(e){ if(!menu.hidden && !menu.contains(e.target)) menu.hidden = true; });
+  }
   var form=document.getElementById('sendform');
   var input=form.querySelector('input[name=body]');
   var imgInput=document.getElementById('imgInput'), imgFile=null;

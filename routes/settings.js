@@ -2,10 +2,58 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
+const { matchCount } = require('./discover');
 const router = express.Router();
 
-router.get('/', requireAuth, (req, res) => {
-  res.render('settings', { title: res.locals.t('settings') });
+const FREE_MATCHES = 3;
+const RELIGIONS = ['Any', 'Orthodox', 'Protestant', 'Catholic', 'Muslim', 'Other'];
+
+router.get('/', requireAuth, async (req, res, next) => {
+  try {
+    const n = await matchCount(req.user.id);
+    res.render('settings', {
+      title: res.locals.t('settings'),
+      matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
+      religions: RELIGIONS,
+    });
+  } catch (e) { next(e); }
+});
+
+// Match Preferences + Premium Features: these are REAL filters, wired
+// into candidate selection (routes/discover.js getCandidates).
+// - age range: SQL filter on the other person's age
+// - gender: looking_for_gender (the deck filter)
+// - religion: pref_religion ('Any' = no filter)
+// - verified only: only email-verified profiles (demos count as verified)
+// - incognito: hide me from other people's decks unless they liked me
+router.post('/preferences', requireAuth, async (req, res, next) => {
+  try {
+    const t = res.locals.t;
+    const b = req.body;
+    let ageMin = Math.max(18, Math.min(99, parseInt(b.age_min, 10) || 18));
+    let ageMax = Math.max(18, Math.min(99, parseInt(b.age_max, 10) || 99));
+    if (ageMin > ageMax) { const tmp = ageMin; ageMin = ageMax; ageMax = tmp; }
+    const lookingFor = ['female', 'male', 'any'].includes(b.looking_for_gender) ? b.looking_for_gender : 'any';
+    const prefReligion = RELIGIONS.includes(b.pref_religion) ? b.pref_religion : 'Any';
+    const verifiedOnly = b.verified_only === 'on' || b.verified_only === 'true';
+    const incognito = b.incognito === 'on' || b.incognito === 'true';
+    await db.query(
+      `UPDATE profiles SET age_min=$1, age_max=$2, looking_for_gender=$3,
+         pref_religion=$4, verified_only=$5, incognito=$6 WHERE user_id=$7`,
+      [ageMin, ageMax, lookingFor, prefReligion, verifiedOnly, incognito, req.user.id]);
+    req.session.flash = { type: 'ok', msg: t('profileSaved') };
+    res.redirect('/settings');
+  } catch (e) { next(e); }
+});
+
+// Reset Matches: clear ONLY my passes so swiped-past profiles come back
+// (same as /discover/reset-passes, reachable from Settings).
+router.post('/reset-matches', requireAuth, async (req, res, next) => {
+  try {
+    await db.query("DELETE FROM swipes WHERE from_user_id=$1 AND kind='pass'", [req.user.id]);
+    req.session.flash = { type: 'ok', msg: res.locals.t('passesCleared') };
+    res.redirect('/settings');
+  } catch (e) { next(e); }
 });
 
 router.post('/change-password', requireAuth, async (req, res, next) => {

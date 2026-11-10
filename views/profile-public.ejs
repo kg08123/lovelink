@@ -1,15 +1,36 @@
-<a class="chat-back" href="/discover"><%- icon('chevronLeft') %> <%= t('discover') %></a>
-<div class="swipe-card" style="margin-top:10px">
-  <% if (other.photo1) { %><div class="swipe-photo-link"><img class="swipe-photo" src="<%= other.photo1 %>" alt="<%= other.name %>"></div><% } %>
-  <% if (other.online) { %><span class="online-badge"><span class="online-dot"></span> <%= t('online') %></span><% } %>
-  <span class="match-badge"><%= score %>% match</span>
-  <div class="swipe-info">
-    <div class="swipe-name"><%= other.name %>, <%= other.age %> <span class="verified-badge"><%- icon('check') %></span></div>
-    <div class="swipe-meta"><%- icon('pin') %> <%= distanceText || (other.city || '') %> · <%= other.city || '' %><%= other.country ? ', '+other.country : '' %></div>
-    <% if (other.bio) { %><p class="swipe-bio"><%= other.bio %></p><% } %>
-    <div class="chips"><% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %></div>
+<% var goalLabel = {serious:'Serious relationship', marriage:'Marriage', casual:'Casual dating', friendship:'Friendship first'}[other.relationship_goal] || 'Still figuring it out'; %>
+<% var photos = [other.photo1, other.photo2, other.photo3].filter(Boolean); %>
+<div class="pub-hero">
+  <% if (other.photo1) { %><img class="pub-photo" id="pubHeroImg" src="<%= other.photo1 %>" alt="<%= other.name %>" draggable="false"><% } else { %><div class="pub-photo-ph"><%- icon('user') %></div><% } %>
+  <% if (photos.length > 1) { %>
+  <div class="story-bars pub-bars"><% photos.forEach(function(_, i){ %><span class="story-bar<%= i===0 ? ' on' : '' %>"></span><% }) %></div>
+  <% } %>
+  <a class="pub-back" href="/discover" aria-label="Back"><%- icon('chevronLeft') %></a>
+  <% if (!preview) { %><button class="pub-report" type="button" id="pubReportBtn">Report</button><% } %>
+  <% if (other.online) { %><span class="online-badge pub-online"><span class="online-dot"></span> <%= t('online') %></span><% } %>
+  <div class="pub-name-row">
+    <div class="pub-name"><%= other.name %>, <%= other.age %> <% if (typeof verified !== 'undefined' && verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></div>
+    <% if (other.city) { %><div class="pub-city"><%- icon('pin') %> <%= other.city %><%= other.country ? ', ' + other.country : '' %></div><% } %>
+  </div>
+  <% if (photos.length > 1) { %><div class="photo-zones pub-zones" aria-hidden="true"><span class="pz pz-prev"></span><span class="pz pz-next"></span></div><% } %>
+</div>
+<div class="pub-cards">
+  <div class="pub-card">
+    <span class="pub-card-ico c-pin"><%- icon('pin') %></span>
+    <div class="pub-card-body"><div class="pub-card-label">LOCATION</div><div class="pub-card-value"><%= other.city || '—' %><%= other.country ? ', ' + other.country : '' %></div><div class="pub-card-sub"><%= distanceText || 'Distance unknown' %></div></div>
+  </div>
+  <div class="pub-card">
+    <span class="pub-card-ico c-heart"><%- icon('heart', true) %></span>
+    <div class="pub-card-body"><div class="pub-card-label">RELATIONSHIP GOAL</div><div class="pub-card-value"><%= goalLabel %></div></div>
   </div>
 </div>
+<% if (other.bio) { %>
+<div class="section">
+  <h2>About</h2>
+  <p><%= other.bio %></p>
+  <% if (interestsList.length) { %><div class="chips"><% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %></div><% } %>
+</div>
+<% } %>
 <div class="section">
   <h2>Details</h2>
   <table class="data kv">
@@ -20,37 +41,47 @@
     <tr><th>Smoking</th><td><%= other.smoking || '—' %></td></tr>
     <tr><th>Drinking</th><td><%= other.drinking || '—' %></td></tr>
     <tr><th>Kids</th><td><%= other.kids || '—' %></td></tr>
-    <tr><th>Goal</th><td><%= other.relationship_goal || '—' %> · looking for <%= other.looking_for_gender || 'any' %> <%= other.age_min %>–<%= other.age_max %></td></tr>
+    <tr><th>Goal</th><td><%= goalLabel %> · looking for <%= other.looking_for_gender || 'any' %> <%= other.age_min %>–<%= other.age_max %></td></tr>
     <tr><th>Languages</th><td><%= other.languages || '—' %></td></tr>
+    <tr><th>Zodiac</th><td><%= other.zodiac || '—' %></td></tr>
+    <tr><th>Birth Place</th><td><%= other.birth_place || '—' %></td></tr>
   </table>
 </div>
 <% if (other.photo2 || other.photo3) { %>
 <div class="section"><h2>More photos</h2>
-  <div class="explore-grid">
-    <% [[other.photo2, other.photo2_thumb], [other.photo3, other.photo3_thumb]].forEach(function(pair){ if (pair[0]) { %><a href="<%= pair[0] %>" target="_blank" rel="noopener"><img src="<%= pair[1] || pair[0] %>" style="width:100%;border-radius:12px" alt="" loading="lazy" decoding="async"></a><% } }) %>
+  <div class="pub-more">
+    <% [[other.photo2, other.photo2_thumb], [other.photo3, other.photo3_thumb]].forEach(function(pair){ if (pair[0]) { %><img class="photo-more" src="<%= pair[1] || pair[0] %>" data-full="<%= pair[0] %>" alt="" loading="lazy" decoding="async"><% } }) %>
   </div>
 </div>
 <% } %>
-<% if (matched) { %>
-  <a class="btn btn-pink btn-block" href="/matches"><%- icon('comment') %> <%= t('chatNow') %></a>
-<% } else if (!swiped) { %>
-  <div class="swipe-actions sticky-actions">
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass"><%- icon('x') %></button></form>
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like"><%- icon('heart', true) %></button></form>
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super"><%- icon('star', true) %></button></form>
+<% if (!preview) { %>
+  <% if (matched) { %>
+    <a class="btn btn-pink btn-block" href="/messages/<%= convId %>"><%- icon('comment') %> <%= t('chatNow') %></a>
+  <% } else if (!swiped) { %>
+    <div class="swipe-actions sticky-actions pub-actions">
+      <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" type="submit" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
+      <form class="js-message-form" method="post" action="/discover/message"><input type="hidden" name="to" value="<%= other.id %>"><button class="swipe-btn msg" type="submit" aria-label="Message"><%- icon('comment') %></button></form>
+      <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" type="submit" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
+    </div>
+  <% } else { %>
+    <p class="sub" style="text-align:center">You <%= swiped.kind==='pass' ? 'passed' : 'liked' %> this profile.</p>
+  <% } %>
+  <div class="section">
+    <h2><%= t('block') %></h2>
+    <% if (!isBlocked) { %>
+    <form method="post" action="/u/<%= other.id %>/block">
+      <button class="btn btn-red btn-block" type="submit"><%- icon('ban') %> <%= t('block') %> <%= other.name %></button>
+    </form>
+    <% } else { %><p class="sub">This user is blocked.</p><% } %>
   </div>
-<% } else { %>
-  <p class="sub" style="text-align:center">You <%= swiped.kind==='pass' ? 'passed' : 'liked' %> this profile.</p>
+  <div class="sheet-backdrop" id="reportSheetBackdrop" hidden></div>
+  <div class="sheet" id="reportSheet" role="dialog" aria-modal="true" hidden>
+    <div class="sheet-grip"></div>
+    <h2>Report <%= other.name %></h2>
+    <form class="js-report-form" method="post" action="/u/<%= other.id %>/report">
+      <div class="field"><label>Reason</label><input type="text" name="reason" placeholder="Fake profile, rude, scam..." maxlength="500"></div>
+      <button class="btn btn-pink btn-block" type="submit"><%- icon('flag') %> <%= t('report') %></button>
+    </form>
+    <button class="sheet-notnow" type="button" id="reportSheetClose">Cancel</button>
+  </div>
 <% } %>
-<div class="section">
-  <h2><%= t('report') %> / <%= t('block') %></h2>
-  <form class="js-report-form" method="post" action="/u/<%= other.id %>/report">
-    <div class="field"><label>Reason</label><input type="text" name="reason" placeholder="Fake profile, rude, scam..." maxlength="500"></div>
-    <button class="btn btn-outline btn-block" type="submit"><%- icon('flag') %> <%= t('report') %></button>
-  </form>
-  <% if (!isBlocked) { %>
-  <form method="post" action="/u/<%= other.id %>/block" style="margin-top:8px">
-    <button class="btn btn-red btn-block" type="submit"><%- icon('ban') %> <%= t('block') %> <%= other.name %></button>
-  </form>
-  <% } else { %><p class="sub">This user is blocked.</p><% } %>
-</div>

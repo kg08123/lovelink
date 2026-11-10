@@ -3,23 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<script>/* Theme boot: apply dark BEFORE first paint, so there is no white flash. Cookie wins; else localStorage; else the phone's system preference. */(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var v=m?m[1]:null;if(!v){try{v=localStorage.getItem('theme')}catch(e){}}if(v==='dark'||(!v&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})();</script>
+<script>/* Theme boot: apply dark BEFORE first paint, so there is no white flash. Cookie wins; else localStorage; else dark — the reference design is dark-first, so dark is the default and light stays available from Settings. */(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var v=m?m[1]:null;if(!v){try{v=localStorage.getItem('theme')}catch(e){}}if(v!=='light'){document.documentElement.classList.add('dark')}}catch(e){}})();</script>
 <title>LoveLink — <%= typeof title !== 'undefined' ? title : t('appTag') %></title>
-<link rel="stylesheet" href="/css/style.css?v=12">
+<link rel="stylesheet" href="/css/style.css?v=13">
 <% if (typeof bodyClass !== 'undefined' && bodyClass === 'landing') { %><link rel="preload" as="image" href="/img/hero-couple.jpg"><% } %>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF2E63'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E">
 </head>
 <body<%- typeof bodyClass !== 'undefined' && bodyClass ? ' class="' + bodyClass + '"' : '' %>>
 <% var isLanding = typeof bodyClass !== 'undefined' && bodyClass === 'landing'; %>
 <% var isChat = typeof bodyClass !== 'undefined' && bodyClass === 'chat-page'; %>
-<% if (!isLanding) { %>
-<header class="topbar">
+<% var isAdmin = user && user.role === 'admin'; %>
+<% if (!isLanding && (!user || isAdmin)) { %>
+<header class="topbar topbar-slim">
   <div class="topbar-in">
     <a class="logo" href="/"><span class="logo-heart"><%- icon('heart', true) %></span>Love<span class="logo-link">Link</span></a>
     <nav class="navlinks">
-      <button class="theme-btn" id="themeBtn" type="button" aria-label="Toggle dark mode" title="Dark mode"><span class="theme-ico-moon"><%- icon('moon') %></span><span class="theme-ico-sun"><%- icon('sun') %></span></button>
-      <% if (user && (profile || user.role === 'admin')) { %>
-        <button class="hamb" id="menuBtn" aria-label="menu"><%- icon('menu') %></button>
+      <% if (isAdmin) { %>
+        <a href="/admin">Admin</a>
+        <a class="signout-link" href="/signout"><%= t('signOut') %></a>
       <% } else if (user) { %>
         <a class="signout-link" href="/signout"><%= t('signOut') %></a>
       <% } else { %>
@@ -31,64 +32,22 @@
     </nav>
   </div>
 </header>
-<% if (user && (profile || user.role === 'admin')) { %>
-<div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
-<aside class="drawer" id="drawer" aria-label="menu">
-  <div class="drawer-head">
-    <div class="drawer-avatar"><%= user.name ? user.name.trim()[0].toUpperCase() : 'L' %></div>
-    <div class="grow">
-      <b><%= user.name %></b>
-      <span class="sub" style="margin:0"><%= user.role === 'admin' ? t('adminPanel') : (user.is_premium ? 'Premium' : t('profile')) %></span>
-    </div>
-    <button class="icon-btn drawer-close" id="drawerClose" aria-label="close"><%- icon('x') %></button>
-  </div>
-  <nav class="drawer-nav">
-    <% if (user.role === 'admin') { %>
-      <a href="/admin"><%- icon('grid') %><%= t('adminPanel') %></a>
-      <a href="/admin/users"><%- icon('users') %><%= t('allUsers') %></a>
-      <a href="/admin/payments"><%- icon('cash') %><%= t('paymentReceipts') %></a>
-      <a href="/admin/reports"><%- icon('file') %><%= t('reportsQueue') %></a>
-      <a href="/messages"><%- icon('comment') %><%= t('messages') %></a>
-    <% } else { %>
-      <a href="/discover"><%- icon('flame') %><%= t('discover') %></a>
-      <a href="/premium"><%- icon('star') %><%= t('premiumTitle') %></a>
-    <% } %>
-    <a href="/settings"><%- icon('settings') %><%= t('settings') %></a>
-    <a href="/about"><%- icon('info') %><%= t('aboutUs') %></a>
-    <a href="/signout" class="danger"><%- icon('logout') %><%= t('signOut') %></a>
-  </nav>
-</aside>
-<% } %>
 <% } %>
 <main class="wrap">
   <% if (flash) { %><div class="flash <%= flash.type %>"><%= flash.msg %></div><% } %>
   <%- body %>
 </main>
 <% if (user && user.role !== 'admin' && profile && !isLanding && !isChat) { %>
-<nav class="bottomnav">
-  <a href="/discover" class="<%= navActive==='discover' ? 'on' : '' %>"><span class="bn-ico"><%- icon('flame', navActive==='discover') %></span><%= t('discover') %></a>
-  <a href="/matches" class="<%= navActive==='matches' ? 'on' : '' %>"><span class="bn-ico"><%- icon('heart', navActive==='matches') %></span><%= t('matches') %></a>
-  <a href="/messages" class="<%= navActive==='messages' ? 'on' : '' %>"><span class="bn-ico"><%- icon('comment') %></span><%= t('messages') %><% if (unreadCount > 0) { %><span class="bn-badge"><%= unreadCount > 99 ? '99+' : unreadCount %></span><% } %></a>
-  <a href="/profile" class="<%= navActive==='profile' ? 'on' : '' %>"><span class="bn-ico"><%- icon('user') %></span><%= t('profile') %></a>
+<nav class="bottomnav" aria-label="Main">
+  <a href="/discover" class="<%= navActive==='discover' ? 'on' : '' %>" aria-label="Discover"><span class="bn-ico"><%- icon('home', navActive==='discover') %></span></a>
+  <a href="/likes" class="<%= navActive==='likes' ? 'on' : '' %>" aria-label="Likes"><span class="bn-ico"><%- icon('heart', navActive==='likes') %></span></a>
+  <a href="/messages" class="<%= navActive==='messages' ? 'on' : '' %>" aria-label="Messages"><span class="bn-ico"><%- icon('comment') %></span><% if (unreadCount > 0) { %><span class="bn-badge"><%= unreadCount > 99 ? '99+' : unreadCount %></span><% } %></a>
+  <a href="/profile" class="<%= navActive==='profile' ? 'on' : '' %>" aria-label="Profile"><span class="bn-ico"><% if (profile.photo1_thumb || profile.photo1) { %><img class="bn-avatar" src="<%= profile.photo1_thumb || profile.photo1 %>" alt=""><% } else { %><%- icon('user') %><% } %></span></a>
 </nav>
 <% } %>
-<% if (!isLanding) { %>
-<footer class="footer">LoveLink · <%= t('appTag') %> · Addis Ababa, Ethiopia<br><a class="link" href="/about"><%= t('aboutUs') %></a> · <a class="link" href="/privacy"><%= t('privacyTitle') %></a></footer>
-<% } %>
-<script src="/js/instant.js?v=7" defer></script>
+<script src="/js/instant.js?v=8" defer></script>
 <script>
 function copyNum(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard&&navigator.clipboard.writeText(el.innerText.trim());}
-(function(){
-  var b=document.getElementById('menuBtn'), d=document.getElementById('drawer'),
-      bg=document.getElementById('drawerBackdrop'), x=document.getElementById('drawerClose');
-  if(!b||!d) return;
-  function open(){ d.classList.add('open'); bg.hidden=false; document.body.style.overflow='hidden'; }
-  function close(){ d.classList.remove('open'); bg.hidden=true; document.body.style.overflow=''; }
-  b.addEventListener('click', function(e){ e.stopPropagation(); open(); });
-  if(x) x.addEventListener('click', close);
-  if(bg) bg.addEventListener('click', close);
-  document.addEventListener('keydown', function(e){ if(e.key==='Escape') close(); });
-})();
 </script>
 </body>
 </html>

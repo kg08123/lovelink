@@ -1,0 +1,22 @@
+<p class="sub likes-sub"><%= tab==='received' ? 'People who liked you' : "People you're interested in" %></p>
+<% if (!items.length) { %>
+  <div class="empty likes-empty">
+    <div class="likes-empty-heart"><%- icon('heart') %></div>
+    <h2><%= tab==='received' ? 'No likes received yet' : 'No likes sent yet' %></h2>
+    <p><%= tab==='received' ? 'Complete your profile and stay active to receive more likes' : 'Like people on Discover and they will show up here.' %></p>
+    <a class="btn btn-pink" href="/discover"><%= t('discover') %></a>
+  </div>
+<% } else { %>
+<div class="likes-grid">
+  <% items.forEach(function(it){ %>
+  <a class="like-card" href="/u/<%= it.id %>">
+    <% if (it.thumb) { %><img src="<%= it.thumb %>" alt="<%= it.name %>" loading="lazy" decoding="async"><% } else { %><div class="like-card-ph"><%- icon('user') %></div><% } %>
+    <div class="like-info">
+      <div class="like-name"><%= it.name %>, <%= it.age %> <% if (it.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></div>
+      <% if (it.online) { %><div class="like-online"><span class="online-dot"></span> Online</div><% } %>
+      <div class="like-meta"><%= it.country || '' %><% if (it.distanceText) { %> • <%= it.distanceText.replace(' away', '') %><% } %></div>
+    </div>
+  </a>
+  <% }) %>
+</div>
+<% } %>

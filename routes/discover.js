@@ -71,6 +71,11 @@ async function ensureMatchesFor(userId) {
 
 // ---- Candidates: not me, not banned, has a profile, not swiped yet,
 // ---- not blocked either way, fits my looking-for + age range (and I fit theirs).
+// ---- Settings prefs are REAL filters here: my age range, my preferred
+// ---- religion, Verified Only (verified = email verified, or a demo
+// ---- profile — demos have no email to verify, and the badge already
+// ---- shows for them), and other users' Incognito (they stay hidden from
+// ---- my deck unless they already liked me).
 async function getCandidates(me, meProfile, opts = {}) {
   const blocked = await db.query(
     'SELECT blocked_id FROM blocks WHERE blocker_id=$1 UNION SELECT blocker_id FROM blocks WHERE blocked_id=$1',
@@ -78,12 +83,15 @@ async function getCandidates(me, meProfile, opts = {}) {
   const blockedIds = blocked.rows.map((x) => x.blocked_id);
   // Slim columns only: v1 selected p.* for up to 200 candidates, which pulled
   // all three base64 photos per person into the Discover page (megabytes).
-  // Only photo1 is ever shown on a card; photo2/3 load on the profile page.
-  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium,
+  // photo2/3 ride along now for the story-progress photo viewer, as
+  // 360px thumbs are NOT used on the full-screen card — the full photo is
+  // one image, and the card is the whole screen.
+  let sql = `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.email_verified, u.is_demo,
              p.user_id, p.bio, p.city, p.country, p.latitude, p.longitude,
              p.height_cm, p.religion, p.education, p.job, p.smoking, p.drinking, p.kids,
              p.looking_for_gender, p.age_min, p.age_max, p.relationship_goal, p.interests,
-             p.languages, p.photo1, p.photo1_thumb, p.online, p.last_active, p.created_at
+             p.languages, p.photo1, p.photo1_thumb, p.photo2, p.photo2_thumb,
+             p.photo3, p.photo3_thumb, p.online, p.last_active, p.created_at, p.incognito
              FROM users u JOIN profiles p ON p.user_id = u.id
              WHERE u.role='user' AND u.id <> $1 AND u.is_banned = FALSE`;
   const params = [me.id];
@@ -93,6 +101,12 @@ async function getCandidates(me, meProfile, opts = {}) {
     sql += ` AND u.id NOT IN (${ph})`;
     params.push(...blockedIds);
   }
+  // Incognito: "only people you like can see you" — a user with incognito
+  // on is invisible in decks unless they already liked the viewer.
+  // (Written as u.id IN (...) rather than a correlated EXISTS, because
+  // pg-mem — the local test DB — cannot resolve the outer alias inside
+  // an EXISTS subquery; Postgres handles both.)
+  sql += ` AND (p.incognito IS NOT TRUE OR u.id IN (SELECT from_user_id FROM swipes WHERE to_user_id = $1 AND kind IN ('like','super')))`;
   if (opts.recycled) {
     // Recycled deck: people already swiped — but NEVER anyone already
     // matched (they live in Matches now). The deck loops instead of
@@ -108,6 +122,8 @@ async function getCandidates(me, meProfile, opts = {}) {
   }
   if (opts.ageMin) { sql += ` AND u.age >= $${i++}`; params.push(Number(opts.ageMin)); }
   if (opts.ageMax) { sql += ` AND u.age <= $${i++}`; params.push(Number(opts.ageMax)); }
+  if (opts.religion) { sql += ` AND p.religion = $${i++}`; params.push(opts.religion); }
+  if (opts.verifiedOnly) { sql += ` AND (u.email_verified = TRUE OR u.is_demo = TRUE)`; }
   if (opts.onlineOnly) { sql += ` AND p.online = TRUE`; }
   sql += ' ORDER BY p.last_active DESC LIMIT 40';
   const r = await db.query(sql, params);
@@ -120,6 +136,11 @@ async function getCandidates(me, meProfile, opts = {}) {
     out.push({
       ...c,
       thumb: thumbFor(c.photo1, c.photo1_thumb),
+      // Story-progress viewer: 360px thumbs keep the page light; the
+      // main <img> still shows the full first photo, and the public
+      // profile page shows the full versions.
+      photos: [thumbFor(c.photo1, c.photo1_thumb), thumbFor(c.photo2, c.photo2_thumb), thumbFor(c.photo3, c.photo3_thumb)].filter(Boolean),
+      verified: !!(c.email_verified || c.is_demo),
       distanceKm: dist,
       distanceText: fmtDistance(dist),
       score: matchScore(
@@ -195,10 +216,17 @@ function photoOf(p) {
 async function discoverData(req) {
   await sweepDemoAutoMatches(req);
   await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
-  let cands = await getCandidates(req.user, req.profile);
+  // My Settings prefs are the filters: age range + preferred religion +
+  // Verified Only. (Gender preference is applied inside getCandidates.)
+  const prefs = {
+    ageMin: req.profile.age_min, ageMax: req.profile.age_max,
+    religion: (req.profile.pref_religion && req.profile.pref_religion !== 'Any') ? req.profile.pref_religion : null,
+    verifiedOnly: !!req.profile.verified_only,
+  };
+  let cands = await getCandidates(req.user, req.profile, prefs);
   let recycled = false;
   if (!cands.length) {
-    cands = await getCandidates(req.user, req.profile, { recycled: true });
+    cands = await getCandidates(req.user, req.profile, { ...prefs, recycled: true });
     recycled = cands.length > 0;
   }
   const card = cands[0] || null;
@@ -241,7 +269,7 @@ const isXhr = (req) => !!req.xhr;
 // ---- Onboarding questionnaire ----
 const ONBOARD_FIELDS = ['bio', 'city', 'country', 'latitude', 'longitude', 'height_cm', 'religion',
   'education', 'job', 'smoking', 'drinking', 'kids', 'looking_for_gender', 'age_min', 'age_max',
-  'relationship_goal', 'interests', 'languages'];
+  'relationship_goal', 'interests', 'languages', 'zodiac', 'birth_place'];
 
 router.get('/onboarding', requireAuth, async (req, res) => {
   if (req.profile) return res.redirect('/discover');
@@ -292,6 +320,8 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
       relationship_goal: ['serious', 'casual', 'friendship', 'marriage'].includes(b.relationship_goal) ? b.relationship_goal : null,
       interests,
       languages: (b.languages || '').trim() || 'Amharic, English',
+      zodiac: ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'].includes(b.zodiac) ? b.zodiac : null,
+      birth_place: (b.birth_place || '').trim().slice(0, 100) || null,
     };
     if (!vals.city) {
       req.session.flash = { type: 'err', msg: t('fillAll') };
@@ -352,7 +382,73 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
 router.get('/profile', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const n = await matchCount(req.user.id);
-    res.render('my-profile', { title: req.user.name, me: req.user, p: req.profile, matchCount: n, interestsList: splitList(req.profile.interests) });
+    res.render('my-profile', {
+      title: req.user.name, me: req.user, p: req.profile, matchCount: n,
+      freeLeft: Math.max(0, FREE_MATCHES - n),
+      interestsList: splitList(req.profile.interests),
+    });
+  } catch (e) { next(e); }
+});
+
+// ---- My Profile photos: drag-to-reorder / tap-to-replace / remove ----
+// The grid sends slot numbers 1-3. Reorder permutes the three photo
+// columns (photo + thumb together) in one UPDATE; remove compacts the
+// remaining photos up so photo1 is always the main photo.
+router.post('/profile/photos/reorder', requireAuth, requireOnboarded, async (req, res, next) => {
+  try {
+    let order = req.body.order;
+    if (typeof order === 'string') order = order.split(',');
+    order = (Array.isArray(order) ? order : []).map((x) => Number(x)).filter((x) => [1, 2, 3].includes(x));
+    if (order.length !== 3 || new Set(order).size !== 3) {
+      return res.status(400).json({ ok: false, msg: 'Order must list slots 1, 2 and 3.' });
+    }
+    const p = req.profile;
+    const cols = ['photo1', 'photo2', 'photo3'];
+    const thumbs = ['photo1_thumb', 'photo2_thumb', 'photo3_thumb'];
+    const vals = {};
+    order.forEach((from, i) => {
+      vals[cols[i]] = p[cols[from - 1]];
+      vals[thumbs[i]] = p[thumbs[from - 1]];
+    });
+    await db.query('UPDATE profiles SET photo1=$1, photo1_thumb=$2, photo2=$3, photo2_thumb=$4, photo3=$5, photo3_thumb=$6 WHERE user_id=$7',
+      [vals.photo1, vals.photo1_thumb, vals.photo2, vals.photo2_thumb, vals.photo3, vals.photo3_thumb, req.user.id]);
+    res.json({ ok: true });
+  } catch (e) { next(e); }
+});
+
+router.post('/profile/photos/replace', requireAuth, requireOnboarded, (req, res, next) => {
+  photoUpload.single('photo')(req, res, (err) => {
+    if (err) return res.status(400).json({ ok: false, msg: err.message });
+    next();
+  });
+}, async (req, res, next) => {
+  try {
+    const slot = Number(req.body.slot);
+    if (![1, 2, 3].includes(slot)) return res.status(400).json({ ok: false, msg: 'Bad slot' });
+    if (!req.file || !req.file.buffer) return res.status(400).json({ ok: false, msg: 'No photo chosen' });
+    const { processPhoto, makeThumb } = require('../lib/photos');
+    const full = await processPhoto(req.file.buffer, req.file.mimetype);
+    const thumb = (await makeThumb(req.file.buffer, req.file.mimetype)) || full;
+    const col = 'photo' + slot, tcol = col + '_thumb';
+    await db.query(`UPDATE profiles SET ${col}=$1, ${tcol}=$2, online=TRUE, last_active=NOW() WHERE user_id=$3`,
+      [full, thumb, req.user.id]);
+    res.json({ ok: true, thumb });
+  } catch (e) { next(e); }
+});
+
+router.post('/profile/photos/remove', requireAuth, requireOnboarded, async (req, res, next) => {
+  try {
+    const slot = Number(req.body.slot);
+    if (![1, 2, 3].includes(slot)) return res.status(400).json({ ok: false, msg: 'Bad slot' });
+    const p = req.profile;
+    const cols = ['photo1', 'photo2', 'photo3'];
+    const thumbs = ['photo1_thumb', 'photo2_thumb', 'photo3_thumb'];
+    const photos = cols.map((c, i) => [p[c], p[thumbs[i]]]);
+    photos.splice(slot - 1, 1);
+    photos.push([null, null]);
+    await db.query('UPDATE profiles SET photo1=$1, photo1_thumb=$2, photo2=$3, photo2_thumb=$4, photo3=$5, photo3_thumb=$6 WHERE user_id=$7',
+      [...photos.flat(), req.user.id]);
+    res.json({ ok: true });
   } catch (e) { next(e); }
 });
 
@@ -369,8 +465,81 @@ router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) =>
   try {
     const data = await discoverData(req);
     res.render('discover', {
-      title: res.locals.t('discover'), ...data, photoOf,
+      title: res.locals.t('discover'), ...data, photoOf, bodyClass: 'discover-page',
     });
+  } catch (e) { next(e); }
+});
+
+// Record a like/super (shared by the swipe buttons and the message
+// button on a card). Returns { dest, hint, alreadyLiked } — dest is
+// '/discover' when there is no mutual like yet, '/match/:id' on a new
+// match, or '/premium?blocked=1' when the mutual like hit the paywall
+// (the like itself IS saved, so Premium approval still creates the
+// match later via ensureMatchesFor).
+async function recordLike(req, toId, target, kind) {
+  const t = req.res.locals.t;
+  const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+  const prevKind = already.rows.length ? already.rows[0].kind : null;
+  if (prevKind === 'like' || prevKind === 'super') {
+    // Re-liking someone already liked: a strict no-op. Never a second
+    // match, never another free match — the caller re-queues the card.
+    return { dest: '/discover', hint: null, alreadyLiked: true };
+  }
+  if (prevKind === 'pass') {
+    // Pass -> like/super upgrade: change the stored swipe, then run the
+    // normal like flow below (a NEW match from it still counts as a
+    // free match, exactly like a first-time like).
+    await db.query('UPDATE swipes SET kind=$3, created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId, kind]);
+  } else {
+    await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
+      [req.user.id, toId, kind]);
+  }
+  // Demo profiles like back automatically after 60s (see lib/demo-auto);
+  // tell the tester so the wait is expected, not a mystery. Only when
+  // the demo has NOT already liked back (those match instantly).
+  let hint = null;
+  if (target.is_demo) {
+    const alreadyLikedBack = await db.query(
+      "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
+      [toId, req.user.id]);
+    if (!alreadyLikedBack.rows.length) hint = t('demoReplyHint');
+  }
+  const dest = await processLike(req, toId, target.name);
+  return { dest, hint, alreadyLiked: false };
+}
+
+// Message button on a Discover card / public profile: if already matched,
+// open the chat; otherwise like first — if that like completes a match,
+// go straight to the chat; if not, the like is saved and the next card
+// shows (the reference app's message button is a like-first action).
+router.post('/discover/message', requireAuth, requireOnboarded, async (req, res, next) => {
+  try {
+    const t = res.locals.t;
+    const toId = Number(req.body.to);
+    if (!toId || toId === req.user.id) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
+    const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
+    if (!target.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
+    const openChat = async () => {
+      const m = await db.query('SELECT c.id AS conv_id FROM matches m LEFT JOIN conversations c ON c.match_id=m.id WHERE (m.user_a_id=$1 AND m.user_b_id=$2) OR (m.user_a_id=$2 AND m.user_b_id=$1)', [req.user.id, toId]);
+      return m.rows.length && m.rows[0].conv_id ? '/messages/' + m.rows[0].conv_id : null;
+    };
+    let chatUrl = await openChat();
+    if (chatUrl) return isXhr(req) ? res.json({ ok: true, redirect: chatUrl }) : res.redirect(chatUrl);
+    const { dest, hint } = await recordLike(req, toId, target.rows[0], 'like');
+    if (dest === '/premium?blocked=1') {
+      // Paywall: the like is saved, the match waits for Premium.
+      // XHR: advance to the next card AND open the premium sheet on top.
+      if (isXhr(req)) return discoverJson(req, res, { sheet: 'premium', hint });
+      req.session.flash = { type: 'err', msg: t('premiumNeeded') };
+      return res.redirect(dest);
+    }
+    if (dest !== '/discover') {
+      chatUrl = await openChat();
+      const url = chatUrl || dest;
+      return isXhr(req) ? res.json({ ok: true, redirect: url, hint }) : res.redirect(url);
+    }
+    if (!isXhr(req) && hint) req.session.flash = { type: 'ok', msg: hint };
+    return isXhr(req) ? discoverJson(req, res, hint ? { hint } : null) : res.redirect('/discover');
   } catch (e) { next(e); }
 });
 
@@ -386,53 +555,45 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
     if (!toId || toId === req.user.id) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     const target = await db.query('SELECT id, name, is_demo FROM users WHERE id=$1 AND role=$2 AND is_banned=FALSE', [toId, 'user']);
     if (!target.rows.length) return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
-    const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-    const prevKind = already.rows.length ? already.rows[0].kind : null;
-    if (prevKind === 'like' || prevKind === 'super') {
-      // Re-swiping someone already liked: a strict no-op. Never a second
-      // match, never another free match, never an error — just stamp the
-      // swipe as fresh so the profile re-queues at the back of the
-      // recycled deck, and move on to the next card.
-      await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
-    }
-    if (prevKind === 'pass' && kind === 'pass') {
-      // Same for a re-pass: re-queue at the back of the deck, nothing else.
-      await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
-      req.session.lastPass = toId; // rewind still brings this card back
-      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
-    }
-    if (prevKind === 'pass') {
-      // Pass -> like/super upgrade: change the stored swipe, then run the
-      // normal like flow below (a NEW match from it still counts as a
-      // free match, exactly like a first-time like).
-      await db.query('UPDATE swipes SET kind=$3, created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId, kind]);
-    } else {
-      await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
-        [req.user.id, toId, kind]);
-    }
     if (kind === 'pass') {
-      req.session.lastPass = toId; // rewind target (once)
+      const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+      const prevKind = already.rows.length ? already.rows[0].kind : null;
+      if (prevKind === 'like' || prevKind === 'super') {
+        // Passing someone already liked: the like stays — just stamp the
+        // swipe as fresh so the profile re-queues at the back of the
+        // recycled deck.
+        await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+      } else if (prevKind === 'pass') {
+        // Re-pass: re-queue at the back of the deck, nothing else.
+        await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+        req.session.lastPass = toId; // rewind still brings this card back
+      } else {
+        await db.query("INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,'pass') ON CONFLICT (from_user_id,to_user_id) DO NOTHING",
+          [req.user.id, toId]);
+        req.session.lastPass = toId; // rewind target (once)
+      }
       return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
     }
-    // Demo profiles like back automatically after 60s (see lib/demo-auto);
-    // tell the tester so the wait is expected, not a mystery. Only when
-    // the demo has NOT already liked back (those match instantly).
+    const { dest, hint, alreadyLiked } = await recordLike(req, toId, target.rows[0], kind);
+    if (alreadyLiked) {
+      // Re-like: strict no-op, just re-queue the card at the back.
+      await db.query('UPDATE swipes SET created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
+      return isXhr(req) ? discoverJson(req, res) : res.redirect('/discover');
+    }
     // XHR: the hint rides in the JSON (a session flash would only appear
     // on the next full page load); plain forms keep the flash.
-    let hint = null;
-    if (target.rows[0].is_demo) {
-      const alreadyLikedBack = await db.query(
-        "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
-        [toId, req.user.id]);
-      if (!alreadyLikedBack.rows.length) {
-        hint = t('demoReplyHint');
-        if (!isXhr(req)) req.session.flash = { type: 'ok', msg: hint };
-      }
+    if (!isXhr(req) && hint) req.session.flash = { type: 'ok', msg: hint };
+    if (dest === '/premium?blocked=1') {
+      // Paywall: the like is saved, but the match waits for Premium.
+      // XHR: advance to the next card AND open the premium sheet on top
+      // (the reference "Need More Points" sheet, with our real numbers).
+      // Plain forms navigate to the Premium page.
+      if (isXhr(req)) return discoverJson(req, res, { sheet: 'premium', hint });
+      req.session.flash = { type: 'err', msg: t('premiumNeeded') };
+      return res.redirect(dest);
     }
-    const dest = await processLike(req, toId, target.rows[0].name);
     if (dest !== '/discover') {
-      // Match screen or paywall: a real navigation either way.
+      // Match screen: a real navigation either way.
       return isXhr(req) ? res.json({ ok: true, redirect: dest, hint }) : res.redirect(dest);
     }
     return isXhr(req) ? discoverJson(req, res, hint ? { hint } : null) : res.redirect(dest);
@@ -494,38 +655,56 @@ router.get('/match/:id', requireAuth, async (req, res, next) => {
 // bookmark to /explore lands on the Discover deck instead of a dead page.
 router.get('/explore', (req, res) => res.redirect('/discover'));
 
-// ---- Matches list ----
-router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => {
+// ---- Matches live inside Messages now (the reference has no separate
+// ---- Matches list — matched people are reached from their chats).
+// ---- Old /matches links land on the inbox instead of a dead page.
+router.get('/matches', requireAuth, requireOnboarded, (req, res) => res.redirect('/messages'));
+
+// ---- Likes: people who liked me / people I liked (heart tab) ----
+router.get('/likes', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     await sweepDemoAutoMatches(req);
-    const r = await db.query(
-      `SELECT m.id, m.created_at,
-              CASE WHEN m.user_a_id=$1 THEN m.user_b_id ELSE m.user_a_id END AS other_id,
-              u.name AS other_name, u.age AS other_age, p.photo1, p.photo1_thumb, p.city, p.latitude, p.longitude,
-              c.id AS conv_id
-       FROM matches m
-       JOIN users u ON u.id = (CASE WHEN m.user_a_id=$1 THEN m.user_b_id ELSE m.user_a_id END)
-       JOIN profiles p ON p.user_id = u.id
-       LEFT JOIN conversations c ON c.match_id = m.id
-       WHERE m.user_a_id=$1 OR m.user_b_id=$1
-       ORDER BY m.created_at DESC`,
+    const tab = req.query.tab === 'sent' ? 'sent' : 'received';
+    const blocked = await db.query(
+      'SELECT blocked_id FROM blocks WHERE blocker_id=$1 UNION SELECT blocker_id FROM blocks WHERE blocked_id=$1',
       [req.user.id]);
-    for (const row of r.rows) {
-      row.thumb = thumbFor(row.photo1, row.photo1_thumb);
-      backfillProfileThumb(row.other_id, row.photo1, row.photo1_thumb);
-      row.distanceText = fmtDistance(haversineKm(req.profile.latitude, req.profile.longitude, row.latitude, row.longitude));
-      if (row.conv_id) {
-        const lm = await db.query('SELECT body FROM messages WHERE conversation_id=$1 ORDER BY id DESC LIMIT 1', [row.conv_id]);
-        row.lastBody = lm.rows.length ? lm.rows[0].body : '';
-        const uc = await db.query(
-          `SELECT COUNT(*)::int AS n FROM messages m LEFT JOIN conversation_reads rd
-           ON rd.conversation_id=m.conversation_id AND rd.user_id=$1
-           WHERE m.conversation_id=$2 AND m.sender_user_id<>$1
-           AND m.created_at > COALESCE(rd.last_read_at,'1970-01-01')`, [req.user.id, row.conv_id]);
-        row.unread = uc.rows[0].n;
-      } else { row.lastBody = ''; row.unread = 0; }
+    const blockedIds = blocked.rows.map((x) => x.blocked_id);
+    const notBlocked = blockedIds.length
+      ? ` AND u.id NOT IN (${blockedIds.map((_, i) => '$' + (i + 2)).join(',')})`
+      : '';
+    const params = [req.user.id, ...blockedIds];
+    const rows = tab === 'received'
+      ? (await db.query(
+        `SELECT u.id, u.name, u.age, u.email_verified, u.is_demo,
+                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online,
+                s.created_at AS liked_at
+         FROM swipes s JOIN users u ON u.id = s.from_user_id JOIN profiles p ON p.user_id = u.id
+         WHERE s.to_user_id = $1 AND s.kind IN ('like','super') AND u.role='user' AND u.is_banned=FALSE${notBlocked}
+         ORDER BY s.created_at DESC`, params)).rows
+      : (await db.query(
+        `SELECT u.id, u.name, u.age, u.email_verified, u.is_demo,
+                p.photo1, p.photo1_thumb, p.city, p.country, p.latitude, p.longitude, p.online,
+                s.created_at AS liked_at
+         FROM swipes s JOIN users u ON u.id = s.to_user_id JOIN profiles p ON p.user_id = u.id
+         WHERE s.from_user_id = $1 AND s.kind IN ('like','super') AND u.role='user' AND u.is_banned=FALSE${notBlocked}
+         ORDER BY s.created_at DESC`, params)).rows;
+    const items = rows.map((row) => ({
+      ...row,
+      thumb: thumbFor(row.photo1, row.photo1_thumb),
+      verified: !!(row.email_verified || row.is_demo),
+      distanceText: fmtDistance(haversineKm(req.profile.latitude, req.profile.longitude, row.latitude, row.longitude)),
+    }));
+    for (const it of items) backfillProfileThumb(it.id, it.photo1, it.photo1_thumb);
+    // Fragment swap: the Likes tabs switch without a full page reload
+    // (same pattern the old Explore tabs used). ?fragment=1 answers with
+    // just the grid HTML; anything else renders the whole page.
+    if (req.query.fragment === '1') {
+      return res.render('likes-grid', { items, tab, layout: false }, (err, html) => {
+        if (err) return next(err);
+        res.send(html);
+      });
     }
-    res.render('matches', { title: res.locals.t('matches'), items: r.rows });
+    res.render('likes', { title: 'Likes', items, tab });
   } catch (e) { next(e); }
 });
 
@@ -533,9 +712,24 @@ router.get('/matches', requireAuth, requireOnboarded, async (req, res, next) => 
 router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const id = Number(req.params.id);
-    if (id === req.user.id) return res.redirect('/profile');
+    // Preview Profile (from My Profile): see your own page exactly as
+    // others see it — same template, no swipe buttons, no report/block.
+    if (id === req.user.id) {
+      if (req.query.preview !== '1') return res.redirect('/profile');
+      const other = {
+        ...req.profile, id: req.user.id, name: req.user.name, gender: req.user.gender,
+        age: req.user.age, is_premium: req.user.is_premium,
+        email_verified: req.user.email_verified, is_demo: req.user.is_demo,
+      };
+      return res.render('profile-public', {
+        title: other.name, other, distanceText: null, score: null,
+        interestsList: splitList(other.interests), swiped: null,
+        matched: null, convId: null, isBlocked: false,
+        verified: !!(other.email_verified || other.is_demo), preview: true,
+      });
+    }
     const r = await db.query(
-      `SELECT u.id, u.name, u.gender, u.age, u.is_premium, p.*
+      `SELECT u.id, u.name, u.gender, u.age, u.is_premium, u.email_verified, u.is_demo, p.*
        FROM users u JOIN profiles p ON p.user_id=u.id
        WHERE u.id=$1 AND u.role='user' AND u.is_banned=FALSE`, [id]);
     if (!r.rows.length) return res.status(404).render('404');
@@ -546,13 +740,15 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
       { age: other.age, age_min: other.age_min, age_max: other.age_max, interests: other.interests, relationship_goal: other.relationship_goal, smoking: other.smoking, drinking: other.drinking },
       dist);
     const sw = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, id]);
-    const matched = await db.query('SELECT id FROM matches WHERE (user_a_id=$1 AND user_b_id=$2) OR (user_a_id=$2 AND user_b_id=$1)',
+    const matched = await db.query('SELECT m.id, c.id AS conv_id FROM matches m LEFT JOIN conversations c ON c.match_id=m.id WHERE (m.user_a_id=$1 AND m.user_b_id=$2) OR (m.user_a_id=$2 AND m.user_b_id=$1)',
       [req.user.id, id]);
     const blocked = await db.query('SELECT 1 FROM blocks WHERE blocker_id=$1 AND blocked_id=$2', [req.user.id, id]);
     res.render('profile-public', {
       title: other.name, other, distanceText: fmtDistance(dist), score,
       interestsList: splitList(other.interests), swiped: sw.rows[0] || null,
-      matched: matched.rows[0] || null, isBlocked: blocked.rows.length > 0,
+      matched: matched.rows[0] || null, convId: matched.rows[0] ? matched.rows[0].conv_id : null,
+      isBlocked: blocked.rows.length > 0,
+      verified: !!(other.email_verified || other.is_demo), preview: false,
     });
   } catch (e) { next(e); }
 });
@@ -597,4 +793,6 @@ router.post('/u/:id/block', requireAuth, requireOnboarded, async (req, res, next
 module.exports = router;
 module.exports.ensureMatchesFor = ensureMatchesFor;
 module.exports.createMatch = createMatch;
+module.exports.getCandidates = getCandidates;
+module.exports.discoverData = discoverData;
 module.exports.matchCount = matchCount;

@@ -1,4 +1,4 @@
-<h1 class="page-title"><%= t('messages') %></h1>
+<h1 class="page-title">Messages</h1>
 <% if (notifs && notifs.length) { %>
 <div class="section-head"><span class="icon-chip"><%- icon('heart', true) %></span><h2 class="section-title">LoveLink</h2></div>
 <% notifs.forEach(function(n){ %>
@@ -11,13 +11,12 @@
 </a>
 <% }) %>
 <% } %>
-<div class="section-head"><span class="icon-chip"><%- icon('users') %></span><h2 class="section-title"><%= t('matches') %></h2></div>
 <% if (!convs.length) { %>
   <div class="empty"><%- icon('comment') %><h2>No chats yet</h2><p>Match with someone first — then you can chat here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a></div>
 <% } %>
 <% convs.forEach(function(c){ %>
 <a class="chat-item <%= c.unread>0?'unread':'' %>" href="/messages/<%= c.id %>">
-  <% if (c.other_photo) { %><img class="avatar-sm" src="<%= c.thumb || c.other_photo %>" alt="" loading="lazy" decoding="async"><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
+  <% if (c.thumb) { %><img class="avatar-sm" src="<%= c.thumb %>" alt="" loading="lazy" decoding="async"><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
   <div class="grow">
     <div class="ci-top"><b><%= c.other_name %></b><% if (c.unread>0) { %><span class="badge"><%= c.unread %></span><% } %></div>
     <div class="ci-prev"><%= c.hasImage ? 'Photo' : (c.lastBody || 'Say hello!') %></div>

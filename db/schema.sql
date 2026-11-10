@@ -160,3 +160,10 @@ ALTER TABLE profiles ADD COLUMN IF NOT EXISTS photo2_thumb TEXT;
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS photo3_thumb TEXT;
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS image_thumb TEXT;
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS receipt_thumb TEXT;
+-- Reference-rebuild prefs (v5): zodiac + birth place shown in About Me;
+-- incognito / verified-only / preferred religion are real Settings filters.
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS zodiac TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS birth_place TEXT;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS incognito BOOLEAN DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS verified_only BOOLEAN DEFAULT FALSE;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS pref_religion TEXT;

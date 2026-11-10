@@ -1,0 +1,8 @@
+<h1 class="page-title likes-title">Likes</h1>
+<div class="text-tabs" id="likesTabs">
+  <a href="/likes?tab=received" class="text-tab<%= tab==='received' ? ' on' : '' %>" data-tab="received">Likes received</a>
+  <a href="/likes?tab=sent" class="text-tab<%= tab==='sent' ? ' on' : '' %>" data-tab="sent">Likes sent</a>
+</div>
+<div id="likesGridWrap">
+<%- include('likes-grid', { items: items, tab: tab }) %>
+</div>

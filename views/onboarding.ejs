@@ -21,7 +21,7 @@
       <label class="upload-zone"><%- icon('camera') %><b>Tap to add a third photo</b><small>Optional — shows more of you.</small><input type="file" name="photo3" accept="image/*" data-upz="upz3"></label>
       <div class="upz-prev" id="upz3"><img alt=""><span class="upz-name"></span><button type="button" class="upz-x" data-clear="photo3" aria-label="Remove photo"><%- icon('x') %></button></div>
     </div>
-    <div class="field"><label><%= t('aboutMe') %></label>
+    <div class="field" id="field-bio"><label><%= t('aboutMe') %></label>
       <textarea name="bio" maxlength="500" placeholder="Dream big, work hard, and enjoy life"><%= (profile && profile.bio) || form.bio || '' %></textarea>
     </div>
   </div>
@@ -45,8 +45,8 @@
 
   <div class="section">
     <h2><%- icon('user') %> About you</h2>
-    <div class="field"><label>Height (cm)</label><input type="number" name="height_cm" min="120" max="230" value="<%= (profile && profile.height_cm) || form.height_cm || '' %>"></div>
-    <div class="field"><label>Religion</label>
+    <div class="field" id="field-height"><label>Height (cm)</label><input type="number" name="height_cm" min="120" max="230" value="<%= (profile && profile.height_cm) || form.height_cm || '' %>"></div>
+    <div class="field" id="field-religion"><label>Religion</label>
       <select name="religion">
         <option value="">—</option>
         <% ['Orthodox','Protestant','Catholic','Muslim','Other','Prefer not to say'].forEach(function(r){ %>
@@ -54,7 +54,15 @@
         <% }) %>
       </select>
     </div>
-    <div class="field"><label>Education</label>
+    <div class="field" id="field-zodiac"><label>Zodiac sign</label>
+      <select name="zodiac">
+        <option value="">—</option>
+        <% ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'].forEach(function(z){ %>
+        <option <%= (profile && profile.zodiac===z) || form.zodiac===z ? 'selected' : '' %>><%= z %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="field" id="field-education"><label>Education</label>
       <select name="education">
         <option value="">—</option>
         <% ['High School','College','University','Masters','PhD'].forEach(function(r){ %>
@@ -62,7 +70,8 @@
         <% }) %>
       </select>
     </div>
-    <div class="field"><label>Job</label><input type="text" name="job" value="<%= (profile && profile.job) || form.job || '' %>" placeholder="Teacher, Engineer..."></div>
+    <div class="field" id="field-job"><label>Job</label><input type="text" name="job" value="<%= (profile && profile.job) || form.job || '' %>" placeholder="Teacher, Engineer..."></div>
+    <div class="field" id="field-birthplace"><label>Birth Place</label><input type="text" name="birth_place" value="<%= (profile && profile.birth_place) || form.birth_place || '' %>" placeholder="Addis Ababa"></div>
     <div class="field"><label>Smoking</label>
       <select name="smoking">
         <option value="">—</option>
@@ -92,21 +101,21 @@
 
   <div class="section">
     <h2><%- icon('heart') %> What are you looking for?</h2>
-    <div class="field"><label>Looking for</label>
+    <div class="field" id="field-lookingfor"><label>Looking for</label>
       <select name="looking_for_gender">
         <option value="any" <%= (profile && profile.looking_for_gender==='any')?'selected':'' %>>Anyone</option>
         <option value="female" <%= (profile && profile.looking_for_gender==='female')?'selected':'' %>>Women</option>
         <option value="male" <%= (profile && profile.looking_for_gender==='male')?'selected':'' %>>Men</option>
       </select>
     </div>
-    <div class="field"><label>Age range</label>
+    <div class="field" id="field-age"><label>Age range</label>
       <div style="display:flex;gap:8px">
         <input type="number" name="age_min" min="18" max="99" value="<%= (profile && profile.age_min) || form.age_min || 18 %>" style="flex:1">
         <span style="align-self:center">–</span>
         <input type="number" name="age_max" min="18" max="99" value="<%= (profile && profile.age_max) || form.age_max || 99 %>" style="flex:1">
       </div>
     </div>
-    <div class="field"><label>Relationship goal</label>
+    <div class="field" id="field-goal"><label>Relationship goal</label>
       <select name="relationship_goal">
         <option value="">—</option>
         <option value="serious" <%= (profile && profile.relationship_goal==='serious')?'selected':'' %>>Serious relationship</option>
@@ -115,14 +124,14 @@
         <option value="friendship" <%= (profile && profile.relationship_goal==='friendship')?'selected':'' %>>Friendship first</option>
       </select>
     </div>
-    <div class="field"><label><%= t('interests') %> (pick all that fit)</label>
+    <div class="field" id="field-interests"><label><%= t('interests') %> (pick all that fit)</label>
       <div class="chips">
         <% INTERESTS.forEach(function(it){ var cur = ((profile && profile.interests) || form.interests || '').split(','); %>
         <label class="chip-check"><input type="checkbox" name="interests" value="<%= it %>" <%= cur.includes(it)?'checked':'' %>> <%= it %></label>
         <% }) %>
       </div>
     </div>
-    <div class="field"><label>Languages</label><input type="text" name="languages" value="<%= (profile && profile.languages) || form.languages || 'Amharic, English' %>"></div>
+    <div class="field" id="field-languages"><label>Languages</label><input type="text" name="languages" value="<%= (profile && profile.languages) || form.languages || 'Amharic, English' %>"></div>
   </div>
 
   <button class="btn btn-pink btn-block" type="submit" id="saveBtn"><%= t('save') %></button>

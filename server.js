@@ -67,26 +67,30 @@ app.use((req, res, next) => {
     req.lang = req.cookies.lang === 'am' ? 'am' : 'en';
   }
   res.locals.lang = req.lang;
-  // Theme: cookie wins ('dark' | 'light'); no cookie = 'light' server-side,
-  // and the <head> boot script then applies the phone's system preference.
-  res.locals.theme = req.cookies.theme === 'dark' ? 'dark' : 'light';
+  // Theme: cookie wins ('dark' | 'light'); no cookie = 'dark' server-side,
+  // and the <head> boot script then applies the stored choice, else dark.
+  // The reference design is dark-first, so dark is the default; light
+  // stays available from the Settings toggle.
+  res.locals.theme = req.cookies.theme === 'light' ? 'light' : 'dark';
   res.locals.t = (key) => t(req.lang, key);
   res.locals.nt = (stored) => nt(req.lang, stored);
   res.locals.googleEnabled = googleEnabled;
   res.locals.fmtETB = (n) => (n === null || n === undefined || n === '' ? '' : Number(n).toLocaleString('en-US') + ' ETB');
   res.locals.icon = icon;
   res.locals.brand = brand;
-  // Bottom-nav active tab, derived from the URL (v1 set it with a `var` inside
-  // the body template, which never reached the layout — so nothing lit up).
+  // Bottom-nav active tab, derived from the URL. Heart tab = Likes now.
   res.locals.navActive = req.path.startsWith('/discover') || req.path.startsWith('/u/')
     ? 'discover'
+    : req.path.startsWith('/likes')
+      ? 'likes'
     : req.path.startsWith('/matches') || req.path.startsWith('/match/')
-      ? 'matches'
+      ? 'messages'
       : req.path.startsWith('/messages')
         ? 'messages'
         : req.path.startsWith('/profile') || req.path.startsWith('/settings') || req.path.startsWith('/premium')
           ? 'profile'
           : '';
+  res.locals.APP_VERSION = require('./package.json').version || '1.0.0';
   res.locals.CITIES = CITIES;
   res.locals.cityName = cityName;
   res.locals.INTERESTS = INTERESTS;
@@ -115,7 +119,11 @@ app.use(async (req, res, next) => {
   // WITHOUT the base64 photo columns (they are ~60-150KB each and would be
   // pulled from the DB on every poll for nothing). The row itself must still
   // load — the questionnaire gate below redirects when req.profile is null.
-  const isJsonPoll = req.xhr || req.path.endsWith('/json');
+  // Only for read-only GET polls: POST mutations (photo reorder/remove,
+  // swipes) run over XHR too and MUST see the full profile row — an XHR
+  // photo reorder once read photo1 as undefined and wrote NULLs over all
+  // three photos. Never slim-load on a POST.
+  const isJsonPoll = (req.xhr || req.path.endsWith('/json')) && req.method === 'GET';
   if (req.session.userId) {
     try {
       const r = await db.query(
@@ -126,7 +134,8 @@ app.use(async (req, res, next) => {
                 p.job AS p_job, p.smoking AS p_smoking, p.drinking AS p_drinking, p.kids AS p_kids,
                 p.looking_for_gender AS p_looking_for_gender, p.age_min AS p_age_min, p.age_max AS p_age_max,
                 p.relationship_goal AS p_relationship_goal, p.interests AS p_interests,
-                p.languages AS p_languages,
+                p.languages AS p_languages, p.zodiac AS p_zodiac, p.birth_place AS p_birth_place,
+                p.incognito AS p_incognito, p.verified_only AS p_verified_only, p.pref_religion AS p_pref_religion,
                 ${isJsonPoll ? '' : 'p.photo1 AS p_photo1, p.photo1_thumb AS p_photo1_thumb, p.photo2 AS p_photo2, p.photo2_thumb AS p_photo2_thumb, p.photo3 AS p_photo3, p.photo3_thumb AS p_photo3_thumb,'}
                 p.online AS p_online, p.last_active AS p_last_active, p.created_at AS p_created_at
          FROM users u LEFT JOIN profiles p ON p.user_id = u.id WHERE u.id=$1`,

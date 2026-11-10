@@ -1,55 +1,57 @@
-<div id="discover-root">
-<div class="discover-top">
-  <span class="pill ok"><%- icon('heart', true) %> <%= freeLeft %> / <%= FREE_MATCHES %> free matches left</span>
-  <% if (!user.is_premium) { %><a class="pill warn" href="/premium">Go Premium <%- icon('chevronRight') %></a><% } else { %><span class="pill ok"><%- icon('star', true) %> Premium</span><% } %>
-</div>
-<% if (typeof recycled !== 'undefined' && recycled) { %><p class="sub" style="text-align:center; margin:2px 0 8px"><%= t('showingAgain') %></p><% } %>
+<div id="discover-root" class="discover-root"<% if (typeof recycled !== 'undefined' && recycled) { %> data-recycled="1" data-recycled-msg="<%= t('showingAgain') %>"<% } %>>
 <% if (!card) { %>
-  <div class="empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
+  <div class="empty fs-empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
       <button class="btn btn-pink" type="submit"><%= t('showAgain') %></button>
     </form></div>
 <% } else { %>
-  <div class="swipe-stack">
+  <div class="swipe-stack fs-stack">
     <% if (typeof next !== 'undefined' && next) { %>
-    <div class="swipe-card peek" aria-hidden="true">
-      <% if (next.photo1) { %><img class="swipe-photo" src="<%= next.thumb || next.photo1 %>" alt="" draggable="false"><% } %>
-      <span class="match-badge"><%= next.score %>% match</span>
-      <div class="swipe-info">
-        <div class="swipe-name"><%= next.name %>, <%= next.age %></div>
-        <div class="swipe-meta"><%- icon('pin') %> <%= next.distanceText || (next.city || '') %></div>
-      </div>
+    <div class="swipe-card fs-card peek" aria-hidden="true">
+      <% if (next.photo1) { %><img class="swipe-photo fs-photo" src="<%= next.photo1 %>" alt="" draggable="false"><% } %>
     </div>
     <% } %>
-    <div class="swipe-card" data-card-id="<%= card.id %>">
+    <div class="swipe-card fs-card" data-card-id="<%= card.id %>" data-photos='<%= JSON.stringify(card.photos || []) %>'>
     <% if (card.photo1) { %>
-    <a class="swipe-photo-link" href="/u/<%= card.id %>"><img class="swipe-photo" src="<%= card.thumb || card.photo1 %>" alt="<%= card.name %>" draggable="false"></a>
+    <div class="swipe-photo-link fs-photo-wrap">
+      <img class="swipe-photo fs-photo" src="<%= card.photo1 %>" alt="<%= card.name %>" draggable="false">
+      <div class="photo-zones" aria-hidden="true"><span class="pz pz-prev"></span><span class="pz pz-next"></span></div>
+    </div>
+    <% } else { %>
+    <div class="swipe-photo-link fs-photo-wrap"><div class="fs-photo-ph"><%- icon('user') %></div></div>
     <% } %>
-    <% if (card.online) { %><span class="online-badge"><span class="online-dot"></span> <%= t('online') %></span><% } %>
-    <span class="match-badge"><%= card.score %>% match</span>
+    <% if (card.photos && card.photos.length > 1) { %>
+    <div class="story-bars"><% card.photos.forEach(function(_, i){ %><span class="story-bar<%= i===0 ? ' on' : '' %>"></span><% }) %></div>
+    <% } %>
     <span class="stamp stamp-like" aria-hidden="true">LIKE</span>
     <span class="stamp stamp-nope" aria-hidden="true">NOPE</span>
-    <div class="swipe-info">
-      <div style="display:flex; align-items:flex-start; gap:8px">
-        <div style="min-width:0; flex:1">
-          <a href="/u/<%= card.id %>" class="swipe-name"><%= card.name %>, <%= card.age %> <span class="verified-badge"><%- icon('check') %></span></a>
-          <div class="swipe-meta"><%- icon('pin') %> <%= card.distanceText || (card.city || '') %> · <%= card.city || '' %></div>
-        </div>
-        <a class="swipe-info-btn" href="/u/<%= card.id %>" aria-label="View profile"><%- icon('info') %></a>
-      </div>
-      <% if (card.bio) { %><p class="swipe-bio"><%= card.bio %></p><% } %>
-      <div class="chips">
-        <% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %>
+    <div class="swipe-info fs-info">
+      <a href="/u/<%= card.id %>" class="swipe-name"><% if (card.online) { %><span class="online-dot fs-online-dot"></span><% } %><%= card.name %>, <%= card.age %> <% if (card.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></a>
+      <div class="fs-pills">
+        <span class="fs-pill"><%- icon('pin') %> <%= card.city || '' %><%= card.country ? ', ' + card.country : '' %><% if (card.distanceText) { %> • <%= card.distanceText.replace(' away', '') %><% } %></span>
+        <span class="fs-pill"><% if (card.relationship_goal === 'friendship') { %>New friends<% } else if (card.relationship_goal === 'serious') { %>Serious dating<% } else if (card.relationship_goal === 'marriage') { %>Marriage<% } else if (card.relationship_goal === 'casual') { %>Casual dating<% } else { %>Looking to meet<% } %></span>
       </div>
     </div>
     </div>
   </div>
-  <div class="swipe-actions">
-    <form class="js-swipe-form" method="post" action="/discover/rewind"><button class="swipe-btn rewind" title="<%= t('rewind') %>" aria-label="<%= t('rewind') %>"><%- icon('rewind') %></button></form>
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" title="<%= t('pass') %>" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" title="<%= t('like') %>" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
-    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="super"><button class="swipe-btn super" title="<%= t('superLike') %>" aria-label="<%= t('superLike') %>"><%- icon('star', true) %></button></form>
+  <div class="swipe-actions fs-actions">
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" type="submit" title="<%= t('pass') %>" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
+    <form class="js-message-form" method="post" action="/discover/message"><input type="hidden" name="to" value="<%= card.id %>"><button class="swipe-btn msg" type="submit" title="Message" aria-label="Message"><%- icon('comment') %></button></form>
+    <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
   </div>
-  <p class="sub" style="text-align:center"><%= remaining %> <%= remaining===1?'profile':'profiles' %> near you · <a class="link" href="/u/<%= card.id %>">View full profile <%- icon('chevronRight') %></a></p>
 <% } %>
+<!-- Premium gate, reference "Need More Points" sheet layout — our real
+     numbers: free matches left / Premium 99 ETB. No points are invented. -->
+<div class="sheet-backdrop" id="pointsSheetBackdrop" hidden></div>
+<div class="sheet" id="pointsSheet" role="dialog" aria-modal="true" aria-labelledby="pointsSheetTitle" hidden>
+  <div class="sheet-grip"></div>
+  <div class="sheet-heart"><%- icon('heart', true) %></div>
+  <h2 id="pointsSheetTitle">Out of free matches</h2>
+  <p class="sheet-sub">You've used your 3 free matches. Go Premium for unlimited matches and messages.</p>
+  <div class="sheet-counts"><span>You have <b><%= typeof freeLeft !== 'undefined' ? freeLeft : 0 %></b> free left</span><span>Premium: <b>unlimited</b></span></div>
+  <div class="sheet-bar"><span style="width:<%= typeof matchCount !== 'undefined' ? Math.min(100, Math.round(matchCount / FREE_MATCHES * 100)) : 100 %>%"></span></div>
+  <p class="sheet-note">Your like was saved — unlock Premium and the match will appear.</p>
+  <a class="btn btn-pink btn-block" href="/premium">Go Premium — <%= fmtETB(PREMIUM_FEE) %></a>
+  <button class="sheet-notnow" type="button" id="pointsSheetClose">Not now</button>
+</div>
 </div>

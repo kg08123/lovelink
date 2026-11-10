@@ -1,20 +1,67 @@
-<h1 class="page-title" style="text-align:center"><%= t('settings') %></h1>
-<div class="section">
-  <div class="profile-head">
-    <% if (profile && profile.photo1) { %><img class="avatar-lg" src="<%= profile.photo1_thumb || profile.photo1 %>" alt=""><% } else { %><div class="avatar-lg avatar-ph"><%- icon('user') %></div><% } %>
-    <div>
-      <b><%= user.name %></b><br>
-      <a class="link" href="/profile"><%= t('viewProfile') %> <%- icon('chevronRight') %></a>
-    </div>
+<h1 class="page-title">Settings</h1>
+<form method="post" action="/settings/preferences" id="prefsForm">
+<div class="settings-group">
+  <h2 class="settings-group-title">Match Preferences</h2>
+  <div class="settings-list">
+    <div class="row-item"><span class="row-ico c-pin"><%- icon('pin') %></span><span class="lbl">Their Location</span><span class="row-val">Nearest</span></div>
+    <div class="row-item"><span class="row-ico c-star"><%- icon('star') %></span><span class="lbl">Their Religion</span>
+      <select name="pref_religion" class="row-select" aria-label="Their Religion">
+        <% religions.forEach(function(r){ %><option value="<%= r %>" <%= (profile.pref_religion || 'Any')===r ? 'selected' : '' %>><%= r %></option><% }) %>
+      </select>
+      <span class="chev"><%- icon('chevronRight') %></span></div>
+    <div class="row-item"><span class="row-ico c-smile"><%- icon('smile') %></span><span class="lbl">Their Age</span>
+      <span class="row-age"><input type="number" name="age_min" min="18" max="99" value="<%= profile.age_min || 18 %>" aria-label="Minimum age"> – <input type="number" name="age_max" min="18" max="99" value="<%= profile.age_max || 99 %>" aria-label="Maximum age"></span>
+      <span class="row-val">years</span></div>
+    <div class="row-item"><span class="row-ico c-users"><%- icon('users') %></span><span class="lbl">Their Gender</span>
+      <select name="looking_for_gender" class="row-select" aria-label="Their Gender">
+        <option value="female" <%= profile.looking_for_gender==='female' ? 'selected' : '' %>>Female</option>
+        <option value="male" <%= profile.looking_for_gender==='male' ? 'selected' : '' %>>Male</option>
+        <option value="any" <%= !profile.looking_for_gender || profile.looking_for_gender==='any' ? 'selected' : '' %>>Anyone</option>
+      </select>
+      <span class="chev"><%- icon('chevronRight') %></span></div>
   </div>
 </div>
-<div class="settings-list">
-  <a href="/profile/edit"><span class="row-ico"><%- icon('user') %></span><span class="lbl">Account Settings</span><span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/messages"><span class="row-ico"><%- icon('bell') %></span><span class="lbl">Notifications</span><% if (unreadCount > 0) { %><span class="count-badge"><%= unreadCount > 9 ? '9+' : unreadCount %></span><% } else { %><span class="chev"><%- icon('chevronRight') %></span><% } %></a>
-  <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl">Privacy &amp; Security</span><span class="chev"><%- icon('chevronRight') %></span></a>
-  <span class="row-item"><span class="row-ico"><%- icon('settings') %></span><span class="lbl">App Preferences</span><span class="chev"><%- icon('chevronRight') %></span></span>
-  <a href="/about"><span class="row-ico"><%- icon('help') %></span><span class="lbl">Help &amp; Support</span><span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/about"><span class="row-ico"><%- icon('info') %></span><span class="lbl">About LoveLink</span><span class="chev"><%- icon('chevronRight') %></span></a>
+<div class="settings-group">
+  <h2 class="settings-group-title">Premium Features</h2>
+  <div class="settings-list">
+    <div class="row-item"><span class="row-ico c-eye"><%- icon('eye') %></span><span class="lbl">Incognito Mode<small>Only people you like can see you</small></span><label class="theme-switch"><input type="checkbox" name="incognito" <%= profile.incognito ? 'checked' : '' %> aria-label="Incognito Mode"><span class="theme-track"></span></label></div>
+    <div class="row-item"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verified Only<small>See only verified profiles</small></span><label class="theme-switch"><input type="checkbox" name="verified_only" <%= profile.verified_only ? 'checked' : '' %> aria-label="Verified Only"><span class="theme-track"></span></label></div>
+  </div>
+</div>
+</form>
+<div class="settings-group">
+  <div class="settings-list">
+    <form method="post" action="/settings/reset-matches" class="row-form-full">
+      <button type="submit" class="row-item row-btn"><span class="row-ico c-reset"><%- icon('rewind') %></span><span class="lbl">Reset Matches<small>See previously swiped profiles again</small></span><span class="chev"><%- icon('chevronRight') %></span></button>
+    </form>
+  </div>
+</div>
+<div class="settings-group">
+  <h2 class="settings-group-title">Your Plan</h2>
+  <div class="settings-list">
+    <a href="/premium"><span class="row-ico c-star"><%- icon('star', true) %></span><span class="lbl"><%= user.is_premium ? 'Premium' : freeLeft + ' free matches left' %><small><%= user.is_premium ? 'Unlimited matches and messages' : 'Tap to purchase Premium' %></small></span><span class="chev"><%- icon('chevronRight') %></span></a>
+  </div>
+</div>
+<div class="settings-group">
+  <h2 class="settings-group-title">Support Info</h2>
+  <div class="settings-list">
+    <a href="/about"><span class="row-ico c-help"><%- icon('help') %></span><span class="lbl">Support Bot</span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a href="/about"><span class="row-ico c-info"><%- icon('info') %></span><span class="lbl">Contact Us</span><span class="chev"><%- icon('chevronRight') %></span></a>
+  </div>
+</div>
+<div class="settings-group">
+  <div class="settings-list">
+    <div class="row-item"><span class="row-ico"><%- icon('info') %></span><span class="lbl">App Version</span><span class="row-val"><%= APP_VERSION %></span></div>
+  </div>
+</div>
+<div class="settings-group">
+  <h2 class="settings-group-title">App Settings</h2>
+  <div class="settings-list">
+    <div class="row-item"><span class="row-ico"><%- icon('moon') %></span><span class="lbl">Dark mode</span><label class="theme-switch"><input type="checkbox" id="themeToggle" aria-label="Dark mode"><span class="theme-track"></span></label></div>
+    <div class="row-item"><span class="row-ico"><%- icon('globe') %></span><span class="lbl">Language</span><span class="lang-toggle"><a href="?lang=en" class="<%= lang==='en'?'on':'' %>">EN</a><a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማ</a></span></div>
+    <a href="/profile/edit"><span class="row-ico"><%- icon('user') %></span><span class="lbl">Account Settings</span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl">Privacy &amp; Security</span><span class="chev"><%- icon('chevronRight') %></span></a>
+  </div>
 </div>
 <div class="section">
   <h2><%= t('changePassword') %></h2>
@@ -25,10 +72,13 @@
     <button class="btn btn-pink btn-block" type="submit"><%= t('save') %></button>
   </form>
 </div>
-<div class="settings-list">
-  <span class="row-item"><span class="row-ico"><%- icon('moon') %></span><span class="lbl">Dark mode</span><label class="theme-switch"><input type="checkbox" id="themeToggle" aria-label="Dark mode"><span class="theme-track"></span></label></span>
-  <span class="row-item"><span class="row-ico"><%- icon('globe') %></span><span class="lbl">Language</span><span class="lang-toggle"><a href="?lang=en" class="<%= lang==='en'?'on':'' %>">EN</a><a href="?lang=am" class="<%= lang==='am'?'on':'' %>">አማ</a></span></span>
-  <a href="/about"><span class="row-ico"><%- icon('info') %></span><span class="lbl"><%= t('aboutUs') %></span><span class="chev"><%- icon('chevronRight') %></span></a>
-  <a href="/privacy"><span class="row-ico"><%- icon('shield') %></span><span class="lbl"><%= t('privacyTitle') %></span><span class="chev"><%- icon('chevronRight') %></span></a>
-</div>
 <a class="btn-logout" href="/signout"><%- icon('logout') %> <%= t('logOut') %></a>
+<script>
+// Preferences save themselves the moment anything changes — the rows
+// are the controls, there is no separate Save button.
+(function(){
+  var f=document.getElementById('prefsForm');
+  if(!f) return;
+  f.addEventListener('change', function(){ f.submit(); });
+})();
+</script>

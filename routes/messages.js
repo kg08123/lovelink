@@ -19,10 +19,15 @@ async function getConv(id, userId) {
   const r = await db.query(
     `SELECT c.id, c.match_id, c.user_a_id, c.user_b_id, c.created_at,
             CASE WHEN c.user_a_id=$1 THEN bu.name ELSE au.name END AS other_name,
-            CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id
+            CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
+            CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_thumb,
+            CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo,
+            CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online
      FROM conversations c
      JOIN users au ON au.id=c.user_a_id
      JOIN users bu ON bu.id=c.user_b_id
+     LEFT JOIN profiles ap ON ap.user_id=c.user_a_id
+     LEFT JOIN profiles bp ON bp.user_id=c.user_b_id
      WHERE c.id=$2 AND (c.user_a_id=$1 OR c.user_b_id=$1)`,
     [userId, id]);
   return r.rows[0];

@@ -1,37 +1,59 @@
-<div class="profile-hero">
-  <% if (p.photo1) { %><img class="profile-hero-photo" src="<%= p.photo1_thumb || p.photo1 %>" alt=""><% } else { %><div class="profile-hero-photo avatar-ph"><%- icon('user') %></div><% } %>
-  <div class="profile-hero-info">
-    <h1 class="profile-hero-name"><%= me.name %>, <%= me.age %></h1>
-    <p class="profile-hero-meta"><%- icon('pin') %> <%= p.city || '' %><%= p.country ? ', '+p.country : '' %> · <%= me.is_premium ? 'Premium' : matchCount + ' / ' + FREE_MATCHES + ' free matches used' %></p>
+<% var goalLabel = {serious:'Serious relationship', marriage:'Marriage', casual:'Casual dating', friendship:'Friendship first'}[p.relationship_goal] || 'Still figuring it out'; %>
+<% var genderLabel = me.gender === 'female' ? 'Female' : me.gender === 'male' ? 'Male' : '—'; %>
+<% var lookingLabel = p.looking_for_gender === 'female' ? 'Female' : p.looking_for_gender === 'male' ? 'Male' : 'Anyone'; %>
+<div class="me-top">
+  <a class="points-pill" href="/premium"><%- icon('heart', true) %> <%= user.is_premium ? 'Premium' : (freeLeft + ' free left') %></a>
+  <a class="icon-btn-round" href="/settings" aria-label="Settings"><%- icon('settings') %></a>
+</div>
+<div class="me-head">
+  <% if (p.photo1) { %><img class="me-photo" src="<%= p.photo1_thumb || p.photo1 %>" alt="<%= me.name %>"><% } else { %><div class="me-photo avatar-ph"><%- icon('user') %></div><% } %>
+  <h1 class="me-name"><%= me.name %></h1>
+  <p class="me-meta"><%= p.city || '' %><%= p.country ? ', ' + p.country : '' %> · <%= me.age %> years</p>
+</div>
+<a class="me-row" href="/u/<%= me.id %>?preview=1"><span class="row-ico c-eye"><%- icon('eye') %></span><span class="lbl">Preview Profile</span><span class="chev"><%- icon('chevronRight') %></span></a>
+<div class="me-section">
+  <div class="me-section-head"><h2>Photos</h2><span class="sub">Tap to add and edit, drag to reorder</span></div>
+  <div class="photo-grid" id="photoGrid">
+    <% [1,2,3].forEach(function(slot){ var ph = p['photo'+slot]; var th = p['photo'+slot+'_thumb']; %>
+    <div class="photo-tile<%= ph ? '' : ' empty' %>" data-slot="<%= slot %>">
+      <% if (ph) { %>
+        <img src="<%= th || ph %>" alt="" draggable="false">
+        <% if (slot===1) { %><span class="photo-main">Main</span><% } %>
+        <span class="photo-grip"><%- icon('grip') %></span>
+        <button type="button" class="photo-x" data-remove="<%= slot %>" aria-label="Remove photo"><%- icon('x') %></button>
+      <% } else { %>
+        <span class="photo-add"><%- icon('plus') %></span>
+      <% } %>
+    </div>
+    <% }) %>
   </div>
-  <% if (me.is_premium) { %><span class="match-badge">Premium</span><% } %>
+  <input type="file" id="photoReplaceInput" accept="image/*" hidden>
 </div>
-<a class="btn btn-outline btn-block" href="/profile/edit"><%= t('editProfile') %></a>
-<div class="section">
-  <h2><%= t('aboutMe') %></h2>
-  <p><%= p.bio || '—' %></p>
-  <div class="chips"><% interestsList.forEach(function(it){ %><span class="chip sm"><%= it %></span><% }) %></div>
-</div>
-<div class="section">
-  <h2>Details</h2>
-  <table class="data kv">
-    <tr><th>Height</th><td><%= p.height_cm ? p.height_cm + ' cm' : '—' %></td></tr>
-    <tr><th>Religion</th><td><%= p.religion || '—' %></td></tr>
-    <tr><th>Education</th><td><%= p.education || '—' %></td></tr>
-    <tr><th>Job</th><td><%= p.job || '—' %></td></tr>
-    <tr><th>Smoking</th><td><%= p.smoking || '—' %></td></tr>
-    <tr><th>Drinking</th><td><%= p.drinking || '—' %></td></tr>
-    <tr><th>Kids</th><td><%= p.kids || '—' %></td></tr>
-    <tr><th>Looking for</th><td><%= p.looking_for_gender || 'any' %> · <%= p.age_min %>–<%= p.age_max %> · <%= p.relationship_goal || '—' %></td></tr>
-    <tr><th>Languages</th><td><%= p.languages || '—' %></td></tr>
-    <tr><th>Location</th><td><%= p.city || '—' %><%= (p.latitude && p.longitude) ? ' (' + p.latitude.toFixed(4) + ', ' + p.longitude.toFixed(4) + ')' : '' %></td></tr>
-  </table>
-</div>
-<% if (p.photo2 || p.photo3) { %>
-<div class="section"><h2>More photos</h2>
-  <div class="explore-grid">
-    <% [[p.photo2, p.photo2_thumb], [p.photo3, p.photo3_thumb]].forEach(function(pair){ if (pair[0]) { %><a href="<%= pair[0] %>" target="_blank" rel="noopener"><img class="photo-more" src="<%= pair[1] || pair[0] %>" alt="" loading="lazy" decoding="async"></a><% } }) %>
-  </div>
-</div>
+<% if (me.email_verified) { %>
+<span class="me-row"><span class="row-ico c-green"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Verified</small></span><span class="chev ok"><%- icon('checkCircle') %></span></span>
+<% } else if (me.email) { %>
+<form method="post" action="/verify-email/resend" class="me-row-form">
+  <input type="hidden" name="email" value="<%= me.email %>">
+  <button type="submit" class="me-row"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Tap to send a verification link to your email</small></span><span class="chev"><%- icon('chevronRight') %></span></button>
+</form>
+<% } else { %>
+<span class="me-row"><span class="row-ico c-shield"><%- icon('shield') %></span><span class="lbl">Verify Yourself<small>Add an email to verify your profile</small></span></span>
 <% } %>
-<a class="btn btn-pink btn-block" href="/premium"><%= t('premiumTitle') %></a>
+<div class="me-section">
+  <h2>About Me</h2>
+  <div class="about-rows">
+    <a class="about-row" href="/profile/edit#field-bio"><span class="row-ico c-edit"><%- icon('edit') %></span><span class="lbl">Bio</span><span class="row-val"><%= p.bio ? (p.bio.length > 40 ? p.bio.slice(0, 40) + '…' : p.bio) : 'Add a bio' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <span class="about-row"><span class="row-ico c-user"><%- icon('user') %></span><span class="lbl">Gender</span><span class="row-val"><%= genderLabel %></span><span class="chev lock"><%- icon('lock') %></span></span>
+    <span class="about-row"><span class="row-ico c-smile"><%- icon('smile') %></span><span class="lbl">Age</span><span class="row-val"><%= me.age %> years</span><span class="chev lock"><%- icon('lock') %></span></span>
+    <a class="about-row" href="/profile/edit#field-religion"><span class="row-ico c-star"><%- icon('star') %></span><span class="lbl">Religion</span><span class="row-val"><%= p.religion || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-goal"><span class="row-ico c-heart"><%- icon('heart') %></span><span class="lbl">Relationship goal</span><span class="row-val"><%= goalLabel %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-height"><span class="row-ico c-info"><%- icon('info') %></span><span class="lbl">Height</span><span class="row-val"><%= p.height_cm ? p.height_cm + ' cm' : '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-education"><span class="row-ico c-book"><%- icon('book') %></span><span class="lbl">Education</span><span class="row-val"><%= p.education || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-job"><span class="row-ico c-briefcase"><%- icon('briefcase') %></span><span class="lbl">Job</span><span class="row-val"><%= p.job || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-birthplace"><span class="row-ico c-pin"><%- icon('pin') %></span><span class="lbl">Birth Place</span><span class="row-val"><%= p.birth_place || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-languages"><span class="row-ico c-globe"><%- icon('globe') %></span><span class="lbl">Languages</span><span class="row-val"><%= p.languages || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-interests"><span class="row-ico c-flame"><%- icon('flame') %></span><span class="lbl">Interests</span><span class="row-val"><%= interestsList.length ? interestsList.join(', ') : '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/profile/edit#field-zodiac"><span class="row-ico c-zodiac"><%- icon('star', true) %></span><span class="lbl">Zodiac sign</span><span class="row-val"><%= p.zodiac || '—' %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+    <a class="about-row" href="/settings"><span class="row-ico c-sliders"><%- icon('sliders') %></span><span class="lbl">Match Preferences</span><span class="row-val"><%= lookingLabel %> · <%= p.age_min %>–<%= p.age_max %></span><span class="chev"><%- icon('chevronRight') %></span></a>
+  </div>
+</div>

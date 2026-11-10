@@ -1,4 +1,8 @@
-<h1 class="page-title"><%- icon('star', true) %> <%= t('premiumTitle') %></h1>
+<div class="premium-head">
+  <div class="sheet-heart"><%- icon('star', true) %></div>
+  <h1 class="page-title"><%= t('premiumTitle') %></h1>
+  <p class="sub">Unlimited matches and messages, one time.</p>
+</div>
 <% if (user.is_premium) { %>
   <div class="flash ok"><%= t('premiumActive') %></div>
   <a class="btn btn-pink btn-block" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a>
@@ -6,7 +10,8 @@
   <% if (blocked) { %><div class="flash err"><%= t('premiumSub') %></div><% } %>
   <div class="section">
     <h2>Your free matches</h2>
-    <p><b><%= matchCount %> / <%= FREE_MATCHES %></b> used — <b><%= freeLeft %></b> left.</p>
+    <div class="sheet-counts"><span><b><%= matchCount %> / <%= FREE_MATCHES %></b> used</span><span><b><%= freeLeft %></b> left</span></div>
+    <div class="sheet-bar"><span style="width:<%= Math.min(100, Math.round(matchCount / FREE_MATCHES * 100)) %>%"></span></div>
     <p>Premium unlocks <b>unlimited matches</b> and <b>unlimited messages</b>.</p>
     <p class="page-title" style="margin:8px 0"><%= fmtETB(fee) %> <small style="font-size:.9rem;color:var(--muted)">one-time</small></p>
   </div>
