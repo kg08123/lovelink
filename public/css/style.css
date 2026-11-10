@@ -78,7 +78,7 @@ body.landing .wrap{padding:0 16px 40px; max-width:430px}
 .bottomnav a.on{color:var(--pink)}
 .bn-ico{display:flex; align-items:center; justify-content:center; height:26px; margin-bottom:2px}
 .bn-ico .ico{width:24px; height:24px}
-.bn-badge{position:absolute; top:0; right:calc(50% - 22px); min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--red); color:#fff; font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center}
+.bn-badge{position:absolute; top:0; right:calc(50% - 22px); min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--pink); color:#fff; font-size:.62rem; font-weight:800; display:flex; align-items:center; justify-content:center}
 /* Forms */
 .field{margin-bottom:14px}
 .field label{display:block; font-weight:700; margin-bottom:6px; font-size:.92rem}
@@ -441,9 +441,10 @@ a:hover{text-decoration:underline}
 .topbar{background:rgba(255,255,255,.86); backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5); border-bottom:1px solid rgba(16,10,14,.06)}
 /* Glass bottom nav: frosted pill look, active tab = pink pill */
 .bottomnav{background:rgba(255,255,255,.82); backdrop-filter:blur(18px) saturate(1.5); -webkit-backdrop-filter:blur(18px) saturate(1.5); border-top:1px solid rgba(16,10,14,.06); box-shadow:0 -8px 30px rgba(16,10,14,.07); padding:6px 6px calc(8px + env(safe-area-inset-bottom))}
-.bottomnav a{border-radius:16px; padding:5px 0 4px; margin:0 2px; transition:background .2s ease, color .2s ease, transform .14s ease}
+.bottomnav a{border-radius:16px; padding:5px 0 4px; margin:0 2px; transition:color .2s ease, transform .14s ease}
 .bottomnav a:active{transform:scale(.93)}
-.bottomnav a.on{background:var(--pink-soft); color:var(--pink)}
+/* Active tab = pink icon only — no pill background (reference look). */
+.bottomnav a.on{background:none; color:var(--pink)}
 .bottomnav a.on .bn-ico{color:var(--pink)}
 /* Cards + sections: bigger radius, layered soft shadow, hairline border */
 .section{border-radius:var(--r-md); box-shadow:var(--shadow-sm); border:1px solid rgba(16,10,14,.05)}
@@ -621,7 +622,11 @@ html.dark .theme-track{background:#3a3a41}
 /* ---- Discover: full-screen photo card ---- */
 body.discover-page main.wrap{padding:0; max-width:100%}
 body.discover-page .flash{margin:12px 16px}
-.discover-root{position:relative; display:flex; flex-direction:column; height:calc(100dvh - 56px); height:calc(100svh - 56px)}
+/* Full-bleed app stage: the photo fills the whole viewport top to
+   bottom; the fixed bottom nav (translucent) floats over it, exactly
+   like the reference app. No black gap below the photo. */
+body.discover-page{overflow:hidden}
+.discover-root{position:relative; display:flex; flex-direction:column; height:100dvh; height:100svh}
 .fs-stack{margin:0; flex:1; min-height:0}
 .fs-stack .swipe-card{border-radius:0; box-shadow:none; margin-bottom:0}
 .fs-card{height:100%}
@@ -630,27 +635,50 @@ body.discover-page .flash{margin:12px 16px}
 .fs-photo-ph{width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#1a0d12; color:#666}
 .fs-photo-ph .ico{width:80px; height:80px}
 .fs-card .swipe-photo-link::after{background:linear-gradient(180deg, rgba(0,0,0,.22) 0%, transparent 25%, transparent 55%, rgba(0,0,0,.82) 100%)}
-/* Story progress bars (one segment per photo) */
-.story-bars{position:absolute; top:10px; left:12px; right:12px; z-index:3; display:flex; gap:5px}
-.story-bar{flex:1; height:3px; border-radius:99px; background:rgba(255,255,255,.4)}
+/* Story progress bars (one segment per photo) — always rendered, even
+   for a single photo, so the top of every card shows them. */
+.story-bars{position:absolute; top:max(10px, env(safe-area-inset-top)); left:12px; right:12px; z-index:3; display:flex; gap:5px}
+.story-bar{flex:1; height:3px; border-radius:99px; background:rgba(255,255,255,.45); box-shadow:0 1px 4px rgba(0,0,0,.25)}
 .story-bar.on{background:#fff}
 /* Tap zones: left third = previous photo, right two-thirds = next */
 .photo-zones{position:absolute; inset:0; z-index:1; display:flex}
 .pz{flex:1}
 .pz-prev{flex:0 0 33%}
-/* Name + pills over the photo bottom, clear of the action buttons */
-.fs-card .fs-info{padding:16px 16px 64px}
-.fs-info .swipe-name{font-size:1.55rem}
+/* Name + info over the photo bottom, clear of the action buttons */
+.fs-card .fs-info{padding:16px 16px 156px}
+.fs-info .swipe-name{font-size:1.42rem; flex-wrap:wrap}
+.fs-info .swipe-name .nm{white-space:nowrap}
+.fs-name-row{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.fs-name-row .swipe-name{flex:1 1 auto; min-width:0}
+.online-txt{color:#4ade80; font-size:.95rem; font-weight:700; letter-spacing:.1px}
 .fs-online-dot{width:10px; height:10px; margin-right:2px; animation:pulseRing 2s ease-out infinite}
-.fs-pills{display:flex; gap:8px; flex-wrap:nowrap; margin-top:8px; overflow:hidden}
-.fs-pill{display:inline-flex; align-items:center; gap:5px; background:rgba(0,0,0,.45); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); color:#fff; font-size:.8rem; font-weight:600; padding:6px 10px; border-radius:999px; white-space:nowrap; flex:0 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis}
-.fs-pill .ico{width:14px; height:14px}
-/* Action buttons overlap the card's bottom edge, like the reference */
-.fs-actions{margin:-46px 0 0; padding-bottom:10px; position:relative; z-index:5; flex:0 0 auto}
-.fs-actions .swipe-btn.pass, .fs-actions .swipe-btn.msg{background:#fff; color:#1a1a1a; border:none}
+/* Expand chevron: round outline button at the right of the name row,
+   opens the full public profile. */
+.fs-expand{flex:0 0 auto; width:44px; height:44px; border-radius:50%; border:1.5px solid rgba(255,255,255,.65); background:rgba(0,0,0,.28); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none; transition:transform .12s ease}
+.fs-expand:active{transform:scale(.88)}
+.fs-expand .ico{width:22px; height:22px}
+/* One outlined info box (reference): location + goal, two lines. */
+.fs-infobox{margin-top:10px; background:rgba(0,0,0,.32); border:1px solid rgba(255,255,255,.45); border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:5px; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px)}
+.fs-info-line{display:flex; align-items:center; gap:7px; color:#fff; font-size:.9rem; font-weight:600; line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.fs-info-line .ico{width:15px; height:15px; flex:0 0 auto}
+.fs-info-line:first-child .ico{color:#ff5c8a}
+.fs-info-line:last-child .ico{color:#f5b942}
+/* Action buttons float ON the photo, just above the bottom nav
+   (reference): X = transparent circle, pink border, pink X; message =
+   transparent circle, white border, white icon; heart = pink, bigger,
+   with a pink glow. */
+.fs-actions{position:absolute; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); margin:0; padding:0; z-index:6; flex:0 0 auto}
+.fs-actions .swipe-btn.pass{background:rgba(0,0,0,.18); border:1.5px solid rgba(255,46,99,.9); color:#ff2e63; box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px)}
+.fs-actions .swipe-btn.msg{background:rgba(0,0,0,.18); border:1.5px solid rgba(255,255,255,.75); color:#fff; box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px)}
 .fs-actions .swipe-btn.msg .ico{width:26px; height:26px}
-.fs-actions .swipe-btn.like{background:var(--grad-pink); color:#fff; border:none}
+.fs-actions .swipe-btn.like{background:var(--grad-pink); color:#fff; border:none; box-shadow:0 8px 28px rgba(255,46,99,.6)}
 .fs-empty{margin:16px}
+/* ---- Native-app feel: no double-tap zoom, no text selection on the
+   card, GPU-friendly drag, subtle page fade, no overscroll bounce ---- */
+body{touch-action:manipulation; overscroll-behavior-y:none}
+main.wrap{animation:pageIn .22s ease both}
+@keyframes pageIn{from{opacity:0} to{opacity:1}}
+.swipe-card{user-select:none; -webkit-user-select:none; touch-action:pan-y; will-change:transform}
 /* ---- Bottom sheet (premium gate / report) ---- */
 .sheet-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:400}
 .sheet{position:fixed; left:0; right:0; bottom:0; z-index:401; background:var(--card); color:var(--ink); border-radius:24px 24px 0 0; padding:10px 20px calc(20px + env(safe-area-inset-bottom)); max-width:640px; margin:0 auto; box-shadow:0 -12px 40px rgba(0,0,0,.35); text-align:center; animation:sheetIn .3s ease both}

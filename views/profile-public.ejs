@@ -2,9 +2,7 @@
 <% var photos = [other.photo1, other.photo2, other.photo3].filter(Boolean); %>
 <div class="pub-hero">
   <% if (other.photo1) { %><img class="pub-photo" id="pubHeroImg" src="<%= other.photo1 %>" alt="<%= other.name %>" draggable="false"><% } else { %><div class="pub-photo-ph"><%- icon('user') %></div><% } %>
-  <% if (photos.length > 1) { %>
   <div class="story-bars pub-bars"><% photos.forEach(function(_, i){ %><span class="story-bar<%= i===0 ? ' on' : '' %>"></span><% }) %></div>
-  <% } %>
   <a class="pub-back" href="/discover" aria-label="Back"><%- icon('chevronLeft') %></a>
   <% if (!preview) { %><button class="pub-report" type="button" id="pubReportBtn">Report</button><% } %>
   <% if (other.online) { %><span class="online-badge pub-online"><span class="online-dot"></span> <%= t('online') %></span><% } %>

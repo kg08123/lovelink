@@ -3,9 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#121214">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LoveLink">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
 <script>/* Theme boot: apply dark BEFORE first paint, so there is no white flash. Cookie wins; else localStorage; else dark — the reference design is dark-first, so dark is the default and light stays available from Settings. */(function(){try{var m=document.cookie.match(/(?:^|; )theme=(dark|light)/);var v=m?m[1]:null;if(!v){try{v=localStorage.getItem('theme')}catch(e){}}if(v!=='light'){document.documentElement.classList.add('dark')}}catch(e){}})();</script>
 <title>LoveLink — <%= typeof title !== 'undefined' ? title : t('appTag') %></title>
-<link rel="stylesheet" href="/css/style.css?v=13">
+<link rel="stylesheet" href="/css/style.css?v=14">
 <% if (typeof bodyClass !== 'undefined' && bodyClass === 'landing') { %><link rel="preload" as="image" href="/img/hero-couple.jpg"><% } %>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FF2E63'%3E%3Cpath d='M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z'/%3E%3C/svg%3E">
 </head>
@@ -45,8 +52,15 @@
   <a href="/profile" class="<%= navActive==='profile' ? 'on' : '' %>" aria-label="Profile"><span class="bn-ico"><% if (profile.photo1_thumb || profile.photo1) { %><img class="bn-avatar" src="<%= profile.photo1_thumb || profile.photo1 %>" alt=""><% } else { %><%- icon('user') %><% } %></span></a>
 </nav>
 <% } %>
-<script src="/js/instant.js?v=8" defer></script>
+<script src="/js/instant.js?v=9" defer></script>
 <script>
+/* PWA: installable app shell. Registers the service worker (same-origin
+   only, so it simply no-ops on plain http or when it fails). */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js').catch(function () { /* offline-first is a bonus, not a requirement */ });
+  });
+}
 function copyNum(id){const el=document.getElementById(id);if(!el)return;navigator.clipboard&&navigator.clipboard.writeText(el.innerText.trim());}
 </script>
 </body>

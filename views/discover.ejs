@@ -20,16 +20,18 @@
     <% } else { %>
     <div class="swipe-photo-link fs-photo-wrap"><div class="fs-photo-ph"><%- icon('user') %></div></div>
     <% } %>
-    <% if (card.photos && card.photos.length > 1) { %>
-    <div class="story-bars"><% card.photos.forEach(function(_, i){ %><span class="story-bar<%= i===0 ? ' on' : '' %>"></span><% }) %></div>
-    <% } %>
+    <% var barPhotos = (card.photos && card.photos.length) ? card.photos : [1]; %>
+    <div class="story-bars"><% barPhotos.forEach(function(_, i){ %><span class="story-bar<%= i===0 ? ' on' : '' %>"></span><% }) %></div>
     <span class="stamp stamp-like" aria-hidden="true">LIKE</span>
     <span class="stamp stamp-nope" aria-hidden="true">NOPE</span>
     <div class="swipe-info fs-info">
-      <a href="/u/<%= card.id %>" class="swipe-name"><% if (card.online) { %><span class="online-dot fs-online-dot"></span><% } %><%= card.name %>, <%= card.age %> <% if (card.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></a>
-      <div class="fs-pills">
-        <span class="fs-pill"><%- icon('pin') %> <%= card.city || '' %><%= card.country ? ', ' + card.country : '' %><% if (card.distanceText) { %> • <%= card.distanceText.replace(' away', '') %><% } %></span>
-        <span class="fs-pill"><% if (card.relationship_goal === 'friendship') { %>New friends<% } else if (card.relationship_goal === 'serious') { %>Serious dating<% } else if (card.relationship_goal === 'marriage') { %>Marriage<% } else if (card.relationship_goal === 'casual') { %>Casual dating<% } else { %>Looking to meet<% } %></span>
+      <div class="fs-name-row">
+        <a href="/u/<%= card.id %>" class="swipe-name"><span class="nm"><%= card.name %>, <%= card.age %></span> <% if (card.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %><% if (card.online) { %><span class="online-dot fs-online-dot"></span><span class="online-txt">Online</span><% } %></a>
+        <a class="fs-expand" href="/u/<%= card.id %>" aria-label="View full profile"><%- icon('chevronUp') %></a>
+      </div>
+      <div class="fs-infobox">
+        <span class="fs-info-line"><%- icon('pin') %> <%= card.city || '' %><%= card.country ? ', ' + card.country : '' %><% if (card.distanceText) { %> • <%= card.distanceText.replace(' away', '') %><% } %></span>
+        <span class="fs-info-line"><%- icon('handshake') %> <% if (card.relationship_goal === 'friendship') { %>New friends<% } else if (card.relationship_goal === 'serious') { %>Serious dating<% } else if (card.relationship_goal === 'marriage') { %>Marriage<% } else if (card.relationship_goal === 'casual') { %>Casual dating<% } else { %>Looking to meet<% } %></span>
       </div>
     </div>
     </div>

@@ -343,11 +343,27 @@
     var card = e.target.closest ? e.target.closest('.swipe-card') : null;
     if (!card || card.classList.contains('peek')) return;
     if (!card.closest('#discover-root')) return;
-    if (e.target.closest('form, button, .swipe-info-btn')) return;
+    if (e.target.closest('form, button, .swipe-info-btn, .fs-expand')) return;
     if (document.querySelector('.swipe-actions.busy')) return;
     drag = { card: card, x0: e.clientX, y0: e.clientY, dx: 0, dy: 0, active: false, pointerId: e.pointerId };
     try { card.setPointerCapture(e.pointerId); } catch (err) { /* older browsers */ }
   });
+
+  // One rAF per frame: pointermove can fire faster than the screen, so
+  // coalesce moves into a single translate3d write (GPU layer, no jank).
+  var dragRaf = 0;
+  function applyDrag() {
+    dragRaf = 0;
+    if (!drag || !drag.active) return;
+    var dx = drag.dx, dy = drag.dy;
+    var rot = Math.max(-12, Math.min(12, dx * 0.06));
+    drag.card.style.transform = 'translate3d(' + dx + 'px,' + (dy * 0.35) + 'px,0) rotate(' + rot + 'deg)';
+    var like = drag.card.querySelector('.stamp-like');
+    var nope = drag.card.querySelector('.stamp-nope');
+    var strength = Math.min(1, Math.abs(dx) / 80);
+    if (like) like.style.opacity = dx > 0 ? strength : 0;
+    if (nope) nope.style.opacity = dx < 0 ? strength : 0;
+  }
 
   document.addEventListener('pointermove', function (e) {
     if (!drag || e.pointerId !== drag.pointerId) return;
@@ -361,13 +377,7 @@
       drag.card.classList.add('dragging');
     }
     drag.dx = dx; drag.dy = dy;
-    var rot = Math.max(-12, Math.min(12, dx * 0.06));
-    drag.card.style.transform = 'translate(' + dx + 'px,' + (dy * 0.35) + 'px) rotate(' + rot + 'deg)';
-    var like = drag.card.querySelector('.stamp-like');
-    var nope = drag.card.querySelector('.stamp-nope');
-    var strength = Math.min(1, Math.abs(dx) / 80);
-    if (like) like.style.opacity = dx > 0 ? strength : 0;
-    if (nope) nope.style.opacity = dx < 0 ? strength : 0;
+    if (!dragRaf) dragRaf = requestAnimationFrame(applyDrag);
   });
 
   function dragEnd(e) {
@@ -387,8 +397,11 @@
       if (!form) { springBack(card); return; }
       // Fly the card off with the same inline transform it already has,
       // then run the normal instant swipe flow (fetch + HTML swap).
+      // Remove .dragging first: its transition:none !important would
+      // otherwise kill this fly-out animation and the card would vanish.
+      card.classList.remove('dragging');
       card.style.transition = 'transform .22s ease, opacity .22s ease';
-      card.style.transform = 'translate(' + (d.dx > 0 ? 120 : -120) + '%, ' + (d.dy * 0.35) + 'px) rotate(' + (d.dx > 0 ? 14 : -14) + 'deg)';
+      card.style.transform = 'translate3d(' + (d.dx > 0 ? 120 : -120) + '%, ' + (d.dy * 0.35) + 'px, 0) rotate(' + (d.dx > 0 ? 14 : -14) + 'deg)';
       card.style.opacity = '0';
       handleDiscoverAction(form, null, true);
     } else {
