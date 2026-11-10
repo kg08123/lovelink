@@ -499,6 +499,42 @@ a:hover{text-decoration:underline}
 .chat-item:active{transform:scale(.98)}
 .chat-item .avatar-sm{width:52px; height:52px; border-radius:16px}
 .chat-item.unread{border-color:rgba(255,46,99,.4)}
+/* ---- Messages inbox (reference style): centered title, search pill,
+   one unified list of dark rounded cards, time top-right, pink badge
+   bottom-right, green online dot on the avatar. ---- */
+.msg-title{text-align:center; font-size:1.55rem; font-weight:800; letter-spacing:-.02em; margin:16px 0 14px}
+.msg-search{display:flex; align-items:center; gap:9px; background:var(--card); border:1px solid var(--line); border-radius:999px; padding:11px 15px; margin-bottom:14px; color:var(--muted)}
+.msg-search .msg-search-ico{display:flex; flex:0 0 auto}
+.msg-search .msg-search-ico .ico{width:18px; height:18px}
+.msg-search input{flex:1; min-width:0; background:none; border:0; outline:0; padding:0; color:var(--ink); font-size:.95rem; font-family:inherit}
+.msg-search input::placeholder{color:var(--muted)}
+.msg-search input::-webkit-search-cancel-button{display:none}
+.msg-clear{display:none; flex:0 0 auto; align-items:center; justify-content:center; width:26px; height:26px; border:0; border-radius:50%; background:rgba(128,128,128,.22); color:var(--ink); cursor:pointer; padding:0}
+.msg-clear .ico{width:14px; height:14px; stroke-width:2.5}
+.msg-search.has-q .msg-clear{display:flex}
+.msg-row{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:12px; margin-bottom:10px; text-decoration:none; color:inherit; box-shadow:var(--shadow-sm); transition:transform .14s ease, background .15s ease}
+.msg-row:active{transform:scale(.98)}
+.msg-av{position:relative; flex:0 0 auto; width:56px; height:56px}
+.msg-av img{width:56px; height:56px; border-radius:50%; object-fit:cover; display:block}
+.msg-av-ph{width:56px; height:56px; border-radius:50%; background:var(--pink); color:#fff; display:flex; align-items:center; justify-content:center}
+.msg-av-ph .ico{width:26px; height:26px}
+.msg-av-user{background:rgba(128,128,128,.25); color:var(--muted)}
+.msg-dot{position:absolute; right:1px; bottom:1px; width:13px; height:13px; border-radius:50%; background:#22c55e; border:2px solid var(--card)}
+.msg-mid{flex:1; min-width:0}
+.msg-name{font-weight:800; font-size:1rem; display:flex; align-items:center; gap:6px; min-width:0}
+.msg-name .verified-badge{width:17px; height:17px}
+.msg-name .verified-badge .ico{width:11px; height:11px}
+.msg-prev{display:block; color:var(--muted); font-size:.88rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:3px}
+.msg-prev-new{display:inline-flex; align-items:center; gap:5px; font-weight:800; overflow:visible}
+.msg-prev-new .ico{width:15px; height:15px; flex:0 0 auto; color:var(--pink)}
+.msg-prev-new span{background:linear-gradient(90deg,#ff2e63,#ff5e8a 55%,#c084fc); -webkit-background-clip:text; background-clip:text; color:transparent}
+.msg-right{display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; align-self:stretch; padding:2px 0; flex:0 0 auto}
+.msg-time{color:var(--muted); font-size:.75rem; white-space:nowrap}
+.msg-badge{background:var(--pink); color:#fff; font-size:.72rem; font-weight:800; border-radius:999px; min-width:22px; height:22px; display:flex; align-items:center; justify-content:center; padding:0 6px}
+.msg-noresults{text-align:center; padding:36px 16px; color:var(--muted)}
+.msg-noresults .ico{width:40px; height:40px; color:var(--pink); opacity:.7; display:block; margin:0 auto 10px}
+.msg-noresults h2{margin:0 0 4px; color:var(--ink); font-size:1.1rem}
+.msg-noresults p{margin:0; font-size:.9rem}
 /* ---- Profile hero: photo-forward, name over a gradient ---- */
 .profile-hero{position:relative; border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--shadow-lg); margin:14px 0 12px; background:#1a0d12}
 .profile-hero-photo{width:100%; height:360px; object-fit:cover; display:block; animation:imgIn .5s ease both}

@@ -15,6 +15,17 @@ const chatUpload = multer({
   },
 });
 
+// Inbox time label, EAT: today -> "6:21 AM", older -> "11/08/26" (reference style).
+const EAT = 'Africa/Addis_Ababa';
+function fmtInboxTime(d) {
+  const dt = d instanceof Date ? d : new Date(d);
+  const day = new Intl.DateTimeFormat('en-US', { timeZone: EAT, year: 'numeric', month: '2-digit', day: '2-digit' });
+  if (day.format(dt) === day.format(new Date())) {
+    return new Intl.DateTimeFormat('en-US', { timeZone: EAT, hour: 'numeric', minute: '2-digit', hour12: true }).format(dt);
+  }
+  return new Intl.DateTimeFormat('en-US', { timeZone: EAT, month: '2-digit', day: '2-digit', year: '2-digit' }).format(dt);
+}
+
 async function getConv(id, userId) {
   const r = await db.query(
     `SELECT c.id, c.match_id, c.user_a_id, c.user_b_id, c.created_at,
@@ -55,7 +66,8 @@ router.get('/', requireAuth, async (req, res, next) => {
               CASE WHEN c.user_a_id=$1 THEN bu.name ELSE au.name END AS other_name,
               CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
               CASE WHEN c.user_a_id=$1 THEN bp.photo1 ELSE ap.photo1 END AS other_photo,
-              CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_photo_thumb
+              CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_photo_thumb,
+              CASE WHEN c.user_a_id=$1 THEN bp.online ELSE ap.online END AS other_online
        FROM conversations c
        JOIN users au ON au.id=c.user_a_id
        JOIN users bu ON bu.id=c.user_b_id
@@ -76,7 +88,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       const ids = convs.map((c) => c.id);
       const ph = ids.map((_, i) => `$${i + 1}`).join(',');
       const lm = await db.query(
-        `SELECT m.conversation_id, m.body, m.image_data IS NOT NULL AS has_image
+        `SELECT m.conversation_id, m.body, m.created_at AS last_at, m.image_data IS NOT NULL AS has_image
          FROM messages m
          JOIN (SELECT conversation_id, MAX(id) AS max_id FROM messages
                WHERE conversation_id IN (${ph}) GROUP BY conversation_id) x
@@ -98,12 +110,45 @@ router.get('/', requireAuth, async (req, res, next) => {
         c.lastBody = last ? last.body : '';
         c.hasImage = last ? !!last.has_image : false;
         c.unread = unreadByConv[c.id] || 0;
+        c.lastAt = last ? last.last_at : c.created_at;
+        c.timeLabel = fmtInboxTime(c.lastAt);
       }
     }
     const nr = await db.query(
       'SELECT * FROM notifications WHERE user_id=$1 ORDER BY created_at DESC LIMIT 100', [req.user.id]);
+    const unreadNotifs = nr.rows.filter((n) => !n.is_read).length;
     await db.query('UPDATE notifications SET is_read=TRUE WHERE user_id=$1 AND is_read=FALSE', [req.user.id]);
-    res.render('messages-inbox', { title: res.locals.t('messages'), convs, notifs: nr.rows });
+    // One unified list, newest activity first — chats + the LoveLink
+    // platform row sit together, exactly like the reference inbox.
+    const rows = convs.map((c) => ({
+      kind: 'chat',
+      href: '/messages/' + c.id,
+      name: c.other_name,
+      thumb: c.thumb,
+      online: !!c.other_online,
+      unread: c.unread,
+      previewKind: c.hasImage ? 'photo' : (c.lastBody ? 'text' : 'new'),
+      previewText: c.lastBody || '',
+      timeLabel: c.timeLabel,
+      lastAt: c.lastAt,
+    }));
+    if (nr.rows.length) {
+      const latest = nr.rows[0];
+      rows.push({
+        kind: 'platform',
+        href: '/messages/platform/' + latest.id,
+        name: 'LoveLink',
+        verified: true,
+        online: true,
+        unread: unreadNotifs,
+        previewKind: 'platform',
+        previewRaw: latest.body,
+        timeLabel: fmtInboxTime(latest.created_at),
+        lastAt: latest.created_at,
+      });
+    }
+    rows.sort((a, b) => new Date(b.lastAt) - new Date(a.lastAt));
+    res.render('messages-inbox', { title: res.locals.t('messages'), rows });
   } catch (e) { next(e); }
 });
 

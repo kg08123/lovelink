@@ -1,25 +1,70 @@
-<h1 class="page-title">Messages</h1>
-<% if (notifs && notifs.length) { %>
-<div class="section-head"><span class="icon-chip"><%- icon('heart', true) %></span><h2 class="section-title">LoveLink</h2></div>
-<% notifs.forEach(function(n){ %>
-<a class="chat-item" href="/messages/platform/<%= n.id %>">
-  <div class="co-avatar" style="background:var(--pink)"><%- icon('heart', true) %></div>
-  <div class="grow">
-    <div class="ci-top"><b><%= nt(n.title) %></b></div>
-    <div class="ci-prev"><%= nt(n.body) %></div>
-  </div>
+<h1 class="msg-title"><%= t('messages') %></h1>
+<% if (rows && rows.length) { %>
+<div class="msg-search" id="msg-search">
+  <span class="msg-search-ico"><%- icon('search') %></span>
+  <input id="msg-search-input" type="search" placeholder="<%= t('searchMessages') %>" autocomplete="off" aria-label="<%= t('searchMessages') %>">
+  <button type="button" class="msg-clear" id="msg-search-clear" aria-label="Clear"><%- icon('x') %></button>
+</div>
+<div id="msg-list">
+<% rows.forEach(function(r){ %>
+<a class="msg-row" href="<%= r.href %>" data-name="<%= (r.name || '').toLowerCase() %>" data-preview="<%= (r.previewKind === 'text' ? (r.previewText || '') : (r.previewKind === 'photo' ? t('photo') : (r.previewKind === 'new' ? t('newMatch') : nt(r.previewRaw)))).toLowerCase() %>">
+  <span class="msg-av">
+    <% if (r.kind === 'platform') { %><span class="msg-av-ph"><%- icon('heart', true) %></span><% } else if (r.thumb) { %><img src="<%= r.thumb %>" alt="" loading="lazy" decoding="async"><% } else { %><span class="msg-av-ph msg-av-user"><%- icon('user') %></span><% } %>
+    <% if (r.online) { %><span class="msg-dot"></span><% } %>
+  </span>
+  <span class="msg-mid">
+    <span class="msg-name"><%= r.name %><% if (r.verified) { %><span class="verified-badge"><%- icon('check') %></span><% } %></span>
+    <% if (r.previewKind === 'new') { %>
+    <span class="msg-prev msg-prev-new"><%- icon('heart', true) %><span><%= t('newMatch') %></span><%- icon('sparkles') %></span>
+    <% } else if (r.previewKind === 'photo') { %>
+    <span class="msg-prev"><%= t('photo') %></span>
+    <% } else if (r.previewKind === 'platform') { %>
+    <span class="msg-prev"><%= nt(r.previewRaw) %></span>
+    <% } else { %>
+    <span class="msg-prev"><%= r.previewText %></span>
+    <% } %>
+  </span>
+  <span class="msg-right">
+    <span class="msg-time"><%= r.timeLabel %></span>
+    <% if (r.unread > 0) { %><span class="msg-badge"><%= r.unread > 99 ? '99+' : r.unread %></span><% } %>
+  </span>
 </a>
 <% }) %>
-<% } %>
-<% if (!convs.length) { %>
+</div>
+<div class="msg-noresults" id="msg-noresults" hidden>
+  <%- icon('search') %><h2><%= t('noChatsFound') %></h2><p><%= t('noChatsFoundHint') %></p>
+</div>
+<script>
+/* Messages search: live client-side filter by name or last-message text.
+   The inbox is a plain server render (no polling), so the filter simply
+   re-applies on every keystroke; clearing restores the full list. */
+(function () {
+  var input = document.getElementById('msg-search-input');
+  if (!input) return;
+  var box = document.getElementById('msg-search');
+  var rows = Array.prototype.slice.call(document.querySelectorAll('#msg-list .msg-row'));
+  var none = document.getElementById('msg-noresults');
+  function apply() {
+    var q = input.value.trim().toLowerCase();
+    box.classList.toggle('has-q', q.length > 0);
+    var shown = 0;
+    rows.forEach(function (r) {
+      var hit = !q
+        || (r.getAttribute('data-name') || '').indexOf(q) !== -1
+        || (r.getAttribute('data-preview') || '').indexOf(q) !== -1;
+      r.style.display = hit ? '' : 'none';
+      if (hit) shown++;
+    });
+    none.hidden = shown !== 0;
+  }
+  input.addEventListener('input', apply);
+  document.getElementById('msg-search-clear').addEventListener('click', function () {
+    input.value = '';
+    apply();
+    input.focus();
+  });
+})();
+</script>
+<% } else { %>
   <div class="empty"><%- icon('comment') %><h2>No chats yet</h2><p>Match with someone first — then you can chat here.</p><a class="btn btn-pink" href="/discover"><%= t('discover') %> <%- icon('chevronRight') %></a></div>
 <% } %>
-<% convs.forEach(function(c){ %>
-<a class="chat-item <%= c.unread>0?'unread':'' %>" href="/messages/<%= c.id %>">
-  <% if (c.thumb) { %><img class="avatar-sm" src="<%= c.thumb %>" alt="" loading="lazy" decoding="async"><% } else { %><div class="avatar-sm avatar-ph"><%- icon('user') %></div><% } %>
-  <div class="grow">
-    <div class="ci-top"><b><%= c.other_name %></b><% if (c.unread>0) { %><span class="badge"><%= c.unread %></span><% } %></div>
-    <div class="ci-prev"><%= c.hasImage ? 'Photo' : (c.lastBody || 'Say hello!') %></div>
-  </div>
-</a>
-<% }) %>
