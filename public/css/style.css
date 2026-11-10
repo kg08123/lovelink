@@ -703,7 +703,7 @@ body.discover-page{overflow:hidden}
    (reference): X = transparent circle, pink border, pink X; message =
    transparent circle, white border, white icon; heart = pink, bigger,
    with a pink glow. */
-.fs-actions{position:absolute; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); margin:0; padding:0; z-index:6; flex:0 0 auto}
+.fs-actions{position:absolute; left:0; right:0; bottom:calc(62px + env(safe-area-inset-bottom)); margin:0; padding:0 46px; z-index:6; flex:0 0 auto; justify-content:space-between; gap:0}
 .fs-actions .swipe-btn.pass{background:rgba(0,0,0,.18); border:1.5px solid rgba(255,46,99,.9); color:#ff2e63; box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px)}
 .fs-actions .swipe-btn.msg{background:rgba(0,0,0,.18); border:1.5px solid rgba(255,255,255,.75); color:#fff; box-shadow:none; backdrop-filter:blur(2px); -webkit-backdrop-filter:blur(2px)}
 .fs-actions .swipe-btn.msg .ico{width:26px; height:26px}

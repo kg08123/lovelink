@@ -123,15 +123,6 @@
     });
   }
 
-  var recycledToastShown = false;
-  function maybeRecycledToast() {
-    var root = document.getElementById('discover-root');
-    if (root && root.dataset.recycled && !recycledToastShown) {
-      recycledToastShown = true;
-      toast(root.dataset.recycledMsg || 'Showing profiles again.');
-    }
-  }
-
   // Discover swipe / rewind / reset: the card flies out at once, then the
   // fresh Discover body swaps in — no full page reload. `preFlown` is set
   // by the drag handler, which already flew the card out with its own
@@ -150,7 +141,6 @@
         var root = document.getElementById('discover-root');
         if (root) root.outerHTML = d.html;
         initPhotoViewers();
-        maybeRecycledToast();
       }
       if (d.sheet === 'premium') openSheet('pointsSheet');
       showMessages(d);
@@ -173,7 +163,6 @@
       if (d.html && root) {
         root.outerHTML = d.html;
         initPhotoViewers();
-        maybeRecycledToast();
       } else if (actions) {
         var p = document.createElement('p');
         p.className = 'sub';
@@ -551,5 +540,4 @@
   }
 
   initPhotoViewers();
-  maybeRecycledToast();
 })();

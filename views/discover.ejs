@@ -1,4 +1,4 @@
-<div id="discover-root" class="discover-root"<% if (typeof recycled !== 'undefined' && recycled) { %> data-recycled="1" data-recycled-msg="<%= t('showingAgain') %>"<% } %>>
+<div id="discover-root" class="discover-root">
 <% if (!card) { %>
   <div class="empty fs-empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">
