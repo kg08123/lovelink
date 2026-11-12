@@ -1,6 +1,8 @@
 <% // Chat icon button for the public profile actions row (reference-app
    // style: round icon button, pink accent). Behavior is decided by the
    // server in the /u/:id route — this template only renders the state:
-   // matched + allowed -> thread link; matched + gated -> premium sheet;
-   // no match -> toast, never a like, never a thread.
+   // matched + may SEND -> thread link; matched + send-gated (like-backer
+   // at 10/10 sends) -> premium sheet; no match -> toast, never a like,
+   // never a thread. Reading a thread is never gated; the icon reflects
+   // sending.
    if (matched && canChat) { %><a class="swipe-btn msg" href="/messages/<%= convId %>" aria-label="<%= t('chatNow') %>" title="<%= t('chatNow') %>"><%- icon('comment') %></a><% } else if (matched) { %><button class="swipe-btn msg" type="button" data-open-sheet="pointsSheet" aria-label="<%= t('chatNow') %>" title="<%= t('chatNow') %>"><%- icon('comment') %></button><% } else { %><button class="swipe-btn msg" type="button" data-toast-msg="<%= t('likeFirstToChat') %>" aria-label="Message" title="Message"><%- icon('comment') %></button><% } %>

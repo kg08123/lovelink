@@ -1,14 +1,15 @@
 // Discover / matching / onboarding / profiles.
 // A match + conversation is created ONLY when both users like each other.
-// Paywall (see lib/paywall.js): the first 3 matches you INITIATE are free;
-// liking back someone who liked you first is always free to chat in.
+// Paywall (see lib/paywall.js): 3 free DIRECT likes; a 4th direct like is
+// blocked and the like is not recorded. Liking back someone who liked you
+// first is always free, and a like-back chat allows 10 sends.
 // The deck shows opposite-gender profiles only (see getCandidates).
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { haversineKm, fmtDistance, splitList, matchScore } = require('../lib/match');
-const { FREE_MATCHES, freeBudgetUsed, canChatInMatch } = require('../lib/paywall');
+const { FREE_LIKES, directLikesUsed, canDirectLike, hasIncomingLike, canSendInMatch } = require('../lib/paywall');
 const { presenceOf } = require('../lib/presence');
 const { notify } = require('../lib/notify');
 const { processDemoAutoMatches } = require('../lib/demo-auto');
@@ -44,7 +45,8 @@ async function matchCount(userId) {
 
 // Create match + conversation for a mutual like. Returns match id or null.
 // initiatorId = the user who liked FIRST (recorded for the paywall: the
-// responder always chats free). When the match already exists (created
+// initiator chats unlimited in the match, the responder is capped at 10
+// sends — see lib/paywall.js). When the match already exists (created
 // before this change, or by a concurrent path) the existing row is kept
 // untouched — a pre-change match keeps its NULL initiator on purpose.
 // The caller decides whether a match may form; this only creates.
@@ -197,12 +199,12 @@ async function getCandidates(me, meProfile, opts = {}) {
 
 // After a like is recorded: if the other side already liked me, it is a
 // mutual like — the match is ALWAYS created now. The paywall no longer
-// blocks match creation: the responder (me, liking back) always chats
-// free, and the initiator's budget is enforced at chat time instead
-// (see lib/paywall.js canChatInMatch). The other side liked first, so
-// they are the recorded initiator. Returns the redirect target. Shared
-// by the swipe buttons and the public-profile swipe buttons so all of
-// them behave identically.
+// blocks match creation: direct likes are budget-checked BEFORE they are
+// recorded (see recordLike), and the responder's 10-send cap is enforced
+// at send time (see lib/paywall.js canSendInMatch). The other side liked
+// first, so they are the recorded initiator. Returns the redirect target.
+// Shared by the swipe buttons and the public-profile swipe buttons so all
+// of them behave identically.
 async function processLike(req, toId, targetName) {
   const mutual = await db.query(
     "SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
@@ -251,16 +253,16 @@ async function discoverData(req) {
     recycled = cands.length > 0;
   }
   const card = cands[0] || null;
-  // Free-match budget: initiated + pre-change matches (NOT every match —
-  // matches gained by liking back never spend the budget).
-  const n = await freeBudgetUsed(req.user.id);
+  // Free-like budget: direct likes recorded since the like-based paywall
+  // (like-backs never spend it, legacy likes never count).
+  const n = await directLikesUsed(req.user.id);
   // Server-side truth for the location banner: it only shows when the
   // user has NO stored coordinates (never client guessing).
   const hasCoords = req.profile.latitude != null && req.profile.latitude !== ''
     && req.profile.longitude != null && req.profile.longitude !== '';
   return {
     card, next: cands[1] || null, remaining: cands.length,
-    matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
+    likesUsed: n, freeLeft: Math.max(0, FREE_LIKES - n),
     interestsList: card ? splitList(card.interests) : [],
     recycled, hasCoords,
   };
@@ -408,13 +410,13 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
 // ---- My profile + edit ----
 router.get('/profile', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
-    const n = await freeBudgetUsed(req.user.id);
+    const n = await directLikesUsed(req.user.id);
     const { latestVerification } = require('./verify');
     const v = await latestVerification(req.user.id);
     const verifyStatus = req.user.selfie_verified ? 'verified' : (v ? v.status : 'none');
     res.render('my-profile', {
-      title: req.user.name, me: req.user, p: req.profile, matchCount: n,
-      freeLeft: Math.max(0, FREE_MATCHES - n),
+      title: req.user.name, me: req.user, p: req.profile, likesUsed: n,
+      freeLeft: Math.max(0, FREE_LIKES - n),
       interestsList: splitList(req.profile.interests),
       verifyStatus,
     });
@@ -524,26 +526,35 @@ router.post('/discover/location', requireAuth, async (req, res, next) => {
 });
 
 // Record a like/super (shared by the swipe buttons and the message
-// button on a card). Returns { dest, hint, alreadyLiked } — dest is
-// '/discover' when there is no mutual like yet, '/match/:id' on a new
-// match. A mutual like ALWAYS creates the match now (the paywall lives
-// at chat time, not at match time — see lib/paywall.js).
+// button on a card). Returns { dest, hint, alreadyLiked, blocked } —
+// dest is '/discover' when there is no mutual like yet, '/match/:id' on
+// a new match, '/premium?blocked=1' when a direct like is blocked by the
+// budget (the like is NOT recorded then). A mutual like ALWAYS creates
+// the match now: direct likes are budget-checked BEFORE recording, and
+// the responder's 10-send cap lives at send time (see lib/paywall.js).
 async function recordLike(req, toId, target, kind) {
   const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
   const prevKind = already.rows.length ? already.rows[0].kind : null;
   if (prevKind === 'like' || prevKind === 'super') {
     // Re-liking someone already liked: a strict no-op. Never a second
-    // match, never another free match — the caller re-queues the card.
+    // match, never another spent free like — the caller re-queues the card.
     return { dest: '/discover', hint: null, alreadyLiked: true };
   }
+  // Classify this like: a like-back (the target already liked me) is
+  // ALWAYS allowed and never spends the budget; a direct like spends
+  // one of the 3 free likes, and a 4th is blocked — the swipe is never
+  // written, so the card stays in the deck for later.
+  const isDirect = !(await hasIncomingLike(req.user.id, toId));
+  if (isDirect && !(await canDirectLike(req.user.id, !!req.user.is_premium))) {
+    return { dest: '/premium?blocked=1', hint: null, alreadyLiked: false, blocked: true };
+  }
   if (prevKind === 'pass') {
-    // Pass -> like/super upgrade: change the stored swipe, then run the
-    // normal like flow below (a NEW match from it still counts as a
-    // free match, exactly like a first-time like).
-    await db.query('UPDATE swipes SET kind=$3, created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId, kind]);
+    // Pass -> like/super upgrade: change the stored swipe (classified
+    // exactly like a first-time like), then run the normal like flow.
+    await db.query('UPDATE swipes SET kind=$3, is_direct=$4, created_at=NOW() WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId, kind, isDirect]);
   } else {
-    await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
-      [req.user.id, toId, kind]);
+    await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind,is_direct) VALUES($1,$2,$3,$4) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
+      [req.user.id, toId, kind, isDirect]);
   }
   // No toast on a like: the card flying out is feedback enough, and no
   // message may reveal anything about the profile behind it.
@@ -554,8 +565,9 @@ async function recordLike(req, toId, target, kind) {
 // Message button on a Discover card: if already matched, open the chat;
 // otherwise like first — if that like completes a match, go straight to
 // the chat; if not, the like is saved and the next card shows (the
-// reference app's message button is a like-first action). The chat
-// thread itself enforces the paywall for the initiator.
+// reference app's message button is a like-first action). A direct like
+// past the 3 free ones is blocked (not recorded) and shows the premium
+// sheet; the chat send gate enforces the like-back 10-send cap.
 router.post('/discover/message', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const t = res.locals.t;
@@ -571,8 +583,8 @@ router.post('/discover/message', requireAuth, requireOnboarded, async (req, res,
     if (chatUrl) return isXhr(req) ? res.json({ ok: true, redirect: chatUrl }) : res.redirect(chatUrl);
     const { dest, hint } = await recordLike(req, toId, target.rows[0], 'like');
     if (dest === '/premium?blocked=1') {
-      // Paywall: the like is saved, the match waits for Premium.
-      // XHR: advance to the next card AND open the premium sheet on top.
+      // Paywall: the direct like was BLOCKED and not recorded.
+      // XHR: keep the deck in place AND open the premium sheet on top.
       if (isXhr(req)) return discoverJson(req, res, { sheet: 'premium', hint });
       req.session.flash = { type: 'err', msg: t('premiumNeeded') };
       return res.redirect(dest);
@@ -587,7 +599,8 @@ router.post('/discover/message', requireAuth, requireOnboarded, async (req, res,
   } catch (e) { next(e); }
 });
 
-// ---- Swipe: like / pass / super-like. Mutual like => match (or paywall on 4th). ----
+// ---- Swipe: like / pass / super-like. Mutual like => match. A direct
+// ---- like past the 3 free ones is blocked (not recorded) => premium sheet.
 router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const t = res.locals.t;
@@ -628,10 +641,11 @@ router.post('/discover/swipe', requireAuth, requireOnboarded, async (req, res, n
     // on the next full page load); plain forms keep the flash.
     if (!isXhr(req) && hint) req.session.flash = { type: 'ok', msg: hint };
     if (dest === '/premium?blocked=1') {
-      // Paywall: the like is saved, but the match waits for Premium.
-      // XHR: advance to the next card AND open the premium sheet on top
-      // (the reference "Need More Points" sheet, with our real numbers).
-      // Plain forms navigate to the Premium page.
+      // Paywall: the direct like was BLOCKED and not recorded — the card
+      // stays in the deck (it is still unswiped). XHR: re-render the
+      // deck AND open the premium sheet on top (the reference "Need More
+      // Points" sheet, with our real numbers). Plain forms navigate to
+      // the Premium page.
       if (isXhr(req)) return discoverJson(req, res, { sheet: 'premium', hint });
       req.session.flash = { type: 'err', msg: t('premiumNeeded') };
       return res.redirect(dest);
@@ -771,7 +785,7 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
         title: other.name, other, distanceText: null, score: null,
         interestsList: splitList(other.interests), swiped: null,
         matched: null, convId: null, isBlocked: false, canChat: false,
-        matchCount: 0, freeLeft: FREE_MATCHES,
+        likesUsed: 0, freeLeft: FREE_LIKES,
         verified: !!(other.selfie_verified || other.is_demo), preview: true,
       });
     }
@@ -791,18 +805,19 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
     const matched = await db.query('SELECT m.id, m.initiated_by_id, c.id AS conv_id FROM matches m LEFT JOIN conversations c ON c.match_id=m.id WHERE (m.user_a_id=$1 AND m.user_b_id=$2) OR (m.user_a_id=$2 AND m.user_b_id=$1)',
       [req.user.id, id]);
     const blocked = await db.query('SELECT 1 FROM blocks WHERE blocker_id=$1 AND blocked_id=$2', [req.user.id, id]);
-    // Chat button state: matched + allowed -> thread; matched + gated ->
-    // premium sheet; no match -> toast. Decided server-side here, never
-    // by the client alone.
+    // Chat button state: matched + may SEND -> thread link; matched +
+    // send-gated (like-backer at 10/10 sends) -> premium sheet; no match
+    // -> toast. Decided server-side here, never by the client alone.
+    // (Reading the thread is never gated — the icon reflects sending.)
     const mRow = matched.rows[0] || null;
-    const canChat = mRow ? await canChatInMatch(req.user.id, !!req.user.is_premium, mRow) : false;
-    const budgetUsed = await freeBudgetUsed(req.user.id);
+    const canChat = mRow ? await canSendInMatch(req.user.id, !!req.user.is_premium, mRow) : false;
+    const likesUsed = await directLikesUsed(req.user.id);
     res.render('profile-public', {
       title: other.name, other, distanceText: fmtDistance(dist), score,
       interestsList: splitList(other.interests), swiped: sw.rows[0] || null,
       matched: mRow, convId: mRow ? mRow.conv_id : null,
       isBlocked: blocked.rows.length > 0, canChat,
-      matchCount: budgetUsed, freeLeft: Math.max(0, FREE_MATCHES - budgetUsed),
+      likesUsed, freeLeft: Math.max(0, FREE_LIKES - likesUsed),
       verified: !!(other.selfie_verified || other.is_demo), preview: false,
     });
   } catch (e) { next(e); }

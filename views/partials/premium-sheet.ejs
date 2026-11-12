@@ -1,17 +1,17 @@
 <!-- Premium gate, reference "Need More Points" sheet layout — our real
-     numbers: free matches left / Premium 99 ETB. No points are invented.
-     Shared by Discover (sheet opens after a gated swipe) and the public
-     profile (chat button on a paywall-gated match). premiumSheetNote
+     numbers: free likes left / Premium 99 ETB. No points are invented.
+     Shared by Discover (sheet opens after a blocked direct like) and the
+     public profile (chat button on a send-gated match). premiumSheetNote
      overrides the bottom line when the match already exists. -->
 <div class="sheet-backdrop" id="pointsSheetBackdrop" hidden></div>
 <div class="sheet" id="pointsSheet" role="dialog" aria-modal="true" aria-labelledby="pointsSheetTitle" hidden>
   <div class="sheet-grip"></div>
   <div class="sheet-heart"><%- icon('heart', true) %></div>
-  <h2 id="pointsSheetTitle">Out of free matches</h2>
-  <p class="sheet-sub">You've used your 3 free matches. Go Premium for unlimited matches and messages.</p>
-  <div class="sheet-counts"><span>You have <b><%= typeof freeLeft !== 'undefined' ? freeLeft : 0 %></b> free left</span><span>Premium: <b>unlimited</b></span></div>
-  <div class="sheet-bar"><span style="width:<%= typeof matchCount !== 'undefined' ? Math.min(100, Math.round(matchCount / FREE_MATCHES * 100)) : 100 %>%"></span></div>
-  <p class="sheet-note"><%= typeof premiumSheetNote !== 'undefined' ? premiumSheetNote : 'Your like was saved — unlock Premium and the match will appear.' %></p>
+  <h2 id="pointsSheetTitle">Out of free likes</h2>
+  <p class="sheet-sub">You've used your 3 free likes. Go Premium for unlimited likes and messages.</p>
+  <div class="sheet-counts"><span>You have <b><%= typeof freeLeft !== 'undefined' ? freeLeft : 0 %></b> free likes left</span><span>Premium: <b>unlimited</b></span></div>
+  <div class="sheet-bar"><span style="width:<%= typeof likesUsed !== 'undefined' ? Math.min(100, Math.round(likesUsed / FREE_LIKES * 100)) : 100 %>%"></span></div>
+  <p class="sheet-note"><%= typeof premiumSheetNote !== 'undefined' ? premiumSheetNote : 'Like-backs are always free — when someone likes you first, you can like back and send 10 messages free.' %></p>
   <a class="btn btn-pink btn-block" href="/premium">Go Premium — <%= fmtETB(PREMIUM_FEE) %></a>
   <button class="sheet-notnow" type="button" id="pointsSheetClose">Not now</button>
 </div>

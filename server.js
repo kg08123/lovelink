@@ -12,7 +12,7 @@ const { googleEnabled, passport } = require('./lib/google');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const PREMIUM_FEE = Number(process.env.PREMIUM_FEE_ETB || 99);
-const FREE_MATCHES = 3;
+const FREE_LIKES = 3;
 
 // Production boot: ensure schema on Render + Neon (idempotent).
 if (process.env.DATABASE_URL && !process.env.USE_PGMEM) {
@@ -95,7 +95,7 @@ app.use((req, res, next) => {
   res.locals.cityName = cityName;
   res.locals.INTERESTS = INTERESTS;
   res.locals.PREMIUM_FEE = PREMIUM_FEE;
-  res.locals.FREE_MATCHES = FREE_MATCHES;
+  res.locals.FREE_LIKES = FREE_LIKES;
   res.locals.TELEBIRR_NUMBER = process.env.TELEBIRR_NUMBER || '';
   res.locals.CBE_NUMBER = process.env.CBE_NUMBER || '';
   res.locals.qs = (over) => {

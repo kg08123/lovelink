@@ -1,7 +1,7 @@
 <div class="premium-head">
   <div class="sheet-heart"><%- icon('star', true) %></div>
   <h1 class="page-title"><%= t('premiumTitle') %></h1>
-  <p class="sub">Unlimited matches and messages, one time.</p>
+  <p class="sub">Unlimited likes and messages, one time.</p>
 </div>
 <% if (user.is_premium) { %>
   <div class="flash ok"><%= t('premiumActive') %></div>
@@ -9,10 +9,11 @@
 <% } else { %>
   <% if (blocked) { %><div class="flash err"><%= t('premiumSub') %></div><% } %>
   <div class="section">
-    <h2>Your free matches</h2>
-    <div class="sheet-counts"><span><b><%= matchCount %> / <%= FREE_MATCHES %></b> used</span><span><b><%= freeLeft %></b> left</span></div>
-    <div class="sheet-bar"><span style="width:<%= Math.min(100, Math.round(matchCount / FREE_MATCHES * 100)) %>%"></span></div>
-    <p>Premium unlocks <b>unlimited matches</b> and <b>unlimited messages</b>.</p>
+    <h2>Your free likes</h2>
+    <div class="sheet-counts"><span><b><%= likesUsed %> / <%= FREE_LIKES %></b> used</span><span><b><%= freeLeft %></b> left</span></div>
+    <div class="sheet-bar"><span style="width:<%= Math.min(100, Math.round(likesUsed / FREE_LIKES * 100)) %>%"></span></div>
+    <p>You get <b>3 free likes</b>. Liking someone back is always free — and in a like-back chat you can send <b>10 messages</b> free.</p>
+    <p>Premium unlocks <b>unlimited likes</b> and <b>unlimited messages</b>.</p>
     <p class="page-title" style="margin:8px 0"><%= fmtETB(fee) %> <small style="font-size:.9rem;color:var(--muted)">one-time</small></p>
   </div>
   <% if (pending) { %>

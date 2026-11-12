@@ -2,17 +2,17 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { FREE_MATCHES, freeBudgetUsed } = require('../lib/paywall');
+const { FREE_LIKES, directLikesUsed } = require('../lib/paywall');
 const router = express.Router();
 
 const RELIGIONS = ['Any', 'Orthodox', 'Protestant', 'Catholic', 'Muslim', 'Other'];
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const n = await freeBudgetUsed(req.user.id);
+    const n = await directLikesUsed(req.user.id);
     res.render('settings', {
       title: res.locals.t('settings'),
-      matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
+      likesUsed: n, freeLeft: Math.max(0, FREE_LIKES - n),
       religions: RELIGIONS,
     });
   } catch (e) { next(e); }

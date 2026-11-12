@@ -1,11 +1,13 @@
-// Premium paywall: first 3 matches free, then Premium unlock via manual receipt
-// (Telebirr / CBE numbers from env, receipt image upload, admin approves).
+// Premium paywall: first 3 direct likes free, then Premium unlock via
+// manual receipt (Telebirr / CBE numbers from env, receipt image upload,
+// admin approves). Like-backs are always free; like-back chats cap at
+// 10 sends (see lib/paywall.js).
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { ensureMatchesFor } = require('./discover');
-const { FREE_MATCHES, freeBudgetUsed } = require('../lib/paywall');
+const { FREE_LIKES, directLikesUsed } = require('../lib/paywall');
 const router = express.Router();
 
 const PREMIUM_FEE = Number(process.env.PREMIUM_FEE_ETB || 99);
@@ -19,10 +21,10 @@ const receiptUpload = multer({
   },
 });
 
-// Paywall page: shows free matches used, price, payment numbers, receipt form
+// Paywall page: shows free likes used, price, payment numbers, receipt form
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const n = await freeBudgetUsed(req.user.id);
+    const n = await directLikesUsed(req.user.id);
     const pending = await db.query(
       "SELECT * FROM payments WHERE user_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 1",
       [req.user.id]);
@@ -31,7 +33,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       [req.user.id]);
     res.render('premium', {
       title: res.locals.t('premiumTitle'),
-      matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
+      likesUsed: n, freeLeft: Math.max(0, FREE_LIKES - n),
       fee: PREMIUM_FEE, pending: pending.rows[0] || null,
       lastPayment: last.rows[0] || null,
       blocked: req.query.blocked === '1',

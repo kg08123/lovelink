@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS swipes (
   from_user_id INT REFERENCES users(id) ON DELETE CASCADE,
   to_user_id INT REFERENCES users(id) ON DELETE CASCADE,
   kind TEXT NOT NULL CHECK (kind IN ('like','pass','super')),
+  is_direct BOOLEAN,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(from_user_id, to_user_id)
 );
@@ -194,3 +195,10 @@ CREATE INDEX IF NOT EXISTS idx_verifications_user ON verifications (user_id);
 -- this change: existing behavior, no new bypass. Plain INT, no FK —
 -- keeps pg-mem compatibility (the local test DB) with the other ALTERs.
 ALTER TABLE matches ADD COLUMN IF NOT EXISTS initiated_by_id INT;
+
+-- Like-based paywall: how each swipe was classified when it was made.
+-- TRUE = direct like (no incoming like existed — spends the 3-free-likes
+-- budget), FALSE = like-back (always free, never spends it), NULL =
+-- legacy swipe from before this change (never counts — fresh start on
+-- likes). Passes leave it NULL; only like/super rows carry a value.
+ALTER TABLE swipes ADD COLUMN IF NOT EXISTS is_direct BOOLEAN;

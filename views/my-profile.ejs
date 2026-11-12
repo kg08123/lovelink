@@ -2,7 +2,7 @@
 <% var genderLabel = me.gender === 'female' ? 'Female' : me.gender === 'male' ? 'Male' : '—'; %>
 <% var lookingLabel = p.looking_for_gender === 'female' ? 'Female' : p.looking_for_gender === 'male' ? 'Male' : 'Anyone'; %>
 <div class="me-top">
-  <a class="points-pill" href="/premium"><%- icon('heart', true) %> <%= user.is_premium ? 'Premium' : (freeLeft + ' free left') %></a>
+  <a class="points-pill" href="/premium"><%- icon('heart', true) %> <%= user.is_premium ? 'Premium' : (freeLeft + ' free likes') %></a>
   <a class="icon-btn-round" href="/settings" aria-label="Settings"><%- icon('settings') %></a>
 </div>
 <div class="me-head">
