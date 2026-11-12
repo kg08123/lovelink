@@ -166,6 +166,7 @@
         var root = document.getElementById('discover-root');
         if (root) root.outerHTML = d.html;
         initPhotoViewers();
+        hideLocBannerIfDismissed();
       }
       if (d.sheet === 'premium') openSheet('pointsSheet');
       showMessages(d);
@@ -188,6 +189,7 @@
       if (d.html && root) {
         root.outerHTML = d.html;
         initPhotoViewers();
+        hideLocBannerIfDismissed();
       } else if (actions) {
         var p = document.createElement('p');
         p.className = 'sub';
@@ -255,6 +257,84 @@
     if (t.closest('#reportSheetClose')) { closeSheet('reportSheet'); return; }
     if (t.closest('#reportSheetBackdrop')) { closeSheet('reportSheet'); return; }
   });
+
+  // ---- Discover location banner (users with no stored coordinates) ----
+  // Delegated like everything else: the banner is re-rendered by card
+  // swaps, so dismissal is re-applied after every swap. Dismiss hides it
+  // for the session (sessionStorage); saving coordinates removes it for
+  // good (the server stops rendering it once hasCoords is true).
+  var LOC_BANNER_KEY = 'll-loc-dismissed';
+  function hideLocBannerIfDismissed() {
+    var b = document.getElementById('locBanner');
+    if (!b) return;
+    try {
+      if (window.sessionStorage && sessionStorage.getItem(LOC_BANNER_KEY)) b.style.display = 'none';
+    } catch (e) { /* private mode: the banner just stays */ }
+  }
+  function dismissLocBanner() {
+    try { if (window.sessionStorage) sessionStorage.setItem(LOC_BANNER_KEY, '1'); } catch (e) {}
+    var b = document.getElementById('locBanner');
+    if (b) b.style.display = 'none';
+  }
+  function locBannerStatus(text, isErr) {
+    var st = document.getElementById('locBannerStatus');
+    if (!st) return;
+    st.hidden = false;
+    st.textContent = text;
+    st.className = 'loc-banner-status' + (isErr ? ' loc-err' : '');
+  }
+  function setBannerBusy(busy) {
+    ['locBannerGps', 'locBannerIp'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (btn) btn.disabled = busy;
+    });
+  }
+  function saveBannerLocation(banner, res) {
+    postJson('/discover/location', {
+      latitude: res.lat, longitude: res.lng, city: res.city || '',
+    }).then(function () {
+      dismissLocBanner();
+      toast(res.via === 'ip' ? banner.getAttribute('data-msg-fallback') : banner.getAttribute('data-msg-saved'));
+    }).catch(function () {
+      setBannerBusy(false);
+      locBannerStatus(banner.getAttribute('data-msg-save-failed'), true);
+    });
+  }
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    if (t.closest('#locBannerDismiss')) { dismissLocBanner(); return; }
+    var banner = document.getElementById('locBanner');
+    if (!banner) return;
+    var LL = window.LoveLinkLocation;
+    if (t.closest('#locBannerGps')) {
+      e.preventDefault();
+      if (!navigator.geolocation || !LL) { locBannerStatus(banner.getAttribute('data-msg-unsupported'), true); return; }
+      setBannerBusy(true);
+      locBannerStatus(banner.getAttribute('data-msg-locating'), false);
+      LL.detectWithFallback().then(function (res) {
+        saveBannerLocation(banner, res);
+      }).catch(function (err) {
+        setBannerBusy(false);
+        if (err && err.code === 1) locBannerStatus(banner.getAttribute('data-msg-denied'), true);
+        else locBannerStatus(banner.getAttribute('data-msg-both-failed'), true);
+      });
+      return;
+    }
+    if (t.closest('#locBannerIp')) {
+      e.preventDefault();
+      if (!LL) { locBannerStatus(banner.getAttribute('data-msg-unsupported'), true); return; }
+      setBannerBusy(true);
+      locBannerStatus(banner.getAttribute('data-msg-detecting'), false);
+      LL.detectIP().then(function (res) {
+        saveBannerLocation(banner, { lat: res.lat, lng: res.lng, city: res.city, via: 'ip-manual' });
+      }).catch(function () {
+        setBannerBusy(false);
+        locBannerStatus(banner.getAttribute('data-msg-ip-failed'), true);
+      });
+    }
+  });
+  hideLocBannerIfDismissed();
 
   // Chat icon button on a public profile: no match -> toast only (it never
   // likes and never opens a thread); matched but paywall-gated -> the

@@ -254,11 +254,15 @@ async function discoverData(req) {
   // Free-match budget: initiated + pre-change matches (NOT every match —
   // matches gained by liking back never spend the budget).
   const n = await freeBudgetUsed(req.user.id);
+  // Server-side truth for the location banner: it only shows when the
+  // user has NO stored coordinates (never client guessing).
+  const hasCoords = req.profile.latitude != null && req.profile.latitude !== ''
+    && req.profile.longitude != null && req.profile.longitude !== '';
   return {
     card, next: cands[1] || null, remaining: cands.length,
     matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
     interestsList: card ? splitList(card.interests) : [],
-    recycled,
+    recycled, hasCoords,
   };
 }
 
@@ -494,6 +498,28 @@ router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) =>
     res.render('discover', {
       title: res.locals.t('discover'), ...data, photoOf, bodyClass: 'discover-page', loadingOverlay: true,
     });
+  } catch (e) { next(e); }
+});
+
+// Save coordinates from the Discover location banner (GPS or IP detect).
+// City is optional — an empty city never wipes the stored one.
+router.post('/discover/location', requireAuth, async (req, res, next) => {
+  try {
+    if (!req.profile) return res.status(400).json({ error: 'no profile' });
+    const lat = parseFloat(req.body.latitude);
+    const lng = parseFloat(req.body.longitude);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90 || !Number.isFinite(lng) || lng < -180 || lng > 180) {
+      return res.status(400).json({ error: 'bad coordinates' });
+    }
+    const city = String(req.body.city || '').trim().slice(0, 100);
+    if (city) {
+      await db.query('UPDATE profiles SET latitude=$2, longitude=$3, city=$4 WHERE user_id=$1',
+        [req.user.id, lat, lng, city]);
+    } else {
+      await db.query('UPDATE profiles SET latitude=$2, longitude=$3 WHERE user_id=$1',
+        [req.user.id, lat, lng]);
+    }
+    return res.json({ ok: true });
   } catch (e) { next(e); }
 });
 

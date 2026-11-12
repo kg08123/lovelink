@@ -700,6 +700,19 @@ body.discover-page .flash{margin:12px 16px}
 body.discover-page{overflow:hidden}
 .discover-root{position:relative; display:flex; flex-direction:column; height:100dvh; height:100svh}
 .fs-stack{margin:0; flex:1; min-height:0}
+/* Discover location banner (no stored coordinates): dark card, pink
+   accent, sits above the deck in the flex column, never covers a card. */
+.loc-banner{position:relative; display:flex; gap:12px; align-items:flex-start; margin:10px 12px 0; padding:14px 40px 14px 14px; border-radius:16px; background:#1e1e24; color:#fff; border:1px solid rgba(255,46,99,.45); box-shadow:0 8px 24px rgba(0,0,0,.35); z-index:5}
+.loc-banner-icon{flex:0 0 auto; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:rgba(255,46,99,.18); color:var(--pink)}
+.loc-banner-icon .ico{width:22px; height:22px}
+.loc-banner-body{flex:1; min-width:0}
+.loc-banner-title{font-weight:800; font-size:1rem; line-height:1.25}
+.loc-banner-sub{margin:4px 0 10px; font-size:.85rem; line-height:1.4; color:#c9c9d1}
+.loc-banner-actions{display:flex; gap:8px; flex-wrap:wrap}
+.loc-banner-actions .btn-outline{background:transparent; border-color:rgba(255,255,255,.35); color:#fff}
+.loc-banner-x{position:absolute; top:8px; right:10px; border:none; background:none; color:#9a9aa3; font-size:1.4rem; line-height:1; cursor:pointer; padding:4px}
+.loc-banner-status{margin:10px 0 0; font-size:.85rem; font-weight:600; color:#c9c9d1}
+.loc-banner-status.loc-err{color:#ff8fa8}
 .fs-stack .swipe-card{border-radius:0; box-shadow:none; margin-bottom:0}
 .fs-card{height:100%}
 .fs-photo-wrap{position:absolute; inset:0}

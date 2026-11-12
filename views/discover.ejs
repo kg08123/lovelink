@@ -16,6 +16,29 @@
   <div class="dl-bar"><span></span></div>
 </div>
 <% } %>
+<% if (typeof hasCoords !== 'undefined' && !hasCoords) { %>
+<!-- Location banner: only for signed-in users with no stored coordinates
+     (server-side hasCoords). Non-modal, sits above the deck; dismiss hides
+     it for the session. Strings ride on data attributes for instant.js. -->
+<div class="loc-banner" id="locBanner" role="region" aria-label="<%= t('locBannerTitle') %>"
+  data-msg-saved="<%= t('locBannerSaved') %>" data-msg-fallback="<%= t('locGpsFallback') %>"
+  data-msg-denied="<%= t('locDenied') %>" data-msg-both-failed="<%= t('locBothFailed') %>"
+  data-msg-ip-failed="<%= t('locIpFailed') %>" data-msg-locating="<%= t('locating') %>"
+  data-msg-detecting="<%= t('locDetecting') %>" data-msg-unsupported="<%= t('locUnsupported') %>"
+  data-msg-save-failed="<%= t('locSaveFailed') %>">
+  <button class="loc-banner-x" type="button" id="locBannerDismiss" aria-label="Dismiss">&times;</button>
+  <div class="loc-banner-icon"><%- icon('pin') %></div>
+  <div class="loc-banner-body">
+    <div class="loc-banner-title"><%= t('locBannerTitle') %></div>
+    <p class="loc-banner-sub"><%= t('locBannerSub') %></p>
+    <div class="loc-banner-actions">
+      <button class="btn btn-pink btn-sm" type="button" id="locBannerGps"><%= t('locBannerShare') %></button>
+      <button class="btn btn-outline btn-sm" type="button" id="locBannerIp"><%= t('locBannerDetect') %></button>
+    </div>
+    <p class="loc-banner-status" id="locBannerStatus" hidden></p>
+  </div>
+</div>
+<% } %>
 <% if (!card) { %>
   <div class="empty fs-empty"><%- icon('heart') %><h2><%= t('caughtUp') %></h2>
     <form class="js-reset-form" method="post" action="/discover/reset-passes" style="margin:14px 0 8px">

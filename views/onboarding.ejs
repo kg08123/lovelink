@@ -156,75 +156,38 @@
     st.className='loc-status' + (kind==='ok' ? ' loc-ok' : kind==='err' ? ' loc-err' : '');
   }
   function fmtCoord(lat, lng){ return ' (' + Number(lat).toFixed(4) + ', ' + Number(lng).toFixed(4) + ')'; }
-  function setLoc(lat, lng, city, approx){
+  function setLoc(lat, lng, city, approx, msgPrefix){
     latIn.value=lat; lngIn.value=lng;
     if(city) cityIn.value=city;
-    showStatus((approx ? '<%- t('locApproxIs') %>' : '<%- t('locSetIs') %>') + (city || '') + fmtCoord(lat, lng), 'ok');
+    var prefix = msgPrefix || (approx ? '<%- t('locApproxIs') %>' : '<%- t('locSetIs') %>');
+    showStatus(prefix + (city || '') + fmtCoord(lat, lng), 'ok');
   }
-  // Nominatim address -> city name. For Ethiopian coords it often returns
-  // no "city" at all (Addis: suburb/county/state only, Amharic script),
-  // or "ሀዋሳ / Hawassa" (Amharic + Latin). Prefer the Latin part, map
-  // known Amharic names, never return a district like "Kirkos" as the city.
-  var AM_CITY = {'አዲስ አበባ':'Addis Ababa','ሀዋሳ':'Hawassa','መቀሌ':'Mekelle','ባሕር ዳር':'Bahir Dar','ድሬዳዋ':'Dire Dawa','አዳማ':'Adama','ጅማ':'Jimma','ጎንደር':'Gondar','ደሴ':'Dessie','ጅጅጋ':'Jijiga','አርባ ምንጭ':'Arba Minch','ሐረር':'Harar','ነቀምት':'Nekemte','አሶሳ':'Asosa','ጋምቤላ':'Gambela','ሰመራ':'Semera'};
-  function cleanCity(s){
-    if(!s) return '';
-    var v=String(s).trim();
-    if(AM_CITY[v]) return AM_CITY[v];
-    var parts=v.split('/');
-    var latin=parts[parts.length-1].trim();
-    if(AM_CITY[latin]) return AM_CITY[latin];
-    if(!/[A-Za-z]/.test(latin)) return '';
-    return latin;
-  }
-  function cityFromAddress(a){
-    if(!a) return '';
-    var c = cleanCity(a.city) || cleanCity(a.town) || cleanCity(a.municipality) || cleanCity(a.village);
-    if(c) return c;
-    return cleanCity(a.state) || cleanCity(a.state_district) || '';
-  }
-  function readCityName(lat, lng){
-    // zoom=10 asks for city-level results; accept-language=en prefers
-    // Latin names where OpenStreetMap has them.
-    return fetch('https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat='+lat+'&lon='+lng+'&zoom=10&accept-language=en')
-      .then(function(r){ return r.json(); })
-      .then(function(d){ return cityFromAddress(d.address || {}); });
-  }
-  function geoError(err){
-    if(err && err.code===1) showStatus('<%- t('locDenied') %>', 'err');
-    else if(err && err.code===2) showStatus('<%- t('locUnavailable') %>', 'err');
-    else showStatus('<%- t('locTimeout') %>', 'err');
-  }
+  // GPS + IP detection lives in /js/location.js (shared with the Discover
+  // banner, one copy only): one 30s retry on timeout/unavailable, then
+  // automatic IP fallback. Denied keeps the allow-instructions message;
+  // an error shows only when GPS and IP both fail.
+  var LL = window.LoveLinkLocation;
   if(btn) btn.addEventListener('click', function(){
     if(!navigator.geolocation){ showStatus('<%- t('locUnsupported') %>', 'err'); return; }
+    if(!LL){ showStatus('<%- t('locUnsupported') %>', 'err'); return; }
     showStatus('<%- t('locating') %>', '');
-    navigator.geolocation.getCurrentPosition(function(pos){
-      var lat=pos.coords.latitude, lng=pos.coords.longitude;
-      latIn.value=lat; lngIn.value=lng;
-      readCityName(lat, lng).then(function(city){
-        if(city){ setLoc(lat, lng, city, false); }
-        else showStatus('<%- t('locCityFailed') %>', 'err');
-      }).catch(function(){ showStatus('<%- t('locCityFailed') %>', 'err'); });
-    }, geoError, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
+    LL.detectWithFallback().then(function(res){
+      latIn.value=res.lat; lngIn.value=res.lng;
+      if(res.via==='ip'){
+        if(res.city) setLoc(res.lat, res.lng, res.city, true, '<%- t('locGpsFallback') %>: ');
+        else showStatus('<%- t('locIpFailed') %>', 'err');
+      } else if(res.city){ setLoc(res.lat, res.lng, res.city, false); }
+      else showStatus('<%- t('locCityFailed') %>', 'err');
+    }).catch(function(err){
+      if(err && err.code===1) showStatus('<%- t('locDenied') %>', 'err');
+      else showStatus('<%- t('locBothFailed') %>', 'err');
+    });
   });
-  // One-tap fallback when GPS is denied/unavailable: detect the city from
-  // the internet connection (approximate). ipwho.is is free, no key, and
-  // allows browser (CORS) calls; ipapi.co is the second try.
+  // One-tap IP detection (approximate): same shared module, no GPS try.
   if(ipBtn) ipBtn.addEventListener('click', function(){
+    if(!LL){ showStatus('<%- t('locUnsupported') %>', 'err'); return; }
     showStatus('<%- t('locDetecting') %>', '');
-    fetch('https://ipwho.is/')
-      .then(function(r){ return r.json(); })
-      .then(function(d){
-        if(d && d.success && d.city && d.latitude) { setLoc(d.latitude, d.longitude, d.city, true); return; }
-        throw new Error('ipwho: no city');
-      })
-      .catch(function(){
-        return fetch('https://ipapi.co/json/')
-          .then(function(r){ return r.json(); })
-          .then(function(d){
-            if(d && d.city && d.latitude) setLoc(d.latitude, d.longitude, d.city, true);
-            else throw new Error('ipapi: no city');
-          });
-      })
+    LL.detectIP().then(function(d){ setLoc(d.lat, d.lng, d.city, true); })
       .catch(function(){ showStatus('<%- t('locIpFailed') %>', 'err'); });
   });
   // Upload-zone previews: show thumbnail + file name, X clears the pick.
