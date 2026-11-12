@@ -475,5 +475,13 @@
   "url": "https://www.pexels.com/photo/man-in-blue-long-sleeve-with-hand-on-chin-8053507/",
   "src": "https://images.pexels.com/photos/8053507/pexels-photo-8053507.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
   "bytes": 70445
+ },
+ "hero-sunset": {
+  "id": 11741360,
+  "photographer": "Alex Kad",
+  "url": "https://www.pexels.com/photo/silhouette-photo-of-a-romantic-couple-during-sunset-11741360/",
+  "src": "https://images.pexels.com/photos/11741360/pexels-photo-11741360.jpeg?auto=compress&cs=tinysrgb&w=1200",
+  "bytes": 43777,
+  "license": "Pexels License (free use, no attribution required)"
  }
 }

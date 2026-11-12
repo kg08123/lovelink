@@ -41,36 +41,68 @@ a{color:var(--pink)}
 .or-row::before,.or-row::after{content:'';flex:1;height:1px;background:var(--line)}
 .or-row.light{color:#f9a8bc}
 .or-row.light::before,.or-row.light::after{background:rgba(255,255,255,.35)}
-/* Landing (dark hero like the mockup: real couple photo + dark gradient) */
-body.landing{background:#111; color:#fff}
-body.landing .wrap{padding:0 16px 40px; max-width:430px}
-.landing-hero{position:relative; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:flex-end; text-align:center; padding:24px 0 8px; margin:0 -16px; padding-left:16px; padding-right:16px}
-.landing-hero::before{content:''; position:absolute; inset:0; background:url('/img/hero-couple.jpg') center 30%/cover no-repeat, #1a0d12; z-index:0}
-.landing-hero::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(10,4,7,.55) 0%, rgba(10,4,7,.15) 35%, rgba(10,4,7,.25) 55%, rgba(10,4,7,.92) 82%, #0d0508 100%); z-index:1}
+/* Landing (sunset mockup: couple photo + pink glow UI) */
+body.landing{background:#14060f; color:#fff}
+body.landing .wrap{padding:0 16px 0; max-width:430px}
+.landing-hero{position:relative; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; justify-content:space-between; gap:20px; text-align:center; padding:calc(26px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom)); margin:0 -16px; overflow:hidden}
+.landing-hero::before{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(46,8,36,.45) 0%, rgba(255,46,99,.06) 42%, rgba(10,4,7,0) 58%), url('/img/hero-sunset.jpg') center 32%/cover no-repeat; background-color:#1a0d12; z-index:0}
+.landing-hero::after{content:''; position:absolute; inset:0; background:linear-gradient(180deg, rgba(20,5,18,.42) 0%, rgba(20,5,18,.05) 30%, rgba(10,4,7,.18) 52%, rgba(10,4,7,.88) 80%, #0d0508 100%); z-index:1; pointer-events:none}
 .landing-hero>*{position:relative; z-index:2}
-.landing-hearts{display:flex; justify-content:center; gap:14px; color:var(--pink); margin-bottom:6px}
-.landing-hearts .ico{width:16px; height:16px; fill:currentColor}
-.landing-hearts .ico:nth-child(2){width:22px; height:22px; margin-top:-6px}
-.landing-hearts .ico:nth-child(odd){opacity:.7}
+.landing-bokeh{position:absolute; inset:0; z-index:1; pointer-events:none}
+.landing-bokeh i{position:absolute; border-radius:50%; background:radial-gradient(circle, rgba(255,190,130,.85) 0%, rgba(255,190,130,0) 68%)}
+.landing-bokeh i:nth-child(1){width:14px; height:14px; left:12%; top:44%}
+.landing-bokeh i:nth-child(2){width:9px; height:9px; left:25%; top:52%; opacity:.8}
+.landing-bokeh i:nth-child(3){width:20px; height:20px; right:10%; top:47%}
+.landing-bokeh i:nth-child(4){width:8px; height:8px; right:26%; top:56%; opacity:.8}
+.landing-bokeh i:nth-child(5){width:12px; height:12px; left:6%; top:60%; opacity:.7}
+.landing-bokeh i:nth-child(6){width:10px; height:10px; right:6%; top:62%; opacity:.7}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-.landing-hearts .ico{animation:floaty 3s ease-in-out infinite}
-.landing-logo{margin:18px 0 0}
 .logo-heart{width:1.3rem; height:1.3rem; color:var(--pink)}
 .logo-heart.big{width:3.2rem; height:3.2rem}
 .logo-heart .ico{width:100%; height:100%}
-.landing-title{font-size:3rem; margin:4px 0 0; font-weight:900; letter-spacing:-.5px; text-shadow:0 2px 18px rgba(0,0,0,.5)}
-.landing-tag{font-size:1.15rem; margin:6px 0 28px; color:#f3d9e0}
-.landing-fine{font-size:.8rem; color:#c9a7b1; margin-top:18px}
-.landing-fine a{color:#ffb3c6}
-.landing-lang{margin-top:10px; font-size:.9rem}
-.landing-lang a{color:#ffb3c6; text-decoration:none; font-weight:700}
-.landing-lang a.on{color:#fff; text-decoration:underline}
-/* Social sign-in: round white buttons with real brand marks, like the mockup */
-.social-row{display:flex; justify-content:center; gap:18px; margin:18px 0 4px}
-.social-btn{width:56px; height:56px; border-radius:50%; background:#fff; border:none; display:flex; align-items:center; justify-content:center; text-decoration:none; box-shadow:0 4px 16px rgba(0,0,0,.35); cursor:pointer}
+.landing-mark{margin:0}
+.mark-hearts{width:116px; height:auto; filter:drop-shadow(0 0 16px rgba(255,46,99,.8)); animation:floaty 3.5s ease-in-out infinite}
+.landing-title{font-size:3.4rem; line-height:1.02; margin:2px 0 0; font-weight:900; font-style:italic; letter-spacing:-1px; color:#fff; text-shadow:0 3px 22px rgba(0,0,0,.55)}
+.landing-title .logo-link{color:#FF4D7E}
+.landing-swoosh{display:block; width:min(250px,68%); height:auto; margin:-4px auto 0; filter:drop-shadow(0 2px 8px rgba(255,46,99,.6))}
+.landing-tag{font-size:1.06rem; margin:10px 0 0; color:#fff; letter-spacing:.22em; font-weight:500; text-shadow:0 2px 12px rgba(0,0,0,.5)}
+html[lang="am"] .landing-tag{letter-spacing:.04em; font-size:1.1rem}
+.landing-actions{position:relative; z-index:2}
+.landing-cta{display:flex; align-items:center; gap:12px; width:100%; padding:16px 20px; border-radius:999px; font-size:1.12rem; font-weight:800; text-decoration:none; margin:7px 0; color:#fff}
+.landing-cta .ico{width:24px; height:24px; flex:none}
+.landing-cta .cta-label{flex:1; text-align:center}
+.landing-cta-primary{background:linear-gradient(135deg,#FF5C8A 0%,#FF2E63 55%,#E01E52 100%); box-shadow:0 10px 30px rgba(255,46,99,.50), inset 0 1px 0 rgba(255,255,255,.35)}
+.landing-cta-ghost{background:rgba(18,7,13,.55); border:1.5px solid rgba(255,255,255,.9); backdrop-filter:blur(4px); box-shadow:0 6px 18px rgba(0,0,0,.30)}
+.landing-cta:active{transform:scale(.98)}
+.landing-fine{display:flex; align-items:flex-start; justify-content:center; gap:8px; font-size:.8rem; line-height:1.5; color:#e6c3cd; margin:16px 4px 0; text-align:left}
+.landing-fine a{color:#FF5C8A; font-weight:700}
+.fine-check{flex:none; width:20px; height:20px; border-radius:6px; background:var(--pink); color:#fff; display:inline-flex; align-items:center; justify-content:center; margin-top:1px; box-shadow:0 2px 10px rgba(255,46,99,.5)}
+.fine-check .ico{width:13px; height:13px; stroke-width:3}
+.landing-lang{display:flex; align-items:center; justify-content:center; gap:10px; width:fit-content; margin:14px auto 0; padding:7px 14px; background:rgba(255,46,99,.20); border:1px solid rgba(255,92,138,.55); border-radius:999px; font-size:.92rem; backdrop-filter:blur(4px)}
+.lang-globe{width:18px; height:18px; color:#ffd9e2; display:inline-flex}
+.lang-globe .ico{width:100%; height:100%}
+.landing-lang a{color:#ffd9e2; text-decoration:none; font-weight:700; padding:3px 10px; border-radius:999px}
+.landing-lang a.on{background:var(--pink); color:#fff; box-shadow:0 2px 10px rgba(255,46,99,.5)}
+.lang-div{width:1px; height:18px; background:rgba(255,255,255,.35)}
+/* Social sign-in: dark translucent circles with glowing ring borders */
+.social-label{display:flex; align-items:center; gap:14px; color:#f2d7de; font-size:.92rem; margin:16px 6px 0}
+.social-label::before,.social-label::after{content:''; flex:1; height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.45))}
+.social-label::after{background:linear-gradient(90deg, rgba(255,255,255,.45), transparent)}
+.social-label span{flex:none}
+.social-row{display:flex; justify-content:center; gap:22px; margin:14px 0 0}
+.social-btn{width:58px; height:58px; border-radius:50%; background:rgba(18,7,13,.55); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; text-decoration:none; cursor:pointer}
 .social-btn .ico{width:28px; height:28px}
 .social-btn .brand-ico{width:28px; height:28px}
-.social-label{color:#e8cdd6; font-size:.9rem; margin:14px 0 0}
+.social-apple{color:#fff; border:1.5px solid rgba(255,92,138,.9); box-shadow:0 0 16px rgba(255,46,99,.45)}
+.social-facebook{border:1.5px solid rgba(66,133,244,.9); box-shadow:0 0 16px rgba(24,119,242,.45)}
+.social-google{border:1.5px solid rgba(255,255,255,.7)}
+/* Decorative bottom wave + flanking outline hearts */
+.landing-wave{position:absolute; left:0; right:0; bottom:0; height:96px; z-index:2; pointer-events:none}
+.landing-wave svg{width:100%; height:100%; display:block}
+.landing-side-heart{position:absolute; bottom:52px; width:24px; height:24px; color:#ff5c8a; opacity:.85; z-index:2; pointer-events:none}
+.landing-side-heart .ico{width:100%; height:100%}
+.sh-left{left:20px}
+.sh-right{right:20px}
 .btn-pink{background:linear-gradient(135deg,#FF2E63,#E01E52); box-shadow:0 6px 20px rgba(255,46,99,.45)}
 /* Bottom nav (Discover / Matches / Messages / Profile) */
 .bottomnav{position:fixed; left:0; right:0; bottom:0; z-index:60; background:#fff; border-top:1px solid var(--line); display:flex; padding:6px 4px calc(8px + env(safe-area-inset-bottom))}
