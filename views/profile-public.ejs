@@ -54,16 +54,22 @@
 <% } %>
 <% if (!preview) { %>
   <% if (matched) { %>
-    <a class="btn btn-pink btn-block" href="/messages/<%= convId %>"><%- icon('comment') %> <%= t('chatNow') %></a>
+    <div class="swipe-actions sticky-actions pub-actions">
+      <%- include('partials/chat-button') %>
+    </div>
   <% } else if (!swiped) { %>
     <div class="swipe-actions sticky-actions pub-actions">
       <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="pass"><button class="swipe-btn pass" type="submit" aria-label="<%= t('pass') %>"><%- icon('x') %></button></form>
-      <form class="js-message-form" method="post" action="/discover/message"><input type="hidden" name="to" value="<%= other.id %>"><button class="swipe-btn msg" type="submit" aria-label="Message"><%- icon('comment') %></button></form>
+      <%- include('partials/chat-button') %>
       <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= other.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" type="submit" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
     </div>
   <% } else { %>
     <p class="sub" style="text-align:center">You <%= swiped.kind==='pass' ? 'passed' : 'liked' %> this profile.</p>
+    <div class="swipe-actions sticky-actions pub-actions">
+      <%- include('partials/chat-button') %>
+    </div>
   <% } %>
+  <%- include('partials/premium-sheet', { premiumSheetNote: 'Unlock Premium to chat in this match.' }) %>
   <div class="section">
     <h2><%= t('block') %></h2>
     <% if (!isBlocked) { %>

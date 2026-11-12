@@ -184,3 +184,13 @@ CREATE TABLE IF NOT EXISTS verifications (
 );
 CREATE INDEX IF NOT EXISTS idx_verifications_status ON verifications (status, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_verifications_user ON verifications (user_id);
+
+CREATE INDEX IF NOT EXISTS idx_verifications_status ON verifications (status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_verifications_user ON verifications (user_id);
+
+-- Like-back paywall bypass: who liked FIRST on each match. The user who
+-- liked second (responding to an incoming like) always chats free; the
+-- initiator spends the 3-free-matches budget. NULL = match formed before
+-- this change: existing behavior, no new bypass. Plain INT, no FK —
+-- keeps pg-mem compatibility (the local test DB) with the other ALTERs.
+ALTER TABLE matches ADD COLUMN IF NOT EXISTS initiated_by_id INT;

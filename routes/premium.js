@@ -4,10 +4,10 @@ const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { ensureMatchesFor, matchCount } = require('./discover');
+const { ensureMatchesFor } = require('./discover');
+const { FREE_MATCHES, freeBudgetUsed } = require('../lib/paywall');
 const router = express.Router();
 
-const FREE_MATCHES = 3;
 const PREMIUM_FEE = Number(process.env.PREMIUM_FEE_ETB || 99);
 
 const receiptUpload = multer({
@@ -22,7 +22,7 @@ const receiptUpload = multer({
 // Paywall page: shows free matches used, price, payment numbers, receipt form
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const n = await matchCount(req.user.id);
+    const n = await freeBudgetUsed(req.user.id);
     const pending = await db.query(
       "SELECT * FROM payments WHERE user_id=$1 AND status='pending' ORDER BY created_at DESC LIMIT 1",
       [req.user.id]);

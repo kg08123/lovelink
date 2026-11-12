@@ -1,10 +1,14 @@
 // Messaging: a conversation exists only inside a match.
 // Poll every 2s, optimistic send, image messages (base64 in DB, 3MB cap).
+// Paywall: opening, polling or sending in a thread the viewer initiated
+// beyond the free budget is blocked server-side (see lib/paywall.js) —
+// the responder of a match always chats free.
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { presenceOf } = require('../lib/presence');
+const { canChatInMatch } = require('../lib/paywall');
 const router = express.Router();
 
 const chatUpload = multer({
@@ -30,6 +34,7 @@ function fmtInboxTime(d) {
 async function getConv(id, userId) {
   const r = await db.query(
     `SELECT c.id, c.match_id, c.user_a_id, c.user_b_id, c.created_at,
+            m.initiated_by_id,
             CASE WHEN c.user_a_id=$1 THEN bu.name ELSE au.name END AS other_name,
             CASE WHEN c.user_a_id=$1 THEN bu.id ELSE au.id END AS other_id,
             CASE WHEN c.user_a_id=$1 THEN bp.photo1_thumb ELSE ap.photo1_thumb END AS other_thumb,
@@ -39,6 +44,7 @@ async function getConv(id, userId) {
             CASE WHEN c.user_a_id=$1 THEN bu.is_demo ELSE au.is_demo END AS other_is_demo,
             CASE WHEN c.user_a_id=$1 THEN bp.last_active ELSE ap.last_active END AS other_last_active
      FROM conversations c
+     JOIN matches m ON m.id = c.match_id
      JOIN users au ON au.id=c.user_a_id
      JOIN users bu ON bu.id=c.user_b_id
      LEFT JOIN profiles ap ON ap.user_id=c.user_a_id
@@ -46,6 +52,23 @@ async function getConv(id, userId) {
      WHERE c.id=$2 AND (c.user_a_id=$1 OR c.user_b_id=$1)`,
     [userId, id]);
   return r.rows[0];
+}
+
+// Paywall gate for one conversation: false means the viewer initiated
+// this match beyond the free budget and is not premium — no reading,
+// polling or sending until Premium. Never decided client-side.
+async function chatAllowed(req, conv) {
+  return canChatInMatch(req.user.id, !!req.user.is_premium,
+    { id: conv.match_id, initiated_by_id: conv.initiated_by_id });
+}
+
+// Gated answer: XHR callers get a 403 they can react to; plain page
+// loads go to the Premium page with the same flash the old match-time
+// gate used.
+function gatedAnswer(req, res) {
+  if (req.xhr) return res.status(403).json({ error: 'premium_required' });
+  req.session.flash = { type: 'err', msg: res.locals.t('premiumNeeded') };
+  return res.redirect('/premium?blocked=1');
 }
 
 async function markRead(convId, userId) {
@@ -178,6 +201,7 @@ router.get('/:id', requireAuth, async (req, res, next) => {
   try {
     const conv = await getConv(req.params.id, req.user.id);
     if (!conv) return res.status(404).render('404');
+    if (!(await chatAllowed(req, conv))) return gatedAnswer(req, res);
     conv.other_presence = presenceOf(conv.other_last_active);
     conv.other_verified = !!(conv.other_selfie_verified || conv.other_is_demo);
     await markRead(conv.id, req.user.id);
@@ -199,6 +223,7 @@ router.get('/:id/json', requireAuth, async (req, res, next) => {
     const conv = await getConv(req.params.id, req.user.id);
     if (!conv) return res.status(404).json({ error: 'not found' });
     if (!req.xhr) return res.redirect('/messages/' + conv.id);
+    if (!(await chatAllowed(req, conv))) return res.status(403).json({ error: 'premium_required' });
     const after = Number(req.query.after) || 0;
     const m = await db.query(
       `SELECT m.id, m.body, m.created_at, m.sender_user_id, m.image_data, m.image_thumb
@@ -232,6 +257,7 @@ router.post('/:id', requireAuth, (req, res, next) => {
   try {
     const conv = await getConv(req.params.id, req.user.id);
     if (!conv) return res.status(404).render('404');
+    if (!(await chatAllowed(req, conv))) return gatedAnswer(req, res);
     const body = ((req.body && req.body.body) || '').trim().slice(0, 2000);
     let imageData = null;
     let imageThumb = null;

@@ -59,18 +59,5 @@
     <form class="js-swipe-form" method="post" action="/discover/swipe"><input type="hidden" name="to" value="<%= card.id %>"><input type="hidden" name="kind" value="like"><button class="swipe-btn like" type="submit" title="<%= t('like') %>" aria-label="<%= t('like') %>"><%- icon('heart', true) %></button></form>
   </div>
 <% } %>
-<!-- Premium gate, reference "Need More Points" sheet layout — our real
-     numbers: free matches left / Premium 99 ETB. No points are invented. -->
-<div class="sheet-backdrop" id="pointsSheetBackdrop" hidden></div>
-<div class="sheet" id="pointsSheet" role="dialog" aria-modal="true" aria-labelledby="pointsSheetTitle" hidden>
-  <div class="sheet-grip"></div>
-  <div class="sheet-heart"><%- icon('heart', true) %></div>
-  <h2 id="pointsSheetTitle">Out of free matches</h2>
-  <p class="sheet-sub">You've used your 3 free matches. Go Premium for unlimited matches and messages.</p>
-  <div class="sheet-counts"><span>You have <b><%= typeof freeLeft !== 'undefined' ? freeLeft : 0 %></b> free left</span><span>Premium: <b>unlimited</b></span></div>
-  <div class="sheet-bar"><span style="width:<%= typeof matchCount !== 'undefined' ? Math.min(100, Math.round(matchCount / FREE_MATCHES * 100)) : 100 %>%"></span></div>
-  <p class="sheet-note">Your like was saved — unlock Premium and the match will appear.</p>
-  <a class="btn btn-pink btn-block" href="/premium">Go Premium — <%= fmtETB(PREMIUM_FEE) %></a>
-  <button class="sheet-notnow" type="button" id="pointsSheetClose">Not now</button>
-</div>
+<%- include('partials/premium-sheet') %>
 </div>

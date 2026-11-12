@@ -2,15 +2,14 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
-const { matchCount } = require('./discover');
+const { FREE_MATCHES, freeBudgetUsed } = require('../lib/paywall');
 const router = express.Router();
 
-const FREE_MATCHES = 3;
 const RELIGIONS = ['Any', 'Orthodox', 'Protestant', 'Catholic', 'Muslim', 'Other'];
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const n = await matchCount(req.user.id);
+    const n = await freeBudgetUsed(req.user.id);
     res.render('settings', {
       title: res.locals.t('settings'),
       matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
@@ -22,7 +21,8 @@ router.get('/', requireAuth, async (req, res, next) => {
 // Match Preferences + Premium Features: these are REAL filters, wired
 // into candidate selection (routes/discover.js getCandidates).
 // - age range: SQL filter on the other person's age
-// - gender: looking_for_gender (the deck filter)
+// - gender: looking_for_gender is stored here, but the deck follows the
+//   opposite-gender rule instead (see getCandidates)
 // - religion: pref_religion ('Any' = no filter)
 // - verified only: only selfie-verified profiles (demos count as verified)
 // - incognito: hide me from other people's decks unless they liked me

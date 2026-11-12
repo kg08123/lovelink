@@ -1,18 +1,19 @@
 // Discover / matching / onboarding / profiles.
 // A match + conversation is created ONLY when both users like each other.
-// Free tier: first 3 matches free; the 4th mutual like hits the paywall.
+// Paywall (see lib/paywall.js): the first 3 matches you INITIATE are free;
+// liking back someone who liked you first is always free to chat in.
+// The deck shows opposite-gender profiles only (see getCandidates).
 const express = require('express');
 const multer = require('multer');
 const db = require('../db');
 const { requireAuth } = require('../middleware/auth');
 const { haversineKm, fmtDistance, splitList, matchScore } = require('../lib/match');
+const { FREE_MATCHES, freeBudgetUsed, canChatInMatch } = require('../lib/paywall');
 const { presenceOf } = require('../lib/presence');
 const { notify } = require('../lib/notify');
 const { processDemoAutoMatches } = require('../lib/demo-auto');
 const { thumbFor, backfillProfileThumb } = require('../lib/thumbs');
 const router = express.Router();
-
-const FREE_MATCHES = 3;
 
 const photoUpload = multer({
   storage: multer.memoryStorage(),
@@ -42,12 +43,16 @@ async function matchCount(userId) {
 }
 
 // Create match + conversation for a mutual like. Returns match id or null.
-// Caller enforces the paywall; this only creates when called.
-async function createMatch(aId, bId) {
+// initiatorId = the user who liked FIRST (recorded for the paywall: the
+// responder always chats free). When the match already exists (created
+// before this change, or by a concurrent path) the existing row is kept
+// untouched — a pre-change match keeps its NULL initiator on purpose.
+// The caller decides whether a match may form; this only creates.
+async function createMatch(aId, bId, initiatorId) {
   const a = Math.min(aId, bId), b = Math.max(aId, bId);
   const ex = await db.query('SELECT id FROM matches WHERE user_a_id=$1 AND user_b_id=$2', [a, b]);
   if (ex.rows.length) return ex.rows[0].id;
-  const m = await db.query('INSERT INTO matches(user_a_id,user_b_id) VALUES($1,$2) RETURNING id', [a, b]);
+  const m = await db.query('INSERT INTO matches(user_a_id,user_b_id,initiated_by_id) VALUES($1,$2,$3) RETURNING id', [a, b, initiatorId || null]);
   await db.query('INSERT INTO conversations(match_id,user_a_id,user_b_id) VALUES($1,$2,$3) ON CONFLICT (match_id) DO NOTHING',
     [m.rows[0].id, a, b]);
   await db.query('UPDATE users SET free_matches_used = free_matches_used + 1 WHERE id IN ($1,$2)', [a, b]);
@@ -55,23 +60,29 @@ async function createMatch(aId, bId) {
 }
 
 // After a user becomes premium, turn every pending mutual like into a match.
+// (Pending pairs are leftovers from before the like-back bypass, when a
+// gated mutual like created no match at all.) The initiator is whoever
+// swiped first, by swipe timestamp.
 async function ensureMatchesFor(userId) {
   const r = await db.query(
-    `SELECT s.to_user_id AS other_id FROM swipes s
+    `SELECT s.to_user_id AS other_id,
+            CASE WHEN s.created_at <= s2.created_at THEN s.from_user_id ELSE s2.from_user_id END AS initiator_id
+     FROM swipes s
      JOIN swipes s2 ON s2.from_user_id = s.to_user_id AND s2.to_user_id = s.from_user_id
        AND s2.kind IN ('like','super')
      WHERE s.from_user_id=$1 AND s.kind IN ('like','super')`,
     [userId]);
   const created = [];
   for (const row of r.rows) {
-    const id = await createMatch(userId, row.other_id);
+    const id = await createMatch(userId, row.other_id, row.initiator_id);
     if (id) created.push(id);
   }
   return created;
 }
 
 // ---- Candidates: not me, not banned, has a profile, not swiped yet,
-// ---- not blocked either way, fits my looking-for + age range (and I fit theirs).
+// ---- not blocked either way, opposite gender (see below), fits my age
+// ---- range (and I fit theirs).
 // ---- Settings prefs are REAL filters here: my age range, my preferred
 // ---- religion, Verified Only (verified = selfie-verified, or a demo
 // ---- profile — demos have no selfie to verify, and the badge already
@@ -117,9 +128,15 @@ async function getCandidates(me, meProfile, opts = {}) {
   } else {
     sql += ` AND u.id NOT IN (SELECT to_user_id FROM swipes WHERE from_user_id=$1)`;
   }
-  if (meProfile.looking_for_gender && meProfile.looking_for_gender !== 'any') {
-    sql += ` AND u.gender = $${i++}`;
-    params.push(meProfile.looking_for_gender);
+  // Opposite-gender deck, enforced server-side: a male viewer sees only
+  // women, a female viewer sees only men. A viewer with no recorded
+  // gender sees everyone. The looking_for_gender setting stays stored
+  // on the profile (and editable in Settings), but the deck follows
+  // this gender rule, not the setting.
+  if (me.gender === 'male') {
+    sql += ' AND u.gender = \'female\'';
+  } else if (me.gender === 'female') {
+    sql += ' AND u.gender = \'male\'';
   }
   if (opts.ageMin) { sql += ` AND u.age >= $${i++}`; params.push(Number(opts.ageMin)); }
   if (opts.ageMax) { sql += ` AND u.age <= $${i++}`; params.push(Number(opts.ageMax)); }
@@ -179,20 +196,19 @@ async function getCandidates(me, meProfile, opts = {}) {
 }
 
 // After a like is recorded: if the other side already liked me, it is a
-// mutual like — create the match (paywall first) and go to the match
-// screen. Returns the redirect target. Shared by the swipe buttons and
-// the public-profile swipe buttons so all of them behave identically.
+// mutual like — the match is ALWAYS created now. The paywall no longer
+// blocks match creation: the responder (me, liking back) always chats
+// free, and the initiator's budget is enforced at chat time instead
+// (see lib/paywall.js canChatInMatch). The other side liked first, so
+// they are the recorded initiator. Returns the redirect target. Shared
+// by the swipe buttons and the public-profile swipe buttons so all of
+// them behave identically.
 async function processLike(req, toId, targetName) {
   const mutual = await db.query(
     "SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
     [toId, req.user.id]);
   if (!mutual.rows.length) return '/discover';
-  const n = await matchCount(req.user.id);
-  if (!req.user.is_premium && n >= FREE_MATCHES) {
-    req.session.flash = { type: 'err', msg: req.res.locals.t('premiumNeeded') };
-    return '/premium?blocked=1';
-  }
-  const matchId = await createMatch(req.user.id, toId);
+  const matchId = await createMatch(req.user.id, toId, toId);
   await notify(db, toId, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [req.user.name]);
   await notify(db, req.user.id, 'match', '/match/' + matchId, 'itsAMatch', 'matchSub', [targetName]);
   return '/match/' + matchId;
@@ -221,7 +237,8 @@ async function discoverData(req) {
   await sweepDemoAutoMatches(req);
   await db.query('UPDATE profiles SET online=TRUE, last_active=NOW() WHERE user_id=$1', [req.user.id]);
   // My Settings prefs are the filters: age range + preferred religion +
-  // Verified Only. (Gender preference is applied inside getCandidates.)
+  // Verified Only. (The opposite-gender rule is applied inside
+  // getCandidates.)
   const prefs = {
     ageMin: req.profile.age_min, ageMax: req.profile.age_max,
     religion: (req.profile.pref_religion && req.profile.pref_religion !== 'Any') ? req.profile.pref_religion : null,
@@ -234,7 +251,9 @@ async function discoverData(req) {
     recycled = cands.length > 0;
   }
   const card = cands[0] || null;
-  const n = await matchCount(req.user.id);
+  // Free-match budget: initiated + pre-change matches (NOT every match —
+  // matches gained by liking back never spend the budget).
+  const n = await freeBudgetUsed(req.user.id);
   return {
     card, next: cands[1] || null, remaining: cands.length,
     matchCount: n, freeLeft: Math.max(0, FREE_MATCHES - n),
@@ -385,7 +404,7 @@ router.post('/onboarding', requireAuth, (req, res, next) => {
 // ---- My profile + edit ----
 router.get('/profile', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
-    const n = await matchCount(req.user.id);
+    const n = await freeBudgetUsed(req.user.id);
     const { latestVerification } = require('./verify');
     const v = await latestVerification(req.user.id);
     const verifyStatus = req.user.selfie_verified ? 'verified' : (v ? v.status : 'none');
@@ -481,9 +500,8 @@ router.get('/discover', requireAuth, requireOnboarded, async (req, res, next) =>
 // Record a like/super (shared by the swipe buttons and the message
 // button on a card). Returns { dest, hint, alreadyLiked } — dest is
 // '/discover' when there is no mutual like yet, '/match/:id' on a new
-// match, or '/premium?blocked=1' when the mutual like hit the paywall
-// (the like itself IS saved, so Premium approval still creates the
-// match later via ensureMatchesFor).
+// match. A mutual like ALWAYS creates the match now (the paywall lives
+// at chat time, not at match time — see lib/paywall.js).
 async function recordLike(req, toId, target, kind) {
   const t = req.res.locals.t;
   const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
@@ -516,10 +534,11 @@ async function recordLike(req, toId, target, kind) {
   return { dest, hint, alreadyLiked: false };
 }
 
-// Message button on a Discover card / public profile: if already matched,
-// open the chat; otherwise like first — if that like completes a match,
-// go straight to the chat; if not, the like is saved and the next card
-// shows (the reference app's message button is a like-first action).
+// Message button on a Discover card: if already matched, open the chat;
+// otherwise like first — if that like completes a match, go straight to
+// the chat; if not, the like is saved and the next card shows (the
+// reference app's message button is a like-first action). The chat
+// thread itself enforces the paywall for the initiator.
 router.post('/discover/message', requireAuth, requireOnboarded, async (req, res, next) => {
   try {
     const t = res.locals.t;
@@ -734,7 +753,8 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
       return res.render('profile-public', {
         title: other.name, other, distanceText: null, score: null,
         interestsList: splitList(other.interests), swiped: null,
-        matched: null, convId: null, isBlocked: false,
+        matched: null, convId: null, isBlocked: false, canChat: false,
+        matchCount: 0, freeLeft: FREE_MATCHES,
         verified: !!(other.selfie_verified || other.is_demo), preview: true,
       });
     }
@@ -751,14 +771,21 @@ router.get('/u/:id', requireAuth, requireOnboarded, async (req, res, next) => {
       { age: other.age, age_min: other.age_min, age_max: other.age_max, interests: other.interests, relationship_goal: other.relationship_goal, smoking: other.smoking, drinking: other.drinking },
       dist);
     const sw = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, id]);
-    const matched = await db.query('SELECT m.id, c.id AS conv_id FROM matches m LEFT JOIN conversations c ON c.match_id=m.id WHERE (m.user_a_id=$1 AND m.user_b_id=$2) OR (m.user_a_id=$2 AND m.user_b_id=$1)',
+    const matched = await db.query('SELECT m.id, m.initiated_by_id, c.id AS conv_id FROM matches m LEFT JOIN conversations c ON c.match_id=m.id WHERE (m.user_a_id=$1 AND m.user_b_id=$2) OR (m.user_a_id=$2 AND m.user_b_id=$1)',
       [req.user.id, id]);
     const blocked = await db.query('SELECT 1 FROM blocks WHERE blocker_id=$1 AND blocked_id=$2', [req.user.id, id]);
+    // Chat button state: matched + allowed -> thread; matched + gated ->
+    // premium sheet; no match -> toast. Decided server-side here, never
+    // by the client alone.
+    const mRow = matched.rows[0] || null;
+    const canChat = mRow ? await canChatInMatch(req.user.id, !!req.user.is_premium, mRow) : false;
+    const budgetUsed = await freeBudgetUsed(req.user.id);
     res.render('profile-public', {
       title: other.name, other, distanceText: fmtDistance(dist), score,
       interestsList: splitList(other.interests), swiped: sw.rows[0] || null,
-      matched: matched.rows[0] || null, convId: matched.rows[0] ? matched.rows[0].conv_id : null,
-      isBlocked: blocked.rows.length > 0,
+      matched: mRow, convId: mRow ? mRow.conv_id : null,
+      isBlocked: blocked.rows.length > 0, canChat,
+      matchCount: budgetUsed, freeLeft: Math.max(0, FREE_MATCHES - budgetUsed),
       verified: !!(other.selfie_verified || other.is_demo), preview: false,
     });
   } catch (e) { next(e); }

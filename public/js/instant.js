@@ -256,6 +256,21 @@
     if (t.closest('#reportSheetBackdrop')) { closeSheet('reportSheet'); return; }
   });
 
+  // Chat icon button on a public profile: no match -> toast only (it never
+  // likes and never opens a thread); matched but paywall-gated -> the
+  // premium sheet (falls back to the Premium page if the sheet is absent).
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t || !t.closest) return;
+    var toastBtn = t.closest('[data-toast-msg]');
+    if (toastBtn) { e.preventDefault(); toast(toastBtn.getAttribute('data-toast-msg')); return; }
+    var sheetBtn = t.closest('[data-open-sheet]');
+    if (sheetBtn) {
+      e.preventDefault();
+      if (!openSheet(sheetBtn.getAttribute('data-open-sheet'))) window.location.href = '/premium?blocked=1';
+    }
+  });
+
   // Photo tap zones: left third = previous photo, right = next photo.
   // A drag (10px+) never reaches here as a click — the drag handler
   // swallows the click that follows it.

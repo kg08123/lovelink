@@ -185,6 +185,9 @@ html[lang="am"] .landing-tag{letter-spacing:.04em; font-size:1.1rem}
 .swipe-btn.super{color:#2196F3}
 .swipe-btn.rewind{color:var(--amber)}
 .swipe-btn.rewind .ico{width:24px; height:24px}
+/* Chat icon button (public profile actions): pink accent. The Discover
+   card keeps its own .fs-actions override, which wins on specificity. */
+.swipe-btn.msg{color:var(--pink); border:1.5px solid rgba(255,46,99,.5)}
 /* Match screen (dark, like the mockup): pink radial glow, floating hearts */
 .match-screen{background:radial-gradient(ellipse 90% 55% at 50% 0%, rgba(255,46,99,.45), transparent 70%), #111; color:#fff; border-radius:20px; text-align:center; padding:28px 18px; margin:14px 0; overflow:hidden}
 .match-hearts{display:flex; justify-content:center; gap:12px; color:var(--pink); margin-bottom:4px}
@@ -648,6 +651,7 @@ html.dark .chip-check:has(input:checked){color:#ff8fb0}
 html.dark .lang-toggle{background:#2a1d23}
 /* Swipe action buttons: dark circles, coloured icons */
 html.dark .swipe-btn{background:#232328; border:1px solid var(--line); box-shadow:0 4px 14px rgba(0,0,0,.5)}
+html.dark .swipe-btn.msg{border-color:rgba(255,46,99,.55)}
 /* Chat */
 html.dark .bubble.theirs{background:#26262b}
 /* Status colours that were too dark on a dark background */

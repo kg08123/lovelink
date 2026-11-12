@@ -81,6 +81,7 @@ const STR = {
     mustBe18: 'LoveLink is 18+ only.',
     notFound: 'Not found.', noAccess: 'You do not have access to this page.',
     premiumNeeded: 'Premium needed for more matches.',
+    likeFirstToChat: 'Like them first — chat opens when you match.',
     like: 'Like', pass: 'Pass', superLike: 'Super Like', rewind: 'Rewind',
     rewound: 'Last profile brought back.',
     noRewind: 'Nothing to rewind.',
