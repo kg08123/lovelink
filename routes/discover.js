@@ -529,7 +529,6 @@ router.post('/discover/location', requireAuth, async (req, res, next) => {
 // match. A mutual like ALWAYS creates the match now (the paywall lives
 // at chat time, not at match time — see lib/paywall.js).
 async function recordLike(req, toId, target, kind) {
-  const t = req.res.locals.t;
   const already = await db.query('SELECT kind FROM swipes WHERE from_user_id=$1 AND to_user_id=$2', [req.user.id, toId]);
   const prevKind = already.rows.length ? already.rows[0].kind : null;
   if (prevKind === 'like' || prevKind === 'super') {
@@ -546,18 +545,10 @@ async function recordLike(req, toId, target, kind) {
     await db.query('INSERT INTO swipes(from_user_id,to_user_id,kind) VALUES($1,$2,$3) ON CONFLICT (from_user_id,to_user_id) DO NOTHING',
       [req.user.id, toId, kind]);
   }
-  // Demo profiles like back automatically after 60s (see lib/demo-auto);
-  // tell the tester so the wait is expected, not a mystery. Only when
-  // the demo has NOT already liked back (those match instantly).
-  let hint = null;
-  if (target.is_demo) {
-    const alreadyLikedBack = await db.query(
-      "SELECT 1 FROM swipes WHERE from_user_id=$1 AND to_user_id=$2 AND kind IN ('like','super')",
-      [toId, req.user.id]);
-    if (!alreadyLikedBack.rows.length) hint = t('demoReplyHint');
-  }
+  // No toast on a like: the card flying out is feedback enough, and no
+  // message may reveal anything about the profile behind it.
   const dest = await processLike(req, toId, target.name);
-  return { dest, hint, alreadyLiked: false };
+  return { dest, hint: null, alreadyLiked: false };
 }
 
 // Message button on a Discover card: if already matched, open the chat;
